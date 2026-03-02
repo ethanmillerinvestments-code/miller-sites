@@ -90,43 +90,54 @@ export default function Results() {
         {/* Portfolio mockups */}
         <ScrollReveal>
           <div className="grid md:grid-cols-2 gap-8">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              className="bg-navy-light rounded-xl overflow-hidden border border-white/5 group"
-            >
-              <div className="aspect-video bg-gradient-to-br from-navy-lighter to-navy flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-6xl mb-3 opacity-30">🏠</div>
-                  <p className="text-slate-500 text-sm">HVAC Company Website</p>
-                  <p className="text-electric text-xs mt-1">Before &amp; After</p>
+            {[
+              {
+                img: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&q=80",
+                tag: "HVAC",
+                name: "Comfort Pro HVAC",
+                result: "312% increase in monthly leads after redesign",
+                badge: "+312% Leads",
+              },
+              {
+                img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
+                tag: "Plumbing",
+                name: "Elite Plumbing Co",
+                result: "From zero online presence to 45 leads/month",
+                badge: "0 → 45 leads/mo",
+              },
+            ].map((item) => (
+              <motion.div
+                key={item.name}
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="bg-navy-light rounded-xl overflow-hidden border border-white/5 group cursor-default"
+              >
+                <div className="aspect-video relative overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.img}
+                    alt={item.name}
+                    className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-light via-transparent to-transparent" />
+                  <div className="absolute top-3 left-3">
+                    <span className="text-xs font-semibold px-3 py-1 rounded-full"
+                      style={{ background: "rgba(99,102,241,0.8)", color: "white" }}>
+                      {item.tag}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-3 right-3">
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-500/90 text-white">
+                      {item.badge}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="p-5">
-                <h3 className="font-semibold mb-1">Comfort Pro HVAC</h3>
-                <p className="text-slate-400 text-sm">
-                  312% increase in monthly leads after redesign
-                </p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              className="bg-navy-light rounded-xl overflow-hidden border border-white/5 group"
-            >
-              <div className="aspect-video bg-gradient-to-br from-navy-lighter to-navy flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-6xl mb-3 opacity-30">🔧</div>
-                  <p className="text-slate-500 text-sm">Plumbing Company Website</p>
-                  <p className="text-electric text-xs mt-1">Before &amp; After</p>
+                <div className="p-5">
+                  <h3 className="font-semibold mb-1">{item.name}</h3>
+                  <p className="text-slate-400 text-sm">{item.result}</p>
                 </div>
-              </div>
-              <div className="p-5">
-                <h3 className="font-semibold mb-1">Elite Plumbing Co</h3>
-                <p className="text-slate-400 text-sm">
-                  From zero online presence to 45 leads/month
-                </p>
-              </div>
-            </motion.div>
+              </motion.div>
+            ))}
           </div>
         </ScrollReveal>
       </div>

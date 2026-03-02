@@ -7,7 +7,7 @@ const services = [
   {
     title: "Website Design",
     description:
-      "Custom, mobile-first websites designed to convert visitors into paying customers. No templates, no cookie-cutter layouts.",
+      "Hand-coded, mobile-first websites built to convert. No page builders, no templates — every pixel is intentional and fast.",
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -17,7 +17,7 @@ const services = [
   {
     title: "SEO Optimization",
     description:
-      "Rank higher on Google for local searches. We handle technical SEO, local listings, and content strategy so customers find you first.",
+      "Dominate local search results. We handle technical SEO, Google Business, citations, and content so your phone rings — not your competitor's.",
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -27,7 +27,7 @@ const services = [
   {
     title: "Lead Generation",
     description:
-      "Built-in contact forms, click-to-call buttons, and review integrations that turn your website traffic into real leads.",
+      "Every site ships with click-to-call, smart contact forms, review funnels, and lead tracking — engineered to capture every customer who lands on your page.",
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -37,7 +37,7 @@ const services = [
   {
     title: "Ongoing Maintenance",
     description:
-      "We keep your site fast, secure, and up to date. Monthly updates, performance monitoring, and priority support included.",
+      "Your site stays fast, secure, and ranking. We monitor uptime, push updates, and handle everything technical so you never have to think about it.",
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
