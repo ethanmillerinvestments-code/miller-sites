@@ -314,7 +314,12 @@ export default function Pricing() {
                   </div>
 
                   {tier.type === "one-time" && (
-                    <p className="text-[11px] text-slate-600 mb-3">You manage hosting + domain. No ongoing fees to us.</p>
+                    <div
+                      className="text-xs mb-4 px-3 py-2 rounded-lg leading-relaxed"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "#94a3b8" }}
+                    >
+                      You receive the full source code via GitHub. Deploy free on Vercel yourself, no monthly fees to us.
+                    </div>
                   )}
 
                   <p className="text-slate-400 text-xs leading-relaxed mb-5">{tier.description}</p>
