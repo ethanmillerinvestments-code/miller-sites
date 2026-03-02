@@ -141,7 +141,7 @@ export default function Hero() {
           className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10"
         >
           We build high-converting, fast-loading websites that turn visitors
-          into paying customers — tailored for HVAC, plumbing, roofing, and
+          into paying customers. Tailored for HVAC, plumbing, roofing, and
           every trade in between.
         </motion.p>
 

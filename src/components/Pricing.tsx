@@ -252,7 +252,7 @@ export default function Pricing() {
         {view === "build" && (
           <ScrollReveal delay={0.3}>
             <p className="text-center text-slate-400 text-sm mt-8">
-              Add a monthly plan and save 20% — mention it on your call.{" "}
+              Add a monthly plan and save 20%. Mention it on your call.{" "}
               <button onClick={() => setView("monthly")} className="text-electric hover:underline">
                 View monthly plans →
               </button>

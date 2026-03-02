@@ -25,7 +25,7 @@ export const useCart = create<CartStore>((set, get) => ({
   addItem: (item) => {
     const existing = get().items.find((i) => i.id === item.id);
     if (existing) {
-      // Already in cart — just open it
+      // Already in cart, just open it
       set({ isOpen: true });
       return;
     }

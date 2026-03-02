@@ -102,7 +102,7 @@ export default function CartDrawer() {
                     >
                       <span className="text-electric mt-0.5">✦</span>
                       <span className="text-slate-300">
-                        Bundle discount applied — mention this on your call for{" "}
+                        Bundle discount applied. Mention this on your call for{" "}
                         <span className="text-electric font-semibold">20% off</span> your monthly plan.
                       </span>
                     </div>

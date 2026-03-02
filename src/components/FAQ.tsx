@@ -8,37 +8,42 @@ const faqs = [
   {
     question: "How long does it take to build my website?",
     answer:
-      "Most sites are delivered within 7-14 days depending on the plan. Our Premium tier is typically done in 7 days. We move fast without cutting corners.",
+      "Most projects are delivered within 7 to 14 days from the date you approve the design mockup. The Starter plan typically takes 10 to 14 days. Growth and Premium projects run 7 to 10 days because we allocate more resources. We move fast, but we never rush at the cost of quality. Every site goes through a full quality check before it launches.",
   },
   {
-    question: "Do I need to provide content and images?",
+    question: "Do I need to provide content, copy, or photos?",
     answer:
-      "We handle everything. We'll write your copy based on your business details and use professional stock images. If you have your own photos and content, even better.",
+      "No. We write all of your website copy based on a short intake form you fill out about your business. We source high-quality professional photos for your industry. If you have your own photos, customer reviews, or specific content you want included, we will absolutely use it. Your input makes the end result better, but it is never required.",
+  },
+  {
+    question: "Will my site show up on Google?",
+    answer:
+      "Every site we build includes foundational on-page SEO: optimized title tags, meta descriptions, header structure, image alt text, schema markup, and a submitted sitemap. We also set up Google Search Console and Google Analytics. For clients who want to actively climb local rankings, our Growth and Agency Partner monthly plans include ongoing local SEO, content publishing, and citation building.",
   },
   {
     question: "Will my site work on phones and tablets?",
     answer:
-      "Every site we build is fully responsive and tested on all devices. Over 70% of home service searches happen on mobile, so this is non-negotiable for us.",
+      "Yes, fully. Every site is built mobile-first and tested on iOS, Android, and all major screen sizes before launch. This is not optional for us. Over 70 percent of searches for home service businesses happen on a mobile device. If your site is slow or broken on a phone, you are losing jobs every single day.",
   },
   {
-    question: "Do you offer ongoing support?",
+    question: "What if I want changes after the site launches?",
     answer:
-      "Yes. Our Premium plan includes 3 months of maintenance. All plans include 30 days of post-launch support. We also offer monthly maintenance packages starting at $97/month.",
+      "All plans include a 30-day post-launch window for small tweaks and corrections at no charge. For ongoing updates, our Maintenance plan ($97/mo) covers monthly content changes, plugin and security updates, and priority support. Larger changes like new pages or redesigns are quoted separately at a fair flat rate.",
   },
   {
-    question: "Can I update the site myself after launch?",
+    question: "What if I do not like the design?",
     answer:
-      "Absolutely. We build on modern platforms and can set up a simple content management system so you can make basic updates. For bigger changes, we're always a message away.",
+      "We start every project with a full design mockup that you review and approve before we build anything. If you want changes to the mockup, we revise until you are satisfied. Once we are in development, each plan includes revision rounds for final adjustments. We do not consider a project done until you are genuinely happy with what you see.",
   },
   {
-    question: "What if I don't like the design?",
+    question: "Do you offer any guarantees?",
     answer:
-      "We include revision rounds with every plan. We start with a mockup you approve before we build anything. If you're not happy after revisions, we'll keep working until you are.",
+      "Yes. If your site is not live within the delivery window we agreed to and the delay is on our end, we refund 10 percent of your project cost for each business day we are late. We also guarantee your site will score above 90 on Google PageSpeed for mobile performance. We stand behind the work.",
   },
   {
-    question: "Do you help with Google rankings (SEO)?",
+    question: "How does the monthly subscription work?",
     answer:
-      "Yes. Every site includes foundational SEO setup. Our Growth and Premium plans include advanced optimization like local SEO, schema markup, and speed optimization to help you rank higher.",
+      "After your site launches, you can add a monthly plan at any time. Plans are billed on the same day each month and can be cancelled with 30 days notice. No long-term contracts, no setup fees. Clients who add a monthly plan at the time of their build get 20 percent off for the first three months.",
   },
 ];
 
@@ -52,13 +57,14 @@ function FAQItem({ question, answer, isOpen, onClick }: {
     <div className="border-b border-white/5 last:border-b-0">
       <button
         onClick={onClick}
-        className="flex items-center justify-between w-full py-5 text-left"
+        className="flex items-center justify-between w-full py-5 text-left gap-4"
       >
-        <span className="font-medium text-white pr-8">{question}</span>
+        <span className="font-semibold text-white">{question}</span>
         <motion.svg
           animate={{ rotate: isOpen ? 45 : 0 }}
           transition={{ duration: 0.2 }}
-          className="w-5 h-5 text-electric shrink-0"
+          className="w-5 h-5 shrink-0"
+          style={{ color: "#6366f1" }}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -75,7 +81,7 @@ function FAQItem({ question, answer, isOpen, onClick }: {
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
-            <p className="pb-5 text-slate-400 leading-relaxed">{answer}</p>
+            <p className="pb-5 text-slate-400 leading-relaxed text-sm">{answer}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -87,7 +93,7 @@ export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="py-24 sm:py-32 bg-navy-light">
+    <section id="faq" className="py-24 sm:py-32 bg-navy-light/60">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal>
           <div className="text-center mb-16">
@@ -95,13 +101,16 @@ export default function FAQ() {
               FAQ
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-3 mb-4">
-              Common <span className="text-electric">Questions</span>
+              Questions We <span className="text-electric">Always Get</span>
             </h2>
+            <p className="text-slate-400 max-w-xl mx-auto">
+              Straight answers. No fluff.
+            </p>
           </div>
         </ScrollReveal>
 
         <ScrollReveal>
-          <div className="bg-navy rounded-2xl p-6 sm:p-8 border border-white/5">
+          <div className="bg-navy rounded-2xl p-6 sm:p-10 border border-white/5">
             {faqs.map((faq, i) => (
               <FAQItem
                 key={i}
@@ -112,6 +121,15 @@ export default function FAQ() {
               />
             ))}
           </div>
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.2}>
+          <p className="text-center text-slate-500 text-sm mt-8">
+            Still have questions?{" "}
+            <a href="#contact" className="text-electric hover:underline">
+              Send us a message and we will respond within a few hours.
+            </a>
+          </p>
         </ScrollReveal>
       </div>
     </section>

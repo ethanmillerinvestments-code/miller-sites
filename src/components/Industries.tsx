@@ -4,14 +4,46 @@ import { motion } from "framer-motion";
 import ScrollReveal from "./ScrollReveal";
 
 const industries = [
-  { name: "HVAC", icon: "🌡️" },
-  { name: "Plumbing", icon: "🔧" },
-  { name: "Roofing", icon: "🏠" },
-  { name: "Landscaping", icon: "🌿" },
-  { name: "Pressure Washing", icon: "💧" },
-  { name: "Electricians", icon: "⚡" },
-  { name: "Clinics", icon: "🏥" },
-  { name: "Painting", icon: "🎨" },
+  {
+    name: "HVAC",
+    icon: "🌡️",
+    detail: "Heating, cooling, and air quality",
+  },
+  {
+    name: "Plumbing",
+    icon: "🔧",
+    detail: "Residential and commercial plumbers",
+  },
+  {
+    name: "Roofing",
+    icon: "🏠",
+    detail: "Repair, replacement, and inspection",
+  },
+  {
+    name: "Landscaping",
+    icon: "🌿",
+    detail: "Design, maintenance, and hardscaping",
+  },
+  {
+    name: "Pressure Washing",
+    icon: "💧",
+    detail: "Residential driveways and commercial lots",
+  },
+  {
+    name: "Electricians",
+    icon: "⚡",
+    detail: "Residential wiring and panel upgrades",
+  },
+  {
+    name: "Clinics",
+    icon: "🏥",
+    detail: "Medical, dental, and wellness practices",
+  },
+  {
+    name: "Painting",
+    icon: "🎨",
+    detail: "Interior and exterior painting crews",
+  },
 ];
 
 export default function Industries() {
@@ -27,8 +59,9 @@ export default function Industries() {
               Built for <span className="text-electric">Home Service</span> Pros
             </h2>
             <p className="text-slate-400 max-w-2xl mx-auto text-lg">
-              We know your industry. Every site we build is tailored to how
-              your customers search and buy.
+              We specialize exclusively in home service businesses. That means
+              we already understand your customers, your search terms, and
+              exactly what it takes to get your phone ringing.
             </p>
           </div>
         </ScrollReveal>
@@ -37,18 +70,30 @@ export default function Industries() {
           {industries.map((ind, i) => (
             <ScrollReveal key={ind.name} delay={i * 0.08}>
               <motion.div
-                whileHover={{ scale: 1.05, y: -4 }}
+                whileHover={{ scale: 1.05, y: -5 }}
                 transition={{ type: "spring", stiffness: 300 }}
-                className="bg-navy-light p-6 rounded-xl border border-white/5 hover:border-electric/30 text-center cursor-default group transition-colors"
+                className="bg-navy-light p-6 rounded-2xl border border-white/5 hover:border-electric/30 text-center cursor-default group transition-all"
               >
-                <div className="text-4xl mb-3">{ind.icon}</div>
-                <h3 className="font-semibold text-white group-hover:text-electric transition-colors">
+                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform inline-block">
+                  {ind.icon}
+                </div>
+                <h3 className="font-bold text-white group-hover:text-electric transition-colors mb-1">
                   {ind.name}
                 </h3>
+                <p className="text-slate-500 text-xs leading-snug">{ind.detail}</p>
               </motion.div>
             </ScrollReveal>
           ))}
         </div>
+
+        <ScrollReveal delay={0.4}>
+          <p className="text-center text-slate-500 text-sm mt-10">
+            Don&apos;t see your trade?{" "}
+            <a href="#contact" className="text-electric hover:underline">
+              Reach out. We work with any local service business.
+            </a>
+          </p>
+        </ScrollReveal>
       </div>
     </section>
   );
