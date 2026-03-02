@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Space_Grotesk } from "next/font/google";
+import { Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
-  variable: "--font-space",
-  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-bricolage",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${spaceGrotesk.variable} font-sans antialiased bg-navy text-slate-100`}>
+      <body className={`${bricolage.variable} font-sans antialiased bg-navy text-slate-100`}>
         {children}
       </body>
     </html>

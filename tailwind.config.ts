@@ -31,7 +31,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["Space Grotesk", "system-ui", "sans-serif"],
+        sans: ["Bricolage Grotesque", "system-ui", "sans-serif"],
       },
       animation: {
         "float": "float 6s ease-in-out infinite",
