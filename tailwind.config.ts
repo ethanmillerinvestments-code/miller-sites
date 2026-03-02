@@ -10,24 +10,24 @@ const config: Config = {
     extend: {
       colors: {
         navy: {
-          DEFAULT: "#04080f",
-          light: "#0d1424",
-          lighter: "#151f35",
+          DEFAULT: "#06091e",
+          light: "#0c1230",
+          lighter: "#131d42",
         },
         electric: {
-          DEFAULT: "#6366f1",
-          dark: "#4f46e5",
-          light: "#818cf8",
+          DEFAULT: "#7c6fff",
+          dark: "#5c52d5",
+          light: "#a89fff",
         },
         cyan: {
-          brand: "#22d3ee",
+          brand: "#00e5ff",
         },
         gold: {
-          DEFAULT: "#f59e0b",
-          light: "#fbbf24",
+          DEFAULT: "#fbbf24",
+          light: "#fcd34d",
         },
         violet: {
-          brand: "#a855f7",
+          brand: "#c165ff",
         },
       },
       fontFamily: {

@@ -1,17 +1,183 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/store/cart";
 
-const navLinks = [
-  { label: "Services", href: "#services" },
-  { label: "Industries", href: "#industries" },
-  { label: "Process", href: "#process" },
-  { label: "Results", href: "#results" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "FAQ", href: "#faq" },
+const pricingDropdown = {
+  build: [
+    { name: "Starter", price: "$797", href: "#pricing" },
+    { name: "Growth", price: "$1,497", href: "#pricing", popular: true },
+    { name: "Premium", price: "$2,997", href: "#pricing" },
+  ],
+  monthly: [
+    { name: "Maintenance", price: "$97/mo", href: "#pricing" },
+    { name: "Growth Plan", price: "$297/mo", href: "#pricing", popular: true },
+    { name: "Agency Partner", price: "$597/mo", href: "#pricing" },
+  ],
+};
+
+const servicesDropdown = [
+  { name: "Website Design", desc: "Custom, conversion-focused builds", icon: "✦" },
+  { name: "Local SEO", desc: "Dominate your city on Google", icon: "◈" },
+  { name: "Lead Generation", desc: "Forms, funnels, and CRM setup", icon: "⬡" },
+  { name: "Maintenance", desc: "Speed, security, and updates", icon: "◎" },
 ];
+
+function PricingDropdown({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 8, scale: 0.97 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
+      className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[480px] rounded-2xl border border-white/8 overflow-hidden"
+      style={{ background: "rgba(10,15,28,0.97)", backdropFilter: "blur(20px)", boxShadow: "0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.1)" }}
+    >
+      <div className="p-4 grid grid-cols-2 gap-3">
+        <div>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">Website Build</p>
+          {pricingDropdown.build.map((item) => (
+            <a
+              key={item.name}
+              href={item.href}
+              onClick={onClose}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-white text-sm font-medium">{item.name}</span>
+                {item.popular && (
+                  <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(99,102,241,0.2)", color: "#a5b4fc" }}>
+                    Popular
+                  </span>
+                )}
+              </div>
+              <span className="text-slate-400 text-sm font-semibold group-hover:text-electric transition-colors">{item.price}</span>
+            </a>
+          ))}
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">Monthly Plans</p>
+          {pricingDropdown.monthly.map((item) => (
+            <a
+              key={item.name}
+              href={item.href}
+              onClick={onClose}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-white text-sm font-medium">{item.name}</span>
+                {item.popular && (
+                  <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(99,102,241,0.2)", color: "#a5b4fc" }}>
+                    Popular
+                  </span>
+                )}
+              </div>
+              <span className="text-slate-400 text-sm font-semibold group-hover:text-electric transition-colors">{item.price}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+      <div className="border-t border-white/5 px-4 py-3 flex items-center justify-between">
+        <p className="text-xs text-slate-500">Bundle a build + monthly and save 20%</p>
+        <a href="#pricing" onClick={onClose} className="text-xs font-semibold text-electric hover:underline">
+          See all plans →
+        </a>
+      </div>
+    </motion.div>
+  );
+}
+
+function ServicesDropdown({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 8, scale: 0.97 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
+      className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 rounded-2xl border border-white/8 overflow-hidden"
+      style={{ background: "rgba(10,15,28,0.97)", backdropFilter: "blur(20px)", boxShadow: "0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.1)" }}
+    >
+      <div className="p-3">
+        {servicesDropdown.map((s) => (
+          <a
+            key={s.name}
+            href="#services"
+            onClick={onClose}
+            className="flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group"
+          >
+            <span className="text-electric text-lg mt-0.5 leading-none">{s.icon}</span>
+            <div>
+              <p className="text-white text-sm font-medium">{s.name}</p>
+              <p className="text-slate-500 text-xs">{s.desc}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function NavDropdownLink({
+  label,
+  href,
+  dropdown,
+}: {
+  label: string;
+  href: string;
+  dropdown?: "pricing" | "services";
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => setOpen(false), 120);
+  };
+
+  if (!dropdown) {
+    return (
+      <a href={href} className="text-sm text-slate-300 hover:text-white transition-colors">
+        {label}
+      </a>
+    );
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <button className="flex items-center gap-1 text-sm text-slate-300 hover:text-white transition-colors">
+        {label}
+        <motion.svg
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="w-3.5 h-3.5 text-slate-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </motion.svg>
+      </button>
+      <AnimatePresence>
+        {open && (
+          dropdown === "pricing"
+            ? <PricingDropdown onClose={() => setOpen(false)} />
+            : <ServicesDropdown onClose={() => setOpen(false)} />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -37,24 +203,35 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
-          <a href="#" className="flex items-center gap-2">
-            <span className="text-xl sm:text-2xl font-bold text-white">
-              Lead<span className="text-electric">craft</span>
-            </span>
+
+          {/* Logo */}
+          <a href="#" className="flex items-center gap-2.5 group">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm shrink-0"
+              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", boxShadow: "0 0 16px rgba(99,102,241,0.5)" }}
+            >
+              LC
+            </div>
+            <div className="flex flex-col leading-none">
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                Lead<span style={{ background: "linear-gradient(90deg, #6366f1, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>craft</span>
+              </span>
+              <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-slate-500 hidden sm:block">
+                Agency
+              </span>
+            </div>
           </a>
 
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="text-sm text-slate-300 hover:text-white transition-colors"
-              >
-                {link.label}
-              </a>
-            ))}
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-7">
+            <NavDropdownLink label="Services" href="#services" dropdown="services" />
+            <a href="#industries" className="text-sm text-slate-300 hover:text-white transition-colors">Industries</a>
+            <a href="#process" className="text-sm text-slate-300 hover:text-white transition-colors">Process</a>
+            <a href="#results" className="text-sm text-slate-300 hover:text-white transition-colors">Results</a>
+            <NavDropdownLink label="Pricing" href="#pricing" dropdown="pricing" />
+            <a href="#faq" className="text-sm text-slate-300 hover:text-white transition-colors">FAQ</a>
 
-            {/* Cart button */}
+            {/* Cart */}
             <button
               onClick={openCart}
               className="relative w-10 h-10 flex items-center justify-center rounded-lg border border-white/10 hover:border-electric/40 transition-colors"
@@ -80,15 +257,15 @@ export default function Navbar() {
 
             <a
               href="#contact"
-              className="text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
-              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)" }}
+              className="text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", boxShadow: "0 0 20px rgba(99,102,241,0.3)" }}
             >
               Get Started
             </a>
           </div>
 
+          {/* Mobile controls */}
           <div className="flex items-center gap-3 md:hidden">
-            {/* Mobile cart button */}
             <button
               onClick={openCart}
               className="relative w-9 h-9 flex items-center justify-center rounded-lg border border-white/10"
@@ -124,21 +301,30 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-navy-light border-t border-white/5"
+            className="md:hidden border-t border-white/5"
+            style={{ background: "rgba(10,15,28,0.97)", backdropFilter: "blur(20px)" }}
           >
-            <div className="px-4 py-4 flex flex-col gap-3">
-              {navLinks.map((link) => (
+            <div className="px-4 py-4 flex flex-col gap-1">
+              {[
+                { label: "Services", href: "#services" },
+                { label: "Industries", href: "#industries" },
+                { label: "Process", href: "#process" },
+                { label: "Results", href: "#results" },
+                { label: "Pricing", href: "#pricing" },
+                { label: "FAQ", href: "#faq" },
+              ].map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="text-slate-300 hover:text-white transition-colors py-2"
+                  className="text-slate-300 hover:text-white transition-colors py-2.5 px-2 rounded-lg hover:bg-white/5"
                 >
                   {link.label}
                 </a>
@@ -146,7 +332,7 @@ export default function Navbar() {
               <a
                 href="#contact"
                 onClick={() => setMobileOpen(false)}
-                className="text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-center mt-2"
+                className="text-white font-semibold px-5 py-3 rounded-lg transition-colors text-center mt-2"
                 style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)" }}
               >
                 Get Started

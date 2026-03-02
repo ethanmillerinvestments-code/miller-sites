@@ -229,6 +229,9 @@ export default function Pricing() {
                       {tier.type === "monthly" ? "/month" : "one-time"}
                     </span>
                   </div>
+                  {tier.type === "one-time" && (
+                    <p className="text-xs text-slate-500 mb-3">You manage hosting + domain. No ongoing fees to us.</p>
+                  )}
                   <p className="text-slate-400 text-sm">{tier.description}</p>
                 </div>
 
@@ -252,7 +255,7 @@ export default function Pricing() {
         {view === "build" && (
           <ScrollReveal delay={0.3}>
             <p className="text-center text-slate-400 text-sm mt-8">
-              Add a monthly plan and save 20%. Mention it on your call.{" "}
+              Want us to handle hosting, updates, and support?{" "}
               <button onClick={() => setView("monthly")} className="text-electric hover:underline">
                 View monthly plans →
               </button>
