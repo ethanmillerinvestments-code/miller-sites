@@ -59,6 +59,11 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Contact</h4>
             <ul className="space-y-3 text-sm">
               <li>
+                <a href="tel:5138151826" className="text-slate-400 hover:text-white transition-colors">
+                  (513) 815-1826
+                </a>
+              </li>
+              <li>
                 <a href="mailto:ethanmillerinvestments@gmail.com" className="text-slate-400 hover:text-white transition-colors">
                   ethanmillerinvestments@gmail.com
                 </a>
