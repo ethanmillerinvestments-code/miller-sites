@@ -39,7 +39,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 sm:h-20">
           <a href="#" className="flex items-center gap-2">
             <span className="text-xl sm:text-2xl font-bold text-white">
-              Miller <span className="text-electric">Web Agency</span>
+              Lead<span className="text-electric">craft</span>
             </span>
           </a>
 

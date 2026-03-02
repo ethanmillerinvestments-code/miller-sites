@@ -9,14 +9,14 @@ const testimonials = [
     name: "Mike Johnson",
     business: "Johnson HVAC Solutions",
     quote:
-      "MillerSites built us a site that actually brings in calls. We went from maybe 5 leads a month to over 30. Best investment we've made in marketing.",
+      "Leadcraft built us a site that actually brings in calls. We went from maybe 5 leads a month to over 30. Best investment we've made in marketing.",
     stars: 5,
   },
   {
     name: "Sarah Williams",
     business: "Williams Plumbing Co",
     quote:
-      "Our old site looked like it was from 2005. MillerSites gave us a modern, fast website and now we're the top result in our area. Couldn't be happier.",
+      "Our old site looked like it was from 2005. Leadcraft gave us a modern, fast website and now we're the top result in our area. Couldn't be happier.",
     stars: 5,
   },
   {
@@ -30,7 +30,7 @@ const testimonials = [
     name: "Lisa Martinez",
     business: "GreenScape Landscaping",
     quote:
-      "I was skeptical about investing in a new website, but the results speak for themselves. We've doubled our revenue since launching with MillerSites.",
+      "I was skeptical about investing in a new website, but the results speak for themselves. We've doubled our revenue since launching with Leadcraft.",
     stars: 5,
   },
 ];

@@ -9,7 +9,7 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "Miller Web Agency - Websites That Generate Leads",
+  title: "Leadcraft Agency - Websites That Generate Leads",
   description:
     "We build high-converting websites for HVAC, plumbing, roofing, landscaping, and other home service businesses. Get more leads with a professional online presence.",
 };

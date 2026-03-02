@@ -88,7 +88,7 @@ export default function Hero() {
       <div className="absolute inset-0">
         <Image
           src={GAMMA_HERO_IMG}
-          alt="Miller Web Agency hero"
+          alt="Leadcraft Agency hero"
           fill
           priority
           className="object-cover"

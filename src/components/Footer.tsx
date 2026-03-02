@@ -6,7 +6,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <span className="text-2xl font-bold text-white">
-              Miller <span className="text-electric">Web Agency</span>
+              Lead<span className="text-electric">craft</span>
             </span>
             <p className="text-slate-400 mt-3 max-w-sm text-sm leading-relaxed">
               Professional websites for home service businesses.
@@ -74,7 +74,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/5 mt-12 pt-8 text-center text-sm text-slate-500">
-          &copy; {new Date().getFullYear()} MillerSites. All rights reserved.
+          &copy; {new Date().getFullYear()} Leadcraft Agency. All rights reserved.
         </div>
       </div>
     </footer>
