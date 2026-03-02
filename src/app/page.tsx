@@ -9,12 +9,14 @@ import Testimonials from "@/components/Testimonials";
 import FAQ from "@/components/FAQ";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import ParallaxBackground from "@/components/ParallaxBackground";
 
 export default function Home() {
   return (
     <>
+      <ParallaxBackground />
       <Navbar />
-      <main>
+      <main className="relative z-10">
         <Hero />
         <Services />
         <Industries />

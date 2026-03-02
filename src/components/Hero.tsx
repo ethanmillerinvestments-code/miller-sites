@@ -5,16 +5,18 @@ import { useEffect, useState } from "react";
 
 function Particles() {
   const [particles, setParticles] = useState<
-    { x: number; y: number; size: number; delay: number }[]
+    { x: number; y: number; size: number; delay: number; color: string }[]
   >([]);
 
   useEffect(() => {
+    const colors = ["#6366f1", "#22d3ee", "#a855f7", "#f59e0b"];
     setParticles(
-      Array.from({ length: 30 }, () => ({
+      Array.from({ length: 40 }, () => ({
         x: Math.random() * 100,
         y: Math.random() * 100,
-        size: Math.random() * 4 + 1,
-        delay: Math.random() * 5,
+        size: Math.random() * 3 + 1,
+        delay: Math.random() * 6,
+        color: colors[Math.floor(Math.random() * colors.length)],
       }))
     );
   }, []);
@@ -24,10 +26,21 @@ function Particles() {
       {particles.map((p, i) => (
         <motion.div
           key={i}
-          className="absolute rounded-full bg-electric/20"
-          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size }}
-          animate={{ y: [0, -30, 0], opacity: [0.2, 0.6, 0.2] }}
-          transition={{ duration: 4 + Math.random() * 3, repeat: Infinity, delay: p.delay }}
+          className="absolute rounded-full"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            backgroundColor: p.color,
+            opacity: 0.4,
+          }}
+          animate={{ y: [0, -40, 0], opacity: [0.2, 0.7, 0.2] }}
+          transition={{
+            duration: 5 + Math.random() * 4,
+            repeat: Infinity,
+            delay: p.delay,
+          }}
         />
       ))}
     </div>
@@ -48,14 +61,18 @@ function TypewriterText({ text }: { text: string }) {
         setDone(true);
         clearInterval(interval);
       }
-    }, 50);
+    }, 45);
     return () => clearInterval(interval);
   }, [text]);
 
   return (
     <span>
       {displayed}
-      {!done && <span className="animate-pulse text-electric">|</span>}
+      {!done && (
+        <span className="animate-pulse" style={{ color: "#6366f1" }}>
+          |
+        </span>
+      )}
     </span>
   );
 }
@@ -63,10 +80,12 @@ function TypewriterText({ text }: { text: string }) {
 export default function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-navy via-navy-light to-navy" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-electric/10 rounded-full blur-3xl animate-pulse-glow" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gold/5 rounded-full blur-3xl animate-pulse-glow" />
+      {/* Rich gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#04080f] via-[#0d0f1f] to-[#04080f]" />
+
+      {/* Hero-specific glows */}
+      <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-violet-brand/15 blur-[100px] animate-pulse-glow" />
+      <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] rounded-full bg-cyan-brand/10 blur-[100px] animate-pulse-glow" />
 
       <Particles />
 
@@ -76,7 +95,14 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <span className="inline-block bg-electric/10 text-electric text-sm font-medium px-4 py-1.5 rounded-full mb-6 border border-electric/20">
+          <span
+            className="inline-block text-sm font-medium px-4 py-1.5 rounded-full mb-6 border"
+            style={{
+              background: "rgba(99,102,241,0.1)",
+              color: "#818cf8",
+              borderColor: "rgba(99,102,241,0.3)",
+            }}
+          >
             Websites That Generate Leads
           </span>
         </motion.div>
@@ -87,7 +113,9 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-4xl sm:text-5xl md:text-7xl font-bold leading-tight mb-6"
         >
-          <TypewriterText text="Professional Websites for Home Service Businesses" />
+          <span className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+            <TypewriterText text="Professional Websites for Home Service Businesses" />
+          </span>
         </motion.h1>
 
         <motion.p
@@ -106,34 +134,29 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.6 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <a
+          <motion.a
             href="#results"
-            className="bg-electric hover:bg-electric-dark text-white font-semibold px-8 py-4 rounded-lg text-lg transition-all hover:shadow-lg hover:shadow-electric/25"
+            whileHover={{ scale: 1.07 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 400 }}
+            className="relative overflow-hidden font-semibold px-8 py-4 rounded-lg text-lg text-white"
+            style={{
+              background: "linear-gradient(135deg, #6366f1, #a855f7)",
+              boxShadow: "0 0 30px rgba(99,102,241,0.35)",
+            }}
           >
             See Our Work
-          </a>
-          <a
+          </motion.a>
+          <motion.a
             href="#contact"
-            className="border border-white/20 hover:border-white/40 text-white font-semibold px-8 py-4 rounded-lg text-lg transition-all hover:bg-white/5"
+            whileHover={{ scale: 1.07 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 400 }}
+            className="font-semibold px-8 py-4 rounded-lg text-lg text-white border transition-colors"
+            style={{ borderColor: "rgba(255,255,255,0.15)" }}
           >
             Book a Call
-          </a>
-        </motion.div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        >
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-6 h-10 border-2 border-white/20 rounded-full flex justify-center"
-          >
-            <motion.div className="w-1.5 h-3 bg-electric rounded-full mt-2" />
-          </motion.div>
+          </motion.a>
         </motion.div>
       </div>
     </section>

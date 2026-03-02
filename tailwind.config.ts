@@ -10,27 +10,34 @@ const config: Config = {
     extend: {
       colors: {
         navy: {
-          DEFAULT: "#0a0f1c",
-          light: "#111827",
-          lighter: "#1a2235",
+          DEFAULT: "#04080f",
+          light: "#0d1424",
+          lighter: "#151f35",
         },
         electric: {
-          DEFAULT: "#3b82f6",
-          dark: "#2563eb",
-          light: "#60a5fa",
+          DEFAULT: "#6366f1",
+          dark: "#4f46e5",
+          light: "#818cf8",
+        },
+        cyan: {
+          brand: "#22d3ee",
         },
         gold: {
           DEFAULT: "#f59e0b",
           light: "#fbbf24",
         },
+        violet: {
+          brand: "#a855f7",
+        },
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Space Grotesk", "system-ui", "sans-serif"],
       },
       animation: {
         "float": "float 6s ease-in-out infinite",
         "float-delayed": "float 6s ease-in-out 3s infinite",
-        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "pulse-glow": "pulse-glow 3s ease-in-out infinite",
+        "spin-slow": "spin 20s linear infinite",
       },
       keyframes: {
         float: {
@@ -38,8 +45,8 @@ const config: Config = {
           "50%": { transform: "translateY(-20px)" },
         },
         "pulse-glow": {
-          "0%, 100%": { opacity: "0.4" },
-          "50%": { opacity: "0.8" },
+          "0%, 100%": { opacity: "0.3" },
+          "50%": { opacity: "0.7" },
         },
       },
     },

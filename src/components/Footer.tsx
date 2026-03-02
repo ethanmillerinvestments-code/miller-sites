@@ -6,7 +6,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <span className="text-2xl font-bold text-white">
-              Miller<span className="text-electric">Sites</span>
+              Miller <span className="text-electric">Web Agency</span>
             </span>
             <p className="text-slate-400 mt-3 max-w-sm text-sm leading-relaxed">
               Professional websites for home service businesses.
