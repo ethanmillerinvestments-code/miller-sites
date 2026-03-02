@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCart } from "@/store/cart";
 
 const navLinks = [
   { label: "Services", href: "#services" },
@@ -15,6 +16,7 @@ const navLinks = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { items, openCart } = useCart();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -51,27 +53,74 @@ export default function Navbar() {
                 {link.label}
               </a>
             ))}
+
+            {/* Cart button */}
+            <button
+              onClick={openCart}
+              className="relative w-10 h-10 flex items-center justify-center rounded-lg border border-white/10 hover:border-electric/40 transition-colors"
+              aria-label="Open cart"
+            >
+              <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <AnimatePresence>
+                {items.length > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-white text-xs font-bold flex items-center justify-center"
+                    style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)" }}
+                  >
+                    {items.length}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </button>
+
             <a
               href="#contact"
-              className="bg-electric hover:bg-electric-dark text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
+              className="text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
+              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)" }}
             >
               Get Started
             </a>
           </div>
 
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden text-white p-2"
-            aria-label="Toggle menu"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {mobileOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          <div className="flex items-center gap-3 md:hidden">
+            {/* Mobile cart button */}
+            <button
+              onClick={openCart}
+              className="relative w-9 h-9 flex items-center justify-center rounded-lg border border-white/10"
+              aria-label="Open cart"
+            >
+              <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              {items.length > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-xs font-bold flex items-center justify-center"
+                  style={{ background: "#6366f1" }}
+                >
+                  {items.length}
+                </span>
               )}
-            </svg>
-          </button>
+            </button>
+
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="text-white p-2"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -97,7 +146,8 @@ export default function Navbar() {
               <a
                 href="#contact"
                 onClick={() => setMobileOpen(false)}
-                className="bg-electric hover:bg-electric-dark text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-center mt-2"
+                className="text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-center mt-2"
+                style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)" }}
               >
                 Get Started
               </a>
