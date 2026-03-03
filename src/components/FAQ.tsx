@@ -47,30 +47,58 @@ const faqs = [
   },
 ];
 
-function FAQItem({ question, answer, isOpen, onClick }: {
+function FAQItem({
+  question,
+  answer,
+  isOpen,
+  onClick,
+  index,
+}: {
   question: string;
   answer: string;
   isOpen: boolean;
   onClick: () => void;
+  index: number;
 }) {
   return (
-    <div className="border-b border-white/5 last:border-b-0">
+    <motion.div
+      className="border-b border-white/5 last:border-b-0 group"
+      initial={false}
+    >
       <button
         onClick={onClick}
-        className="flex items-center justify-between w-full py-5 text-left gap-4"
+        className="flex items-center justify-between w-full py-5 text-left gap-4 group/btn"
       >
-        <span className="font-semibold text-white">{question}</span>
-        <motion.svg
+        <span className="flex items-center gap-3">
+          <span
+            className="text-xs font-mono w-6 text-center transition-colors duration-300"
+            style={{ color: isOpen ? "#7c6fff" : "#475569" }}
+          >
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <span className="font-semibold text-white group-hover/btn:text-electric transition-colors duration-300">
+            {question}
+          </span>
+        </span>
+        <motion.div
           animate={{ rotate: isOpen ? 45 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="w-5 h-5 shrink-0"
-          style={{ color: "#6366f1" }}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+          transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
+          style={{
+            background: isOpen ? "rgba(124,111,255,0.15)" : "rgba(255,255,255,0.05)",
+            border: isOpen ? "1px solid rgba(124,111,255,0.3)" : "1px solid rgba(255,255,255,0.1)",
+          }}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </motion.svg>
+          <svg
+            className="w-3.5 h-3.5 transition-colors duration-300"
+            style={{ color: isOpen ? "#7c6fff" : "#64748b" }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </motion.div>
       </button>
       <AnimatePresence>
         {isOpen && (
@@ -78,14 +106,20 @@ function FAQItem({ question, answer, isOpen, onClick }: {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="overflow-hidden"
           >
-            <p className="pb-5 text-slate-400 leading-relaxed text-sm">{answer}</p>
+            <div className="flex gap-3 pb-6">
+              {/* Accent line */}
+              <div className="w-6 shrink-0 flex justify-center">
+                <div className="w-px h-full" style={{ background: "linear-gradient(180deg, #7c6fff, transparent)" }} />
+              </div>
+              <p className="text-slate-400 leading-relaxed text-sm">{answer}</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 
@@ -93,15 +127,20 @@ export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="py-24 sm:py-32 bg-navy-light/60">
+    <section id="faq" className="py-24 sm:py-32 bg-navy-light/60 relative">
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[1px]"
+        style={{ background: "linear-gradient(90deg, transparent, rgba(124,111,255,0.3), transparent)" }}
+      />
+
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <ScrollReveal>
+        <ScrollReveal direction="blur">
           <div className="text-center mb-16">
             <span className="text-electric text-sm font-semibold tracking-wider uppercase">
               FAQ
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-3 mb-4">
-              Questions We <span className="text-electric">Always Get</span>
+              Questions We <span className="text-gradient">Always Get</span>
             </h2>
             <p className="text-slate-400 max-w-xl mx-auto">
               Straight answers. No fluff.
@@ -110,10 +149,17 @@ export default function FAQ() {
         </ScrollReveal>
 
         <ScrollReveal>
-          <div className="bg-navy rounded-2xl p-6 sm:p-10 border border-white/5">
+          <div className="bg-navy rounded-2xl p-6 sm:p-10 border border-white/5 hover:border-white/8 transition-colors duration-500 relative overflow-hidden">
+            {/* Subtle corner glow */}
+            <div
+              className="absolute -top-20 -right-20 w-40 h-40 rounded-full pointer-events-none"
+              style={{ background: "radial-gradient(circle, rgba(124,111,255,0.06) 0%, transparent 70%)" }}
+            />
+
             {faqs.map((faq, i) => (
               <FAQItem
                 key={i}
+                index={i}
                 question={faq.question}
                 answer={faq.answer}
                 isOpen={openIndex === i}
@@ -123,7 +169,7 @@ export default function FAQ() {
           </div>
         </ScrollReveal>
 
-        <ScrollReveal delay={0.2}>
+        <ScrollReveal delay={0.2} direction="blur">
           <p className="text-center text-slate-500 text-sm mt-8">
             Still have questions?{" "}
             <a href="#contact" className="text-electric hover:underline">

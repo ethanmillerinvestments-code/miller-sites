@@ -38,6 +38,11 @@ const config: Config = {
         "float-delayed": "float 6s ease-in-out 3s infinite",
         "pulse-glow": "pulse-glow 3s ease-in-out infinite",
         "spin-slow": "spin 20s linear infinite",
+        "shimmer": "shimmer 3s ease-in-out infinite",
+        "gradient-shift": "gradient-shift 8s ease infinite",
+        "breathe": "breathe 4s ease-in-out infinite",
+        "shine-sweep": "shine-sweep 3s ease-in-out infinite",
+        "border-glow": "border-glow 3s ease-in-out infinite",
       },
       keyframes: {
         float: {
@@ -47,6 +52,26 @@ const config: Config = {
         "pulse-glow": {
           "0%, 100%": { opacity: "0.3" },
           "50%": { opacity: "0.7" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        "gradient-shift": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        breathe: {
+          "0%, 100%": { transform: "scale(1)", opacity: "0.6" },
+          "50%": { transform: "scale(1.05)", opacity: "1" },
+        },
+        "shine-sweep": {
+          "0%": { left: "-100%" },
+          "50%, 100%": { left: "100%" },
+        },
+        "border-glow": {
+          "0%, 100%": { borderColor: "rgba(124,111,255,0.3)" },
+          "50%": { borderColor: "rgba(193,101,255,0.6)" },
         },
       },
     },

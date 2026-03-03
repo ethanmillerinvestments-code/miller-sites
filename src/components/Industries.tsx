@@ -4,59 +4,33 @@ import { motion } from "framer-motion";
 import ScrollReveal from "./ScrollReveal";
 
 const industries = [
-  {
-    name: "HVAC",
-    icon: "🌡️",
-    detail: "Heating, cooling, and air quality",
-  },
-  {
-    name: "Plumbing",
-    icon: "🔧",
-    detail: "Residential and commercial plumbers",
-  },
-  {
-    name: "Roofing",
-    icon: "🏠",
-    detail: "Repair, replacement, and inspection",
-  },
-  {
-    name: "Landscaping",
-    icon: "🌿",
-    detail: "Design, maintenance, and hardscaping",
-  },
-  {
-    name: "Pressure Washing",
-    icon: "💧",
-    detail: "Residential driveways and commercial lots",
-  },
-  {
-    name: "Electricians",
-    icon: "⚡",
-    detail: "Residential wiring and panel upgrades",
-  },
-  {
-    name: "Clinics",
-    icon: "🏥",
-    detail: "Medical, dental, and wellness practices",
-  },
-  {
-    name: "Painting",
-    icon: "🎨",
-    detail: "Interior and exterior painting crews",
-  },
+  { name: "HVAC", icon: "🌡️", detail: "Heating, cooling, and air quality" },
+  { name: "Plumbing", icon: "🔧", detail: "Residential and commercial plumbers" },
+  { name: "Roofing", icon: "🏠", detail: "Repair, replacement, and inspection" },
+  { name: "Landscaping", icon: "🌿", detail: "Design, maintenance, and hardscaping" },
+  { name: "Pressure Washing", icon: "💧", detail: "Residential driveways and commercial lots" },
+  { name: "Electricians", icon: "⚡", detail: "Residential wiring and panel upgrades" },
+  { name: "Clinics", icon: "🏥", detail: "Medical, dental, and wellness practices" },
+  { name: "Painting", icon: "🎨", detail: "Interior and exterior painting crews" },
 ];
 
 export default function Industries() {
   return (
-    <section id="industries" className="py-24 sm:py-32 bg-navy">
+    <section id="industries" className="py-24 sm:py-32 bg-navy relative">
+      {/* Top separator line */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[1px]"
+        style={{ background: "linear-gradient(90deg, transparent, rgba(124,111,255,0.3), transparent)" }}
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <ScrollReveal>
+        <ScrollReveal direction="blur">
           <div className="text-center mb-16">
             <span className="text-electric text-sm font-semibold tracking-wider uppercase">
               Who We Serve
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-3 mb-4">
-              Built for <span className="text-electric">Home Service</span> Pros
+              Built for <span className="text-gradient">Home Service</span> Pros
             </h2>
             <p className="text-slate-400 max-w-2xl mx-auto text-lg">
               We specialize exclusively in home service businesses. That means
@@ -68,25 +42,45 @@ export default function Industries() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
           {industries.map((ind, i) => (
-            <ScrollReveal key={ind.name} delay={i * 0.08}>
+            <ScrollReveal key={ind.name} delay={i * 0.06} direction={i < 4 ? "up" : "zoom"}>
               <motion.div
-                whileHover={{ scale: 1.05, y: -5 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                className="bg-navy-light p-6 rounded-2xl border border-white/5 hover:border-electric/30 text-center cursor-default group transition-all"
+                whileHover={{ scale: 1.06, y: -6 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="relative bg-navy-light p-6 rounded-2xl border border-white/5 hover:border-electric/25 text-center cursor-default group transition-all overflow-hidden"
               >
-                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform inline-block">
-                  {ind.icon}
+                {/* Under-glow on hover */}
+                <div
+                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background: "radial-gradient(ellipse at 50% 100%, rgba(124,111,255,0.1) 0%, transparent 70%)",
+                  }}
+                />
+
+                <div className="relative z-10">
+                  <motion.div
+                    className="text-4xl mb-3 inline-block"
+                    whileHover={{ scale: 1.2, rotate: [0, -10, 10, 0] }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    {ind.icon}
+                  </motion.div>
+                  <h3 className="font-bold text-white group-hover:text-electric transition-colors duration-300 mb-1">
+                    {ind.name}
+                  </h3>
+                  <p className="text-slate-500 text-xs leading-snug">{ind.detail}</p>
                 </div>
-                <h3 className="font-bold text-white group-hover:text-electric transition-colors mb-1">
-                  {ind.name}
-                </h3>
-                <p className="text-slate-500 text-xs leading-snug">{ind.detail}</p>
+
+                {/* Bottom accent line */}
+                <div
+                  className="absolute bottom-0 left-1/4 right-1/4 h-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{ background: "linear-gradient(90deg, transparent, #7c6fff, transparent)" }}
+                />
               </motion.div>
             </ScrollReveal>
           ))}
         </div>
 
-        <ScrollReveal delay={0.4}>
+        <ScrollReveal delay={0.3} direction="blur">
           <p className="text-center text-slate-500 text-sm mt-10">
             Don&apos;t see your trade?{" "}
             <a href="#contact" className="text-electric hover:underline">

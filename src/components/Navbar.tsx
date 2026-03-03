@@ -30,9 +30,9 @@ function PricingDropdown({ onClose }: { onClose: () => void }) {
       initial={{ opacity: 0, y: 10, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 8, scale: 0.97 }}
-      transition={{ duration: 0.18, ease: "easeOut" }}
+      transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[480px] rounded-2xl border border-white/8 overflow-hidden"
-      style={{ background: "rgba(10,15,28,0.97)", backdropFilter: "blur(20px)", boxShadow: "0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.1)" }}
+      style={{ background: "rgba(10,15,28,0.97)", backdropFilter: "blur(20px)", boxShadow: "0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,111,255,0.1)" }}
     >
       <div className="p-4 grid grid-cols-2 gap-3">
         <div>
@@ -42,12 +42,12 @@ function PricingDropdown({ onClose }: { onClose: () => void }) {
               key={item.name}
               href={item.href}
               onClick={onClose}
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 transition-all group"
             >
               <div className="flex items-center gap-2">
-                <span className="text-white text-sm font-medium">{item.name}</span>
+                <span className="text-white text-sm font-medium group-hover:text-electric transition-colors">{item.name}</span>
                 {item.popular && (
-                  <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(99,102,241,0.2)", color: "#a5b4fc" }}>
+                  <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(124,111,255,0.2)", color: "#a89fff" }}>
                     Popular
                   </span>
                 )}
@@ -63,12 +63,12 @@ function PricingDropdown({ onClose }: { onClose: () => void }) {
               key={item.name}
               href={item.href}
               onClick={onClose}
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 transition-all group"
             >
               <div className="flex items-center gap-2">
-                <span className="text-white text-sm font-medium">{item.name}</span>
+                <span className="text-white text-sm font-medium group-hover:text-electric transition-colors">{item.name}</span>
                 {item.popular && (
-                  <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(99,102,241,0.2)", color: "#a5b4fc" }}>
+                  <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(124,111,255,0.2)", color: "#a89fff" }}>
                     Popular
                   </span>
                 )}
@@ -94,9 +94,9 @@ function ServicesDropdown({ onClose }: { onClose: () => void }) {
       initial={{ opacity: 0, y: 10, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 8, scale: 0.97 }}
-      transition={{ duration: 0.18, ease: "easeOut" }}
+      transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 rounded-2xl border border-white/8 overflow-hidden"
-      style={{ background: "rgba(10,15,28,0.97)", backdropFilter: "blur(20px)", boxShadow: "0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.1)" }}
+      style={{ background: "rgba(10,15,28,0.97)", backdropFilter: "blur(20px)", boxShadow: "0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,111,255,0.1)" }}
     >
       <div className="p-3">
         {servicesDropdown.map((s) => (
@@ -104,11 +104,11 @@ function ServicesDropdown({ onClose }: { onClose: () => void }) {
             key={s.name}
             href="#services"
             onClick={onClose}
-            className="flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group"
+            className="flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-all group"
           >
-            <span className="text-electric text-lg mt-0.5 leading-none">{s.icon}</span>
+            <span className="text-electric text-lg mt-0.5 leading-none group-hover:scale-110 transition-transform inline-block">{s.icon}</span>
             <div>
-              <p className="text-white text-sm font-medium">{s.name}</p>
+              <p className="text-white text-sm font-medium group-hover:text-electric transition-colors">{s.name}</p>
               <p className="text-slate-500 text-xs">{s.desc}</p>
             </div>
           </a>
@@ -142,8 +142,9 @@ function NavDropdownLink({
 
   if (!dropdown) {
     return (
-      <a href={href} className="text-sm text-slate-300 hover:text-white transition-colors">
+      <a href={href} className="text-sm text-slate-300 hover:text-white transition-colors relative group">
         {label}
+        <span className="absolute -bottom-1 left-0 w-0 h-px bg-electric group-hover:w-full transition-all duration-300" />
       </a>
     );
   }
@@ -155,12 +156,12 @@ function NavDropdownLink({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <button className="flex items-center gap-1 text-sm text-slate-300 hover:text-white transition-colors">
+      <button className="flex items-center gap-1 text-sm text-slate-300 hover:text-white transition-colors group">
         {label}
         <motion.svg
           animate={{ rotate: open ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="w-3.5 h-3.5 text-slate-500"
+          transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="w-3.5 h-3.5 text-slate-500 group-hover:text-electric transition-colors"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -194,10 +195,10 @@ export default function Navbar() {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      transition={{ duration: 0.6 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? "bg-navy/90 backdrop-blur-md border-b border-white/5 shadow-lg"
+          ? "bg-navy/85 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-navy/50"
           : "bg-transparent"
       }`}
     >
@@ -206,15 +207,17 @@ export default function Navbar() {
 
           {/* Logo */}
           <a href="#" className="flex items-center gap-2.5 group">
-            <div
+            <motion.div
               className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm shrink-0"
-              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", boxShadow: "0 0 16px rgba(99,102,241,0.5)" }}
+              style={{ background: "linear-gradient(135deg, #7c6fff, #c165ff)", boxShadow: "0 0 20px rgba(124,111,255,0.4)" }}
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
             >
               LC
-            </div>
+            </motion.div>
             <div className="flex flex-col leading-none">
               <span className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                Lead<span style={{ background: "linear-gradient(90deg, #6366f1, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>craft</span>
+                Lead<span className="text-gradient">craft</span>
               </span>
               <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-slate-500 hidden sm:block">
                 Agency
@@ -225,16 +228,30 @@ export default function Navbar() {
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-7">
             <NavDropdownLink label="Services" href="#services" dropdown="services" />
-            <a href="#industries" className="text-sm text-slate-300 hover:text-white transition-colors">Industries</a>
-            <a href="#process" className="text-sm text-slate-300 hover:text-white transition-colors">Process</a>
-            <a href="#results" className="text-sm text-slate-300 hover:text-white transition-colors">Results</a>
+            <a href="#industries" className="text-sm text-slate-300 hover:text-white transition-colors relative group">
+              Industries
+              <span className="absolute -bottom-1 left-0 w-0 h-px bg-electric group-hover:w-full transition-all duration-300" />
+            </a>
+            <a href="#process" className="text-sm text-slate-300 hover:text-white transition-colors relative group">
+              Process
+              <span className="absolute -bottom-1 left-0 w-0 h-px bg-electric group-hover:w-full transition-all duration-300" />
+            </a>
+            <a href="#results" className="text-sm text-slate-300 hover:text-white transition-colors relative group">
+              Results
+              <span className="absolute -bottom-1 left-0 w-0 h-px bg-electric group-hover:w-full transition-all duration-300" />
+            </a>
             <NavDropdownLink label="Pricing" href="#pricing" dropdown="pricing" />
-            <a href="#faq" className="text-sm text-slate-300 hover:text-white transition-colors">FAQ</a>
+            <a href="#faq" className="text-sm text-slate-300 hover:text-white transition-colors relative group">
+              FAQ
+              <span className="absolute -bottom-1 left-0 w-0 h-px bg-electric group-hover:w-full transition-all duration-300" />
+            </a>
 
             {/* Cart */}
-            <button
+            <motion.button
               onClick={openCart}
-              className="relative w-10 h-10 flex items-center justify-center rounded-lg border border-white/10 hover:border-electric/40 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative w-10 h-10 flex items-center justify-center rounded-lg border border-white/10 hover:border-electric/40 hover:bg-white/5 transition-all"
               aria-label="Open cart"
             >
               <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,22 +263,26 @@ export default function Navbar() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
+                    transition={{ type: "spring", stiffness: 500 }}
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-white text-xs font-bold flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)" }}
+                    style={{ background: "linear-gradient(135deg, #7c6fff, #c165ff)", boxShadow: "0 0 10px rgba(124,111,255,0.5)" }}
                   >
                     {items.length}
                   </motion.span>
                 )}
               </AnimatePresence>
-            </button>
+            </motion.button>
 
-            <a
+            <motion.a
               href="#contact"
-              className="text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", boxShadow: "0 0 20px rgba(99,102,241,0.3)" }}
+              whileHover={{ scale: 1.05, y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
+              className="text-white text-sm font-semibold px-5 py-2.5 rounded-lg shimmer-btn relative overflow-hidden"
+              style={{ background: "linear-gradient(135deg, #7c6fff, #c165ff)", boxShadow: "0 0 25px rgba(124,111,255,0.35)" }}
             >
-              Get Started
-            </a>
+              <span className="relative z-10">Get Started</span>
+            </motion.a>
           </div>
 
           {/* Mobile controls */}
@@ -277,7 +298,7 @@ export default function Navbar() {
               {items.length > 0 && (
                 <span
                   className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-xs font-bold flex items-center justify-center"
-                  style={{ background: "#6366f1" }}
+                  style={{ background: "#7c6fff" }}
                 >
                   {items.length}
                 </span>
@@ -308,7 +329,8 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-white/5"
+            transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="md:hidden border-t border-white/5 overflow-hidden"
             style={{ background: "rgba(10,15,28,0.97)", backdropFilter: "blur(20px)" }}
           >
             <div className="px-4 py-4 flex flex-col gap-1">
@@ -319,24 +341,30 @@ export default function Navbar() {
                 { label: "Results", href: "#results" },
                 { label: "Pricing", href: "#pricing" },
                 { label: "FAQ", href: "#faq" },
-              ].map((link) => (
-                <a
+              ].map((link, i) => (
+                <motion.a
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="text-slate-300 hover:text-white transition-colors py-2.5 px-2 rounded-lg hover:bg-white/5"
+                  className="text-slate-300 hover:text-white transition-colors py-2.5 px-3 rounded-lg hover:bg-white/5"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
                 >
                   {link.label}
-                </a>
+                </motion.a>
               ))}
-              <a
+              <motion.a
                 href="#contact"
                 onClick={() => setMobileOpen(false)}
-                className="text-white font-semibold px-5 py-3 rounded-lg transition-colors text-center mt-2"
-                style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)" }}
+                className="text-white font-semibold px-5 py-3 rounded-lg transition-colors text-center mt-2 shimmer-btn relative overflow-hidden"
+                style={{ background: "linear-gradient(135deg, #7c6fff, #c165ff)" }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
               >
-                Get Started
-              </a>
+                <span className="relative z-10">Get Started</span>
+              </motion.a>
             </div>
           </motion.div>
         )}

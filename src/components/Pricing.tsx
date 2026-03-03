@@ -135,10 +135,10 @@ function AddToCartButton({ tier }: { tier: CartItem }) {
   return (
     <motion.button
       onClick={() => addItem(tier)}
-      whileHover={{ scale: 1.04 }}
+      whileHover={{ scale: 1.04, y: -1 }}
       whileTap={{ scale: 0.97 }}
-      transition={{ type: "spring", stiffness: 400 }}
-      className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 relative overflow-hidden"
+      transition={{ type: "spring", stiffness: 400, damping: 15 }}
+      className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 relative overflow-hidden"
       style={
         inCart
           ? { background: "rgba(124,111,255,0.12)", color: "#a89fff", border: "1px solid rgba(124,111,255,0.35)" }
@@ -147,21 +147,34 @@ function AddToCartButton({ tier }: { tier: CartItem }) {
           : { background: "rgba(255,255,255,0.06)", color: "white", border: "1px solid rgba(255,255,255,0.12)" }
       }
     >
-      {inCart ? (
-        <>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          Added to Cart
-        </>
-      ) : (
-        <>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          Add to Cart
-        </>
+      {/* Shimmer on non-cart buttons */}
+      {!inCart && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 55%, transparent 60%)",
+            backgroundSize: "200% 100%",
+            animation: "shimmer 4s ease-in-out infinite",
+          }}
+        />
       )}
+      <span className="relative z-10 flex items-center gap-2">
+        {inCart ? (
+          <>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Added to Cart
+          </>
+        ) : (
+          <>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            Add to Cart
+          </>
+        )}
+      </span>
     </motion.button>
   );
 }
@@ -179,19 +192,25 @@ export default function Pricing() {
           background: "radial-gradient(ellipse 70% 50% at 50% 50%, rgba(124,111,255,0.06) 0%, transparent 70%)",
         }}
       />
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[1px]"
+        style={{ background: "linear-gradient(90deg, transparent, rgba(124,111,255,0.4), transparent)" }}
+      />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <ScrollReveal>
+        <ScrollReveal direction="blur">
           <div className="text-center mb-14">
-            <span
+            <motion.span
               className="inline-block text-xs font-bold tracking-[0.2em] uppercase px-4 py-1.5 rounded-full mb-4"
               style={{ background: "rgba(124,111,255,0.12)", color: "#a89fff", border: "1px solid rgba(124,111,255,0.25)" }}
+              animate={{ boxShadow: ["0 0 15px rgba(124,111,255,0.1)", "0 0 25px rgba(124,111,255,0.2)", "0 0 15px rgba(124,111,255,0.1)"] }}
+              transition={{ duration: 3, repeat: Infinity }}
             >
               Pricing
-            </span>
+            </motion.span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mt-2 mb-4 tracking-tight">
               Simple,{" "}
-              <span style={{ background: "linear-gradient(90deg, #7c6fff, #c165ff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              <span className="text-gradient">
                 Transparent
               </span>{" "}
               Pricing
@@ -215,8 +234,8 @@ export default function Pricing() {
                   {view === tab && (
                     <motion.div
                       layoutId="tab-bg"
-                      className="absolute inset-0 rounded-xl"
-                      style={{ background: "linear-gradient(135deg, #7c6fff, #c165ff)", boxShadow: "0 0 20px rgba(124,111,255,0.4)" }}
+                      className="absolute inset-0 rounded-xl shimmer-btn"
+                      style={{ background: "linear-gradient(135deg, #7c6fff, #c165ff)", boxShadow: "0 0 25px rgba(124,111,255,0.45)" }}
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
@@ -232,26 +251,26 @@ export default function Pricing() {
         <AnimatePresence mode="wait">
           <motion.div
             key={view}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.98 }}
+            transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
           >
             {tiers.map((tier, i) => (
               <motion.div
                 key={tier.id}
-                initial={{ opacity: 0, y: 24 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08, duration: 0.35, ease: "easeOut" }}
-                whileHover={{ scale: 1.02, y: -6 }}
-                className="relative rounded-2xl flex flex-col overflow-hidden"
+                transition={{ delay: i * 0.1, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                whileHover={{ scale: 1.03, y: -8 }}
+                className="relative rounded-2xl flex flex-col overflow-hidden group"
                 style={
                   tier.popular
                     ? {
-                        background: "linear-gradient(160deg, rgba(124,111,255,0.15) 0%, rgba(6,9,30,0.95) 60%)",
+                        background: "linear-gradient(160deg, rgba(124,111,255,0.18) 0%, rgba(6,9,30,0.95) 60%)",
                         border: "1.5px solid rgba(124,111,255,0.45)",
-                        boxShadow: "0 0 40px rgba(124,111,255,0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
+                        boxShadow: "0 0 50px rgba(124,111,255,0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
                       }
                     : {
                         background: "rgba(255,255,255,0.025)",
@@ -260,39 +279,48 @@ export default function Pricing() {
                       }
                 }
               >
+                {/* Hover glow */}
+                <div
+                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(124,111,255,0.08) 0%, transparent 60%)" }}
+                />
+
                 {/* Popular glow beam */}
                 {tier.popular && (
-                  <div
+                  <motion.div
                     className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px"
                     style={{ background: "linear-gradient(90deg, transparent, rgba(124,111,255,0.8), transparent)" }}
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity }}
                   />
                 )}
 
                 {/* Badge */}
                 {tier.badge && (
                   <div className="absolute top-4 right-4">
-                    <span
-                      className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
+                    <motion.span
+                      className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full shimmer-btn"
                       style={{ background: "linear-gradient(135deg, #7c6fff, #c165ff)", color: "white" }}
                     >
                       {tier.badge}
-                    </span>
+                    </motion.span>
                   </div>
                 )}
 
-                <div className="p-6 flex flex-col flex-1">
+                <div className="p-6 flex flex-col flex-1 relative z-10">
                   {/* Icon + name */}
                   <div className="flex items-center gap-3 mb-5">
-                    <div
+                    <motion.div
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
                       style={
                         tier.popular
                           ? { background: "linear-gradient(135deg, rgba(124,111,255,0.3), rgba(193,101,255,0.2))", border: "1px solid rgba(124,111,255,0.4)" }
                           : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }
                       }
+                      whileHover={{ scale: 1.1, rotate: 5 }}
                     >
                       {tier.icon}
-                    </div>
+                    </motion.div>
                     <div>
                       <h3 className="text-base font-bold text-white">{tier.name}</h3>
                       <p className="text-xs text-slate-500">{tier.type === "monthly" ? "per month" : "one-time"}</p>
