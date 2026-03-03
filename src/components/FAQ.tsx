@@ -62,7 +62,8 @@ function FAQItem({
 }) {
   return (
     <motion.div
-      className="border-b border-white/5 last:border-b-0 group"
+      className="border-b border-white/5 last:border-b-0 group rounded-lg px-2 -mx-2 transition-colors duration-300"
+      style={{ background: isOpen ? "rgba(124,111,255,0.04)" : "transparent" }}
       initial={false}
     >
       <button
@@ -76,9 +77,9 @@ function FAQItem({
           >
             {String(index + 1).padStart(2, "0")}
           </span>
-          <span className="font-semibold text-white group-hover/btn:text-electric transition-colors duration-300">
+          <h3 className="font-semibold text-white group-hover/btn:text-electric transition-colors duration-300 text-left">
             {question}
-          </span>
+          </h3>
         </span>
         <motion.div
           animate={{ rotate: isOpen ? 45 : 0 }}

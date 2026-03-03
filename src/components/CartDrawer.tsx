@@ -3,8 +3,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/store/cart";
 
-// Replace with your real Calendly link
-const CALENDLY_URL = "https://calendly.com/ethanmillerinvestments";
+const CALENDLY_URL =
+  process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/ethanmillerinvestments";
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem } = useCart();

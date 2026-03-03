@@ -13,16 +13,17 @@ function Particles() {
   >([]);
 
   useEffect(() => {
-    const colors = ["#7c6fff", "#00e5ff", "#c165ff", "#fbbf24", "#a89fff"];
+    const colors = ["#8b7aff", "#00f0ff", "#d06fff", "#fbbf24", "#b8adff"];
+    const isMobile = window.innerWidth < 768;
     setParticles(
-      Array.from({ length: 50 }, () => ({
+      Array.from({ length: isMobile ? 20 : 60 }, () => ({
         x: Math.random() * 100,
         y: Math.random() * 100,
-        size: Math.random() * 4 + 1,
-        delay: Math.random() * 8,
+        size: Math.random() * 5 + 1.5,
+        delay: Math.random() * 6,
         color: colors[Math.floor(Math.random() * colors.length)],
-        duration: 4 + Math.random() * 6,
-        drift: (Math.random() - 0.5) * 30,
+        duration: 3 + Math.random() * 5,
+        drift: (Math.random() - 0.5) * 40,
       }))
     );
   }, []);
@@ -39,13 +40,13 @@ function Particles() {
             width: p.size,
             height: p.size,
             backgroundColor: p.color,
-            boxShadow: `0 0 ${p.size * 3}px ${p.color}40`,
+            boxShadow: `0 0 ${p.size * 4}px ${p.color}80`,
           }}
           animate={{
-            y: [0, -50, 0],
+            y: [0, -60, 0],
             x: [0, p.drift, 0],
-            opacity: [0.15, 0.6, 0.15],
-            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.8, 0.2],
+            scale: [1, 1.5, 1],
           }}
           transition={{
             duration: p.duration,
@@ -73,7 +74,7 @@ function TypewriterText({ text }: { text: string }) {
         setDone(true);
         clearInterval(interval);
       }
-    }, 40);
+    }, 38);
     return () => clearInterval(interval);
   }, [text]);
 
@@ -83,13 +84,67 @@ function TypewriterText({ text }: { text: string }) {
       {!done && (
         <motion.span
           animate={{ opacity: [1, 0, 1] }}
-          transition={{ duration: 0.8, repeat: Infinity }}
-          style={{ color: "#7c6fff" }}
+          transition={{ duration: 0.6, repeat: Infinity }}
+          className="text-gradient"
+          style={{ WebkitTextFillColor: "#8b7aff" }}
         >
           |
         </motion.span>
       )}
     </span>
+  );
+}
+
+function BrowserMockup() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40, rotateX: 8 }}
+      animate={{ opacity: 1, y: 0, rotateX: 4 }}
+      transition={{ duration: 1.2, delay: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
+      className="hidden lg:block mt-16 mx-auto max-w-3xl perspective-[1200px]"
+    >
+      <motion.div
+        className="rounded-xl overflow-hidden border border-white/10 relative"
+        style={{
+          boxShadow: "0 25px 60px rgba(124,111,255,0.15), 0 10px 30px rgba(0,0,0,0.5)",
+          transform: "perspective(1200px) rotateX(4deg)",
+        }}
+        whileHover={{ rotateX: 0, scale: 1.02 }}
+        transition={{ type: "spring", stiffness: 200, damping: 20 }}
+      >
+        {/* Browser chrome */}
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-[#0d1424] border-b border-white/5">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-500/70" />
+            <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
+            <div className="w-3 h-3 rounded-full bg-green-500/70" />
+          </div>
+          <div className="flex-1 mx-8">
+            <div className="bg-white/5 rounded-md px-3 py-1 text-xs text-slate-500 text-center truncate">
+              comfortprohvac.com
+            </div>
+          </div>
+        </div>
+        {/* Site preview */}
+        <div className="aspect-[16/9] relative bg-navy">
+          <Image
+            src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&q=80"
+            alt="Comfort Pro HVAC portfolio website preview"
+            fill
+            sizes="(max-width: 1024px) 0vw, 768px"
+            className="object-cover opacity-70"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy via-transparent to-transparent" />
+          <div className="absolute bottom-4 left-4 right-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-2 w-24 rounded bg-white/20" />
+              <div className="h-2 w-16 rounded bg-electric/30" />
+            </div>
+            <div className="h-3 w-48 rounded bg-white/10" />
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -100,30 +155,42 @@ export default function Hero() {
       <div className="absolute inset-0">
         <Image
           src={GAMMA_HERO_IMG}
-          alt="Leadcraft Agency hero"
+          alt="Professional website design for home service businesses by Leadcraft Agency"
           fill
           priority
+          sizes="100vw"
           className="object-cover"
-          unoptimized
         />
-        {/* Dark overlays with richer depth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#04080fdd] via-[#04080fbb] to-[#04080f]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#04080f90] via-transparent to-[#04080f90]" />
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 30%, #04080f 80%)" }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#04060ecc] via-[#04060eaa] to-[#04060e]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#04060e80] via-transparent to-[#04060e80]" />
       </div>
 
-      {/* Enhanced glows */}
+      {/* CSS gradient mesh animation layer */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-30"
+        style={{
+          background: "radial-gradient(ellipse at 20% 50%, rgba(124,111,255,0.2) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(34,211,238,0.12) 0%, transparent 50%), radial-gradient(ellipse at 60% 80%, rgba(168,85,247,0.15) 0%, transparent 50%)",
+        }}
+      />
+
+      {/* BIG animated glows */}
       <motion.div
-        className="absolute top-1/4 left-1/3 w-[600px] h-[600px] rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(124,111,255,0.15) 0%, transparent 70%)", filter: "blur(80px)" }}
-        animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-1/4 left-1/4 w-[700px] h-[700px] rounded-full"
+        style={{ background: "radial-gradient(circle, rgba(139,122,255,0.3) 0%, transparent 60%)", filter: "blur(60px)" }}
+        animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute bottom-1/4 right-1/3 w-[500px] h-[500px] rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(0,229,255,0.12) 0%, transparent 70%)", filter: "blur(80px)" }}
-        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] rounded-full"
+        style={{ background: "radial-gradient(circle, rgba(0,240,255,0.25) 0%, transparent 60%)", filter: "blur(60px)" }}
+        animate={{ scale: [1, 1.25, 1], opacity: [0.4, 0.9, 0.4] }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+      />
+      <motion.div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full"
+        style={{ background: "radial-gradient(circle, rgba(208,111,255,0.2) 0%, transparent 60%)", filter: "blur(60px)" }}
+        animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.7, 0.3] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       />
 
       <Particles />
@@ -136,14 +203,16 @@ export default function Hero() {
           transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
           <motion.span
-            className="inline-block text-sm font-medium px-5 py-2 rounded-full mb-8 border shimmer-btn"
+            className="inline-block text-sm font-semibold px-6 py-2.5 rounded-full mb-8 border shimmer-btn"
             style={{
-              background: "rgba(124,111,255,0.12)",
-              color: "#a89fff",
-              borderColor: "rgba(124,111,255,0.35)",
+              background: "rgba(139,122,255,0.18)",
+              color: "#b8adff",
+              borderColor: "rgba(139,122,255,0.5)",
             }}
-            animate={{ boxShadow: ["0 0 20px rgba(124,111,255,0.1)", "0 0 30px rgba(124,111,255,0.25)", "0 0 20px rgba(124,111,255,0.1)"] }}
-            transition={{ duration: 3, repeat: Infinity }}
+            animate={{
+              boxShadow: ["0 0 20px rgba(139,122,255,0.2)", "0 0 40px rgba(139,122,255,0.5)", "0 0 20px rgba(139,122,255,0.2)"],
+            }}
+            transition={{ duration: 2.5, repeat: Infinity }}
           >
             Websites That Generate Leads
           </motion.span>
@@ -166,7 +235,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="text-lg sm:text-xl text-slate-300/90 max-w-2xl mx-auto mb-12 leading-relaxed"
+          className="text-lg sm:text-xl text-slate-200/90 max-w-2xl mx-auto mb-12 leading-relaxed"
         >
           We build high-converting, fast-loading websites that turn visitors
           into paying customers. Tailored for HVAC, plumbing, roofing, and
@@ -178,39 +247,42 @@ export default function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.7 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
+          className="flex flex-col sm:flex-row gap-5 justify-center"
         >
           <motion.a
             href="#results"
-            whileHover={{ scale: 1.07, y: -2 }}
+            whileHover={{ scale: 1.08, y: -3 }}
             whileTap={{ scale: 0.97 }}
             transition={{ type: "spring", stiffness: 400, damping: 15 }}
-            className="relative overflow-hidden font-semibold px-9 py-4 rounded-xl text-lg text-white shimmer-btn"
+            className="relative overflow-hidden font-bold px-10 py-4.5 rounded-xl text-lg text-white shimmer-btn"
             style={{
-              background: "linear-gradient(135deg, #7c6fff, #c165ff)",
-              boxShadow: "0 0 40px rgba(124,111,255,0.4), 0 4px 20px rgba(0,0,0,0.3)",
+              background: "linear-gradient(135deg, #8b7aff, #d06fff)",
+              boxShadow: "0 0 50px rgba(139,122,255,0.5), 0 0 100px rgba(139,122,255,0.2), 0 4px 20px rgba(0,0,0,0.3)",
             }}
           >
-            See Our Work
+            <span className="relative z-10">See Our Work</span>
           </motion.a>
           <motion.a
             href="#contact"
-            whileHover={{ scale: 1.07, y: -2, borderColor: "rgba(124,111,255,0.5)" }}
+            whileHover={{ scale: 1.08, y: -3, borderColor: "rgba(139,122,255,0.7)" }}
             whileTap={{ scale: 0.97 }}
             transition={{ type: "spring", stiffness: 400, damping: 15 }}
-            className="font-semibold px-9 py-4 rounded-xl text-lg text-white border backdrop-blur-md transition-all hover:bg-white/8"
-            style={{ borderColor: "rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.03)" }}
+            className="font-bold px-10 py-4.5 rounded-xl text-lg text-white border-2 backdrop-blur-md transition-all hover:bg-white/10"
+            style={{ borderColor: "rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.05)" }}
           >
             Book a Call
           </motion.a>
         </motion.div>
 
-        {/* Trust bar with staggered reveal */}
+        {/* Browser Mockup */}
+        <BrowserMockup />
+
+        {/* Trust bar */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.4, duration: 0.8 }}
-          className="mt-20 flex flex-wrap justify-center gap-x-10 gap-y-4 text-sm text-slate-400"
+          transition={{ delay: 1.2, duration: 0.8 }}
+          className="mt-20 flex flex-wrap justify-center gap-x-10 gap-y-4 text-sm text-slate-300"
         >
           {["50+ Sites Built", "2,500+ Leads Generated", "7-Day Delivery", "98% Client Retention"].map((item, i) => (
             <motion.span
@@ -218,11 +290,12 @@ export default function Hero() {
               className="flex items-center gap-2.5"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.6 + i * 0.15, duration: 0.5 }}
+              transition={{ delay: 1.4 + i * 0.15, duration: 0.5 }}
             >
               <motion.span
-                className="w-2 h-2 rounded-full bg-electric inline-block"
-                animate={{ boxShadow: ["0 0 4px #7c6fff", "0 0 12px #7c6fff", "0 0 4px #7c6fff"] }}
+                className="w-2.5 h-2.5 rounded-full inline-block"
+                style={{ background: "#8b7aff", boxShadow: "0 0 8px #8b7aff" }}
+                animate={{ boxShadow: ["0 0 6px #8b7aff", "0 0 18px #8b7aff", "0 0 6px #8b7aff"], scale: [1, 1.3, 1] }}
                 transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
               />
               {item}
@@ -232,7 +305,7 @@ export default function Hero() {
       </div>
 
       {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-navy to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#04060e] to-transparent pointer-events-none" />
     </section>
   );
 }

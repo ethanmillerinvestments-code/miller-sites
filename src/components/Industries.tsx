@@ -46,21 +46,26 @@ export default function Industries() {
               <motion.div
                 whileHover={{ scale: 1.06, y: -6 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="relative bg-navy-light p-6 rounded-2xl border border-white/5 hover:border-electric/25 text-center cursor-default group transition-all overflow-hidden"
+                className="relative bg-navy-light p-6 rounded-2xl border border-white/8 hover:border-electric/40 text-center cursor-default group transition-all overflow-hidden"
+                style={{ boxShadow: "0 0 15px rgba(139,122,255,0.06), 0 4px 20px rgba(0,0,0,0.3)" }}
               >
-                {/* Under-glow on hover */}
-                <div
-                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                {/* Always-on glow */}
+                <motion.div
+                  className="absolute inset-0 rounded-2xl"
                   style={{
-                    background: "radial-gradient(ellipse at 50% 100%, rgba(124,111,255,0.1) 0%, transparent 70%)",
+                    background: "radial-gradient(ellipse at 50% 100%, rgba(139,122,255,0.1) 0%, transparent 70%)",
                   }}
+                  animate={{ opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ duration: 3.5, repeat: Infinity, delay: i * 0.3 }}
                 />
 
                 <div className="relative z-10">
                   <motion.div
                     className="text-4xl mb-3 inline-block"
-                    whileHover={{ scale: 1.2, rotate: [0, -10, 10, 0] }}
-                    transition={{ duration: 0.4 }}
+                    aria-hidden="true"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: i * 0.25 }}
+                    whileHover={{ scale: 1.3, rotate: [0, -10, 10, 0] }}
                   >
                     {ind.icon}
                   </motion.div>
@@ -70,10 +75,12 @@ export default function Industries() {
                   <p className="text-slate-500 text-xs leading-snug">{ind.detail}</p>
                 </div>
 
-                {/* Bottom accent line */}
-                <div
-                  className="absolute bottom-0 left-1/4 right-1/4 h-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ background: "linear-gradient(90deg, transparent, #7c6fff, transparent)" }}
+                {/* Bottom accent line - always on */}
+                <motion.div
+                  className="absolute bottom-0 left-1/4 right-1/4 h-[1px]"
+                  style={{ background: "linear-gradient(90deg, transparent, #8b7aff, transparent)" }}
+                  animate={{ opacity: [0.2, 0.6, 0.2] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: i * 0.2 }}
                 />
               </motion.div>
             </ScrollReveal>

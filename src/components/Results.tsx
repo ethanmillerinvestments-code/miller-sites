@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
+import Image from "next/image";
 import ScrollReveal from "./ScrollReveal";
 
 function easeOutExpo(t: number): number {
@@ -85,14 +86,17 @@ export default function Results() {
           {stats.map((stat, i) => (
             <ScrollReveal key={stat.label} delay={i * 0.1} direction="zoom">
               <motion.div
-                className="bg-navy-light rounded-xl p-6 text-center border border-white/5 group hover:border-electric/20 transition-all relative overflow-hidden"
+                className="bg-navy-light rounded-xl p-6 text-center border border-white/10 group hover:border-electric/40 transition-all relative overflow-hidden"
+                style={{ boxShadow: "0 0 20px rgba(139,122,255,0.08), 0 4px 20px rgba(0,0,0,0.3)" }}
                 whileHover={{ y: -4, scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
-                {/* Glow on hover */}
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(124,111,255,0.06) 0%, transparent 70%)" }}
+                {/* Always-on glow */}
+                <motion.div
+                  className="absolute inset-0"
+                  style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(139,122,255,0.1) 0%, transparent 70%)" }}
+                  animate={{ opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: i * 0.5 }}
                 />
                 <div className="relative z-10">
                   <div className="text-3xl sm:text-4xl font-bold text-gradient mb-2">
@@ -138,11 +142,12 @@ export default function Results() {
                 className="bg-navy-light rounded-xl overflow-hidden border border-white/5 group cursor-default hover:border-electric/20 transition-all relative"
               >
                 <div className="aspect-video relative overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={item.img}
-                    alt={item.name}
-                    className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-700 ease-out"
+                    alt={`${item.name} website portfolio showing ${item.result}`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-700 ease-out"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-light via-navy-light/30 to-transparent" />
 

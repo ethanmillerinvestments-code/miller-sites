@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#04080f"/>
+      <stop offset="50%" stop-color="#0d1424"/>
+      <stop offset="100%" stop-color="#04080f"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c6fff"/>
+      <stop offset="100%" stop-color="#c165ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="200" cy="315" r="300" fill="#7c6fff" opacity="0.05"/>
+  <circle cx="1000" cy="315" r="250" fill="#c165ff" opacity="0.04"/>
+  <rect x="80" y="260" width="64" height="64" rx="16" fill="url(#accent)"/>
+  <text x="112" y="302" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="900" font-size="28" fill="white">LC</text>
+  <text x="160" y="298" font-family="system-ui,sans-serif" font-weight="800" font-size="48" fill="white">Leadcraft Agency</text>
+  <text x="82" y="350" font-family="system-ui,sans-serif" font-weight="400" font-size="24" fill="#94a3b8">Websites That Generate Leads for Home Service Businesses</text>
+  <line x1="80" y1="390" x2="500" y2="390" stroke="url(#accent)" stroke-width="2" opacity="0.5"/>
+  <text x="82" y="420" font-family="system-ui,sans-serif" font-weight="600" font-size="18" fill="#7c6fff">miller-sites.vercel.app</text>
+</svg>

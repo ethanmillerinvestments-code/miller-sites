@@ -301,6 +301,14 @@ export default function Pricing() {
                     <motion.span
                       className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full shimmer-btn"
                       style={{ background: "linear-gradient(135deg, #7c6fff, #c165ff)", color: "white" }}
+                      animate={{
+                        boxShadow: [
+                          "0 0 8px rgba(124,111,255,0.3)",
+                          "0 0 20px rgba(124,111,255,0.6)",
+                          "0 0 8px rgba(124,111,255,0.3)",
+                        ],
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
                     >
                       {tier.badge}
                     </motion.span>

@@ -53,7 +53,7 @@ export default function ScrollReveal({
     <motion.div
       initial={{ ...v.initial, filter: direction === "blur" ? "blur(8px)" : "blur(0px)" }}
       whileInView={{ ...v.animate, filter: "blur(0px)" }}
-      viewport={{ once: false, margin: "-60px" }}
+      viewport={{ once: true, margin: "-60px" }}
       transition={{
         duration,
         delay,

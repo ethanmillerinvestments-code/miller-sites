@@ -84,7 +84,7 @@ export default function Testimonials() {
   };
 
   return (
-    <section className="py-24 sm:py-32 bg-navy relative">
+    <section id="testimonials" className="py-24 sm:py-32 bg-navy relative">
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[1px]"
         style={{ background: "linear-gradient(90deg, transparent, rgba(124,111,255,0.3), transparent)" }}
@@ -110,7 +110,7 @@ export default function Testimonials() {
           <div className="relative">
             <div
               className="rounded-2xl p-8 sm:p-12 border border-white/5 min-h-[320px] flex items-center relative overflow-hidden group"
-              style={{ background: "linear-gradient(160deg, rgba(124,111,255,0.06), rgba(4,8,15,0.95))" }}
+              style={{ background: "linear-gradient(160deg, rgba(139,122,255,0.12), rgba(4,6,14,0.95))", boxShadow: "0 0 40px rgba(139,122,255,0.08), 0 4px 30px rgba(0,0,0,0.4)" }}
             >
               {/* Large quote mark decoration */}
               <div
