@@ -1,0 +1,6 @@
+.next
+.playwright-cli
+output
+test-results
+.next.bak*
+components.manual.backup.json

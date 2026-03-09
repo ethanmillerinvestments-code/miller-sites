@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque } from "next/font/google";
+import { Bricolage_Grotesque, Cormorant_Garamond } from "next/font/google";
+
+import { siteConfig } from "@/lib/site";
+
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -8,65 +11,69 @@ const bricolage = Bricolage_Grotesque({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-const siteUrl = "https://miller-sites.vercel.app";
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["500", "600", "700"],
+});
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(siteConfig.siteUrl),
   title: {
-    default: "Leadcraft Agency - Websites That Generate Leads for Home Service Businesses",
+    default: "Leadcraft Agency | Premium Websites for Home-Service Companies",
     template: "%s | Leadcraft Agency",
   },
   description:
-    "We build high-converting websites for HVAC, plumbing, roofing, landscaping, and other home service businesses. Custom code, 7-day delivery, local SEO built in.",
+    "Leadcraft Agency designs conversion-focused websites for HVAC, plumbing, roofing, landscaping, electrical, painting, and other home-service companies.",
   keywords: [
+    "home service website design",
     "home service website",
     "HVAC website design",
-    "plumbing website",
-    "roofing website",
-    "landscaping website",
-    "local SEO",
+    "plumbing website design",
+    "roofing website design",
+    "contractor website design",
+    "search-ready website structure",
     "lead generation website",
-    "contractor website",
-    "home service marketing",
-    "small business website",
   ],
-  authors: [{ name: "Leadcraft Agency" }],
-  creator: "Leadcraft Agency",
+  authors: [{ name: siteConfig.name }],
+  creator: siteConfig.name,
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true, "max-video-preview": -1, "max-image-preview": "large", "max-snippet": -1 },
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: siteUrl,
-    siteName: "Leadcraft Agency",
-    title: "Leadcraft Agency - Websites That Generate Leads",
+    url: siteConfig.siteUrl,
+    siteName: siteConfig.name,
+    title: "Leadcraft Agency | Websites That Generate Leads",
     description:
-      "Custom websites for HVAC, plumbing, roofing, and home service businesses. Hand-coded, fast-loading, SEO-optimized. Get more leads.",
+      "Custom-coded websites for home-service companies, built around mobile trust and booked calls.",
     images: [
       {
         url: "/og-image.svg",
         width: 1200,
         height: 630,
-        alt: "Leadcraft Agency - Websites That Generate Leads",
+        alt: "Leadcraft Agency",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Leadcraft Agency - Websites That Generate Leads",
+    title: "Leadcraft Agency | Websites That Generate Leads",
     description:
-      "Custom websites for home service businesses. Hand-coded, fast-loading, SEO-optimized.",
+      "Conversion-focused websites for home-service companies, built for booked calls.",
     images: ["/og-image.svg"],
   },
-  icons: {
-    icon: "/favicon.svg",
-    apple: "/favicon.svg",
-  },
   alternates: {
-    canonical: siteUrl,
+    canonical: siteConfig.siteUrl,
   },
 };
 
@@ -75,41 +82,27 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "WebSite",
-      "@id": `${siteUrl}/#website`,
-      url: siteUrl,
-      name: "Leadcraft Agency",
-      description: "Websites that generate leads for home service businesses.",
+      "@id": `${siteConfig.siteUrl}/#website`,
+      url: siteConfig.siteUrl,
+      name: siteConfig.name,
+      description: siteConfig.tagline,
     },
     {
       "@type": "ProfessionalService",
-      "@id": `${siteUrl}/#business`,
-      name: "Leadcraft Agency",
-      url: siteUrl,
+      "@id": `${siteConfig.siteUrl}/#business`,
+      name: siteConfig.name,
+      url: siteConfig.siteUrl,
       telephone: "+15138151826",
-      email: "ethanmillerinvestments@gmail.com",
+      email: siteConfig.email,
       description:
-        "We build high-converting websites for HVAC, plumbing, roofing, landscaping, and home service businesses.",
+        "Leadcraft Agency designs conversion-focused websites for home-service companies.",
       areaServed: { "@type": "Country", name: "United States" },
       serviceType: [
         "Website Design",
-        "Local SEO",
-        "Lead Generation",
+        "Landing Page Design",
+        "Search-Ready Website Structure",
         "Website Maintenance",
       ],
-      priceRange: "$797-$2997",
-    },
-    {
-      "@type": "Service",
-      name: "Website Design for Home Service Businesses",
-      provider: { "@id": `${siteUrl}/#business` },
-      description:
-        "Hand-coded, mobile-first websites built to convert visitors into booked jobs.",
-      offers: {
-        "@type": "AggregateOffer",
-        lowPrice: "797",
-        highPrice: "2997",
-        priceCurrency: "USD",
-      },
     },
   ],
 };
@@ -122,14 +115,15 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <head>
-        <link rel="preconnect" href="https://cdn.gamma.app" />
-        <link rel="preconnect" href="https://images.unsplash.com" />
+        <meta name="theme-color" content="#0b0c0f" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${bricolage.variable} font-sans antialiased bg-navy text-slate-100`}>
+      <body
+        className={`${bricolage.variable} ${cormorant.variable} bg-[#0b0c0f] font-sans text-stone-100 antialiased`}
+      >
         {children}
       </body>
     </html>

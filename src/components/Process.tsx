@@ -1,147 +1,93 @@
-"use client";
-
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
-import ScrollReveal from "./ScrollReveal";
-
 const steps = [
   {
     number: "01",
-    title: "Discovery Call",
-    description:
-      "We start with a 30-minute call to understand your business, service area, ideal customer, and top competitors. This is where we learn what makes you the best choice in your market so we can build your site around that.",
-    detail: "30-min call",
+    title: "Strategy & Scope",
+    detail: "Align the main offer, priority pages, proof, and CTA before design starts.",
   },
   {
     number: "02",
-    title: "Design Mockup",
-    description:
-      "We create a full visual mockup of your homepage before writing a single line of code. You review it, give feedback, and approve it. Nothing gets built until you love the direction.",
-    detail: "You approve first",
+    title: "Design Direction",
+    detail: "Shape the layout around how buyers decide to call or request a quote.",
   },
   {
     number: "03",
-    title: "Development",
-    description:
-      "We hand-code your site with sub-2-second load times, full mobile responsiveness, and on-page SEO built in from the ground up. No drag-and-drop builders. No bloated plugins. Clean, fast code that ranks.",
-    detail: "Clean code only",
+    title: "Build & QA",
+    detail: "Build the pages, forms, and mobile states, then test the lead path.",
   },
   {
     number: "04",
-    title: "Launch and Grow",
-    description:
-      "We deploy your site, connect Google Analytics and Google Search Console, verify your Google Business listing, and submit your sitemap. Then we send you a full handoff guide and stay available for questions.",
-    detail: "Full setup included",
+    title: "Launch & Handoff",
+    detail: "Launch or hand off the site with scope, ownership, and support clearly documented.",
   },
-];
+] as const;
 
-function AnimatedConnectionLine() {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: false, margin: "-100px" });
-
-  return (
-    <div ref={ref} className="hidden md:block absolute top-12 left-[12.5%] right-[12.5%] h-px overflow-hidden">
-      {/* Static base line */}
-      <div
-        className="absolute inset-0"
-        style={{ background: "rgba(124,111,255,0.15)" }}
-      />
-      {/* Animated fill */}
-      <motion.div
-        className="absolute inset-y-0 left-0"
-        style={{
-          background: "linear-gradient(90deg, #7c6fff, #c165ff, #7c6fff)",
-        }}
-        initial={{ width: "0%" }}
-        animate={isInView ? { width: "100%" } : { width: "0%" }}
-        transition={{ duration: 1.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-      />
-      {/* Moving dot */}
-      <motion.div
-        className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full"
-        style={{
-          background: "#c165ff",
-          boxShadow: "0 0 10px #c165ff, 0 0 20px rgba(193,101,255,0.5)",
-        }}
-        initial={{ left: "0%" }}
-        animate={isInView ? { left: ["0%", "100%"] } : { left: "0%" }}
-        transition={{ duration: 2, ease: "easeInOut", repeat: Infinity, repeatDelay: 3 }}
-      />
-    </div>
-  );
-}
+const checklist = [
+  "Phone links and primary CTA tested on mobile",
+  "Form submission, validation, and inbox routing confirmed",
+  "Security headers, SSL readiness, canonical, robots, and sitemap verified",
+  "Approved proof positioned where it helps the sale",
+] as const;
 
 export default function Process() {
   return (
-    <section id="process" className="py-24 sm:py-32 bg-navy-light/60 relative">
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[1px]"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(124,111,255,0.3), transparent)" }}
-      />
+    <section id="process" className="section-pad section-rule">
+      <div className="section-shell grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+        <div>
+          <span className="eyebrow">Process</span>
+          <h2 className="section-title mt-7 text-5xl text-stone-50 sm:text-6xl">
+            How the project moves.
+          </h2>
+          <p className="muted-copy mt-6 max-w-2xl text-lg leading-8">
+            Smaller-scope service sites usually move in roughly 2 to 4 weeks
+            once content and feedback are approved. Larger builds are scoped
+            separately before timing is promised.
+          </p>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <ScrollReveal direction="blur">
-          <div className="text-center mb-16">
-            <span className="text-electric text-sm font-semibold tracking-wider uppercase">
-              How It Works
-            </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-3 mb-4">
-              Live in <span className="text-gradient">7 to 14 Days,</span> Done Right
-            </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto text-lg">
-              A tight, transparent process that keeps you informed at every step
-              and gets your site online faster than any agency you have ever worked with.
+          <div className="mt-10 space-y-5">
+            {steps.map((step, index) => (
+              <div
+                key={step.number}
+                className={`lux-panel flex gap-5 rounded-[1.5rem] p-5 sm:p-6 ${
+                  index === 0 ? "border-[rgba(216,170,115,0.18)]" : ""
+                }`}
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[rgba(216,170,115,0.25)] bg-[rgba(216,170,115,0.08)] text-sm font-semibold text-[color:var(--accent-strong)]">
+                  {step.number}
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-stone-50">
+                    {step.title}
+                  </h3>
+                  <p className="muted-copy mt-3 text-sm leading-7">
+                    {step.detail}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="lux-panel rounded-[1.8rem] p-6 sm:p-7">
+          <p className="mini-label">Before Launch</p>
+          <h3 className="mt-4 text-3xl font-semibold text-stone-50">
+            The launch check is part of the build.
+          </h3>
+          <ul className="mt-6 space-y-4 text-sm leading-7 text-stone-200">
+            {checklist.map((item) => (
+              <li key={item} className="flex gap-3">
+                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[color:var(--teal)]" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-8 rounded-[1.45rem] border border-white/10 bg-white/[0.03] p-5">
+            <p className="mini-label">Kickoff Standard</p>
+            <p className="mt-3 text-sm leading-7 text-stone-200">
+              Scope, deliverables, price, timeline, and signer identity are
+              confirmed before work starts.
             </p>
           </div>
-        </ScrollReveal>
-
-        <div className="grid md:grid-cols-4 gap-6 relative">
-          <AnimatedConnectionLine />
-
-          {steps.map((step, i) => (
-            <ScrollReveal key={step.number} delay={i * 0.12} direction="up">
-              <motion.div
-                whileHover={{ y: -6 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="relative text-center group"
-              >
-                {/* Step circle with pulse */}
-                <motion.div
-                  className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(124,111,255,0.15), rgba(193,101,255,0.1))",
-                    border: "2px solid rgba(124,111,255,0.4)",
-                  }}
-                  whileHover={{
-                    boxShadow: "0 0 30px rgba(124,111,255,0.3), 0 0 60px rgba(124,111,255,0.1)",
-                    borderColor: "rgba(124,111,255,0.7)",
-                  }}
-                >
-                  {/* Inner glow ring */}
-                  <motion.div
-                    className="absolute inset-1 rounded-full"
-                    style={{ border: "1px solid rgba(124,111,255,0.15)" }}
-                    animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.6, 0.3] }}
-                    transition={{ duration: 3, repeat: Infinity, delay: i * 0.5 }}
-                  />
-                  <span className="text-2xl font-bold text-gradient">{step.number}</span>
-                </motion.div>
-
-                <span
-                  className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-3"
-                  style={{ background: "rgba(124,111,255,0.1)", color: "#7c6fff" }}
-                >
-                  {step.detail}
-                </span>
-                <h3 className="text-xl font-bold mb-3 group-hover:text-electric transition-colors duration-300">
-                  {step.title}
-                </h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  {step.description}
-                </p>
-              </motion.div>
-            </ScrollReveal>
-          ))}
         </div>
       </div>
     </section>

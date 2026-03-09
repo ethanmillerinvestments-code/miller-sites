@@ -1,10 +1,16 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+
+import type { SupportPlanId, WebsitePlanId } from "@/lib/offers";
+
+export type CartOfferId = WebsitePlanId | SupportPlanId;
 
 export type CartItem = {
-  id: string;
+  id: CartOfferId;
   name: string;
-  price: number;
-  type: "one-time" | "monthly";
+  priceCents: number;
+  billing: "one-time" | "monthly";
+  category: "website" | "support";
   description: string;
 };
 
@@ -12,32 +18,80 @@ type CartStore = {
   items: CartItem[];
   isOpen: boolean;
   addItem: (item: CartItem) => void;
-  removeItem: (id: string) => void;
+  removeItem: (id: CartOfferId) => void;
+  clearCart: () => void;
   openCart: () => void;
   closeCart: () => void;
-  total: () => number;
+  toggleCart: () => void;
+  selectedIds: () => CartOfferId[];
+  checkoutHref: () => string;
 };
 
-export const useCart = create<CartStore>((set, get) => ({
-  items: [],
-  isOpen: false,
-
-  addItem: (item) => {
-    const existing = get().items.find((i) => i.id === item.id);
-    if (existing) {
-      // Already in cart, just open it
-      set({ isOpen: true });
-      return;
+function sortCartItems(items: CartItem[]) {
+  return [...items].sort((left, right) => {
+    if (left.category === right.category) {
+      return left.name.localeCompare(right.name);
     }
-    set((state) => ({ items: [...state.items, item], isOpen: true }));
-  },
 
-  removeItem: (id) =>
-    set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
+    return left.category === "website" ? -1 : 1;
+  });
+}
 
-  openCart: () => set({ isOpen: true }),
-  closeCart: () => set({ isOpen: false }),
+export const useCart = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      isOpen: false,
 
-  total: () =>
-    get().items.reduce((sum, item) => sum + item.price, 0),
-}));
+      addItem: (item) => {
+        const otherItems = get().items.filter(
+          (entry) =>
+            entry.id !== item.id &&
+            !(entry.category === item.category && entry.billing === item.billing)
+        );
+
+        set({
+          items: sortCartItems([...otherItems, item]),
+          isOpen: true,
+        });
+      },
+
+      removeItem: (id) =>
+        set((state) => ({
+          items: state.items.filter((item) => item.id !== id),
+        })),
+
+      clearCart: () => set({ items: [] }),
+      openCart: () => set({ isOpen: true }),
+      closeCart: () => set({ isOpen: false }),
+      toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
+
+      selectedIds: () => get().items.map((item) => item.id),
+
+      checkoutHref: () => {
+        const ids = get().items.map((item) => item.id);
+
+        if (ids.length === 0) {
+          return "/#package-finder";
+        }
+
+        if (ids.length === 1) {
+          return `/checkout/intake?item=${encodeURIComponent(ids[0])}`;
+        }
+
+        return `/checkout/intake?items=${encodeURIComponent(ids.join(","))}`;
+      },
+    }),
+    {
+      name: "leadcraft-cart",
+      version: 2,
+      storage: createJSONStorage(() => localStorage),
+      migrate: () => ({
+        items: [],
+      }),
+      partialize: (state) => ({
+        items: state.items,
+      }),
+    }
+  )
+);

@@ -6,39 +6,39 @@ import ScrollReveal from "./ScrollReveal";
 
 const testimonials = [
   {
-    name: "Mike Johnson",
-    business: "Johnson HVAC Solutions",
-    location: "Cincinnati, OH",
+    name: "Approved Review Slot",
+    business: "Replace with a real client business",
+    location: "Verified location only",
     quote:
-      "Leadcraft built us a site that actually brings in calls. We went from about 5 leads a month to over 30. We had to hire two more technicians to keep up. Best investment we have ever made in marketing, by a wide margin.",
-    result: "6x lead increase",
+      "Use a real testimonial, review excerpt, or case-study note that has been approved for public use. Do not publish invented outcomes or unverified rankings.",
+    result: "Verified proof only",
     stars: 5,
   },
   {
-    name: "Sarah Williams",
-    business: "Williams Plumbing Co",
-    location: "Columbus, OH",
+    name: "Approved Case Study",
+    business: "Replace with a real company",
+    location: "Visible service area",
     quote:
-      "Our old site looked like it was from 2005. We were embarrassed to send people to it. Leadcraft gave us a site that looks like we are the biggest plumbing company in the city, and now we actually are ranking number one for our main keywords.",
-    result: "#1 Google ranking",
+      "Use a before-and-after summary tied to a real project, real screenshots, or a measurable conversion improvement that can actually be supported.",
+    result: "Measured outcome",
     stars: 5,
   },
   {
-    name: "David Chen",
-    business: "Peak Roofing and Exteriors",
-    location: "Dayton, OH",
+    name: "Approved Client Quote",
+    business: "Verified business name",
+    location: "Real location only",
     quote:
-      "The whole process was smooth from start to finish. They asked the right questions, understood our business immediately, and delivered something that genuinely looks premium. Our close rate went up because customers already trust us before we show up.",
-    result: "Higher close rate",
+      "Use a quote that speaks to trust, presentation, cleaner lead flow, or sales experience, but only if the client actually said it and approved it.",
+    result: "Client-approved quote",
     stars: 5,
   },
   {
-    name: "Lisa Martinez",
-    business: "GreenScape Landscaping",
-    location: "Louisville, KY",
+    name: "Approved Proof Asset",
+    business: "Verified project source",
+    location: "Real market only",
     quote:
-      "I was honestly skeptical about spending money on a new website when I had other expenses. Three months after launch we had our best revenue quarter ever. The site pays for itself every single month. I wish we had done this two years ago.",
-    result: "Best revenue quarter ever",
+      "Use a verified review, a screenshot-backed result, or a short owner statement that supports the positioning without exaggeration or invented claims.",
+    result: "Proof asset ready",
     stars: 5,
   },
 ];
@@ -87,21 +87,22 @@ export default function Testimonials() {
     <section id="testimonials" className="py-24 sm:py-32 bg-navy relative">
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[1px]"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(124,111,255,0.3), transparent)" }}
+        style={{ background: "linear-gradient(90deg, transparent, rgba(216,170,115,0.3), transparent)" }}
       />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal direction="blur">
           <div className="text-center mb-16">
-            <span className="text-electric text-sm font-semibold tracking-wider uppercase">
-              Client Results
+            <span className="text-[color:var(--accent-strong)] text-sm font-semibold tracking-wider uppercase">
+              Proof Framework
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-3 mb-4">
-              Real Business Owners,{" "}
-              <span className="text-gradient">Real Results</span>
+              Approved Proof,{" "}
+              <span className="text-[color:var(--accent-strong)]">No Invented Claims</span>
             </h2>
             <p className="text-slate-400 max-w-xl mx-auto">
-              Every quote below comes from an actual client. No made-up stats, no stock photos.
+              This component is safe to use only after real testimonials, case
+              studies, or review excerpts are approved for public use.
             </p>
           </div>
         </ScrollReveal>
@@ -110,12 +111,15 @@ export default function Testimonials() {
           <div className="relative">
             <div
               className="rounded-2xl p-8 sm:p-12 border border-white/5 min-h-[320px] flex items-center relative overflow-hidden group"
-              style={{ background: "linear-gradient(160deg, rgba(139,122,255,0.12), rgba(4,6,14,0.95))", boxShadow: "0 0 40px rgba(139,122,255,0.08), 0 4px 30px rgba(0,0,0,0.4)" }}
+              style={{
+                background: "linear-gradient(160deg, rgba(216,170,115,0.08), rgba(4,6,14,0.95))",
+                boxShadow: "0 0 40px rgba(216,170,115,0.08), 0 4px 30px rgba(0,0,0,0.4)",
+              }}
             >
               {/* Large quote mark decoration */}
               <div
                 className="absolute top-6 left-8 text-8xl font-serif leading-none pointer-events-none select-none"
-                style={{ color: "rgba(124,111,255,0.06)" }}
+                style={{ color: "rgba(216,170,115,0.06)" }}
               >
                 &ldquo;
               </div>
@@ -123,14 +127,14 @@ export default function Testimonials() {
               {/* Subtle glow behind card */}
               <div
                 className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-                style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(124,111,255,0.04) 0%, transparent 70%)" }}
+                style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(216,170,115,0.05) 0%, transparent 70%)" }}
               />
 
               {/* Result badge */}
               <div className="absolute top-6 right-6 z-20">
                 <motion.span
                   className="text-xs font-bold px-3 py-1.5 rounded-full text-white shimmer-btn"
-                  style={{ background: "linear-gradient(135deg, #7c6fff, #c165ff)" }}
+                  style={{ background: "linear-gradient(135deg, #d8aa73, #7db7b0)", color: "#25190f" }}
                   key={current}
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -174,7 +178,11 @@ export default function Testimonials() {
                   <div className="flex items-center gap-3">
                     <div
                       className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
-                      style={{ background: "linear-gradient(135deg, #7c6fff, #c165ff)", boxShadow: "0 0 15px rgba(124,111,255,0.3)" }}
+                      style={{
+                        background: "linear-gradient(135deg, #d8aa73, #7db7b0)",
+                        boxShadow: "0 0 15px rgba(216,170,115,0.22)",
+                        color: "#25190f",
+                      }}
                     >
                       {t.name.charAt(0)}
                     </div>
@@ -194,7 +202,7 @@ export default function Testimonials() {
                 onClick={prev}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-10 h-10 rounded-full border border-white/10 hover:border-electric/50 hover:bg-white/5 flex items-center justify-center transition-all"
+                className="w-10 h-10 rounded-full border border-white/10 hover:border-[rgba(216,170,115,0.45)] hover:bg-white/5 flex items-center justify-center transition-all"
                 aria-label="Previous testimonial"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,12 +223,17 @@ export default function Testimonials() {
                   >
                     <div
                       className="absolute inset-0 rounded-full"
-                      style={{ background: i === current ? "linear-gradient(90deg, #7c6fff, #c165ff)" : "rgba(255,255,255,0.15)" }}
+                      style={{
+                        background:
+                          i === current
+                            ? "linear-gradient(90deg, #d8aa73, #7db7b0)"
+                            : "rgba(255,255,255,0.15)",
+                      }}
                     />
                     {i === current && (
                       <motion.div
                         className="absolute inset-0 rounded-full"
-                        style={{ background: "linear-gradient(90deg, #7c6fff, #c165ff)" }}
+                        style={{ background: "linear-gradient(90deg, #d8aa73, #7db7b0)" }}
                         initial={{ scaleX: 0 }}
                         animate={{ scaleX: 1 }}
                         transition={{ duration: 7, ease: "linear" }}
@@ -234,7 +247,7 @@ export default function Testimonials() {
                 onClick={next}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-10 h-10 rounded-full border border-white/10 hover:border-electric/50 hover:bg-white/5 flex items-center justify-center transition-all"
+                className="w-10 h-10 rounded-full border border-white/10 hover:border-[rgba(216,170,115,0.45)] hover:bg-white/5 flex items-center justify-center transition-all"
                 aria-label="Next testimonial"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

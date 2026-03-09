@@ -1,406 +1,495 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import ScrollReveal from "./ScrollReveal";
-import { useCart, CartItem } from "@/store/cart";
+import Link from "next/link";
+import { ArrowRight, Layers3, LifeBuoy } from "lucide-react";
 
-const buildTiers: (CartItem & { features: string[]; popular: boolean; priceLabel: string; icon: string; badge?: string })[] = [
-  {
-    id: "build-starter",
-    name: "Starter",
-    price: 797,
-    priceLabel: "$797",
-    type: "one-time",
-    icon: "⚡",
-    description: "Perfect for new businesses that need a professional online presence fast.",
-    features: [
-      "5-page custom website",
-      "Mobile responsive",
-      "Contact form + click-to-call",
-      "Basic on-page SEO",
-      "Google Business setup",
-      "Speed optimized",
-      "1 revision round",
-      "14-day delivery",
-    ],
-    popular: false,
-  },
-  {
-    id: "build-growth",
-    name: "Growth",
-    price: 1497,
-    priceLabel: "$1,497",
-    type: "one-time",
-    icon: "🚀",
-    badge: "Most Popular",
-    description: "For businesses ready to dominate their local market and generate consistent leads.",
-    features: [
-      "10-page custom website",
-      "Advanced local SEO",
-      "Lead capture + CRM integration",
-      "Google Reviews widget",
-      "Before/after gallery",
-      "Analytics dashboard setup",
-      "Blog-ready structure",
-      "3 revision rounds",
-      "10-day delivery",
-    ],
-    popular: true,
-  },
-  {
-    id: "build-premium",
-    name: "Premium",
-    price: 2997,
-    priceLabel: "$2,997",
-    type: "one-time",
-    icon: "👑",
-    description: "The full package for established businesses that want to be the #1 result in their market.",
-    features: [
-      "Unlimited pages",
-      "Custom animations + micro-interactions",
-      "Online booking system",
-      "Client portal",
-      "Competitor analysis",
-      "Full SEO audit + strategy",
-      "Google Ads landing page",
-      "Unlimited revisions",
-      "7-day delivery",
-    ],
-    popular: false,
-  },
-];
+import PointerCard from "@/components/PointerCard";
+import ScrollReveal from "@/components/ScrollReveal";
+import {
+  buildOnlyPoints,
+  monthlySupportSummary,
+  supportOffer,
+  supportPlans,
+  type SupportPlan,
+  websitePlans,
+  type WebsitePlan,
+} from "@/lib/offers";
+import { siteConfig } from "@/lib/site";
+import { cn } from "@/lib/utils";
+import { useCart, type CartItem } from "@/store/cart";
 
-const retainerTiers: (CartItem & { features: string[]; popular: boolean; priceLabel: string; icon: string; badge?: string })[] = [
+const qualificationGroups = [
   {
-    id: "monthly-maintenance",
-    name: "Maintenance",
-    price: 97,
-    priceLabel: "$97",
-    type: "monthly",
-    icon: "🛡️",
-    description: "Keep your site fast, secure, and up to date every month.",
-    features: [
-      "Monthly content updates",
-      "Security monitoring",
-      "Speed optimization checks",
-      "Uptime monitoring",
-      "Priority email support",
+    title: "Best Fit",
+    tone: "accent",
+    bullets: [
+      "Local service operators replacing a weak or generic site",
+      "Teams that want scope clarity before kickoff",
+      "Businesses that value trust, mobile lead flow, and clean handoff",
     ],
-    popular: false,
   },
   {
-    id: "monthly-growth",
-    name: "Growth Plan",
-    price: 297,
-    priceLabel: "$297",
-    type: "monthly",
-    icon: "📈",
-    badge: "Best Value",
-    description: "Ongoing SEO and lead generation to grow your rankings every month.",
-    features: [
-      "Everything in Maintenance",
-      "2x monthly blog posts",
-      "Local SEO optimization",
-      "Google Business management",
-      "Monthly performance report",
-      "Backlink building",
+    title: "Not A Fit",
+    tone: "neutral",
+    bullets: [
+      "Cheap brochure buyers shopping only on lowest price",
+      "Projects with vague scope and no decision-maker involved",
+      "Companies expecting guaranteed rankings or invented proof claims",
     ],
-    popular: true,
   },
-  {
-    id: "monthly-agency",
-    name: "Agency Partner",
-    price: 597,
-    priceLabel: "$597",
-    type: "monthly",
-    icon: "🏆",
-    description: "Full-service digital marketing partner for businesses scaling fast.",
-    features: [
-      "Everything in Growth Plan",
-      "Google Ads management",
-      "Landing page A/B testing",
-      "Lead tracking dashboard",
-      "Monthly strategy call",
-      "Social proof automation",
-    ],
-    popular: false,
-  },
-];
+] as const;
 
-function AddToCartButton({ tier }: { tier: CartItem }) {
-  const { addItem, items } = useCart();
-  const inCart = items.some((i) => i.id === tier.id);
+const pricingRules = [
+  {
+    title: "Fixed where scope stays tight",
+    body: "Lead Launch stays public because the scope can remain controlled and fulfillment-safe.",
+    tone: "accent",
+  },
+  {
+    title: "Custom where scope expands",
+    body: "Authority Build moves into scope review instead of pretending a larger project fits a flat card.",
+    tone: "neutral",
+  },
+  {
+    title: "Support stays optional",
+    body: "Monthly help is visible and priced, but it is not hidden inside the build fee.",
+    tone: "teal",
+  },
+] as const;
 
-  return (
-    <motion.button
-      onClick={() => addItem(tier)}
-      whileHover={{ scale: 1.04, y: -1 }}
-      whileTap={{ scale: 0.97 }}
-      transition={{ type: "spring", stiffness: 400, damping: 15 }}
-      className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 relative overflow-hidden"
-      style={
-        inCart
-          ? { background: "rgba(124,111,255,0.12)", color: "#a89fff", border: "1px solid rgba(124,111,255,0.35)" }
-          : tier.type === "monthly"
-          ? { background: "linear-gradient(135deg, #7c6fff, #c165ff)", color: "white", boxShadow: "0 0 24px rgba(124,111,255,0.35)" }
-          : { background: "rgba(255,255,255,0.06)", color: "white", border: "1px solid rgba(255,255,255,0.12)" }
-      }
-    >
-      {/* Shimmer on non-cart buttons */}
-      {!inCart && (
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 55%, transparent 60%)",
-            backgroundSize: "200% 100%",
-            animation: "shimmer 4s ease-in-out infinite",
-          }}
-        />
-      )}
-      <span className="relative z-10 flex items-center gap-2">
-        {inCart ? (
-          <>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            Added to Cart
-          </>
-        ) : (
-          <>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            Add to Cart
-          </>
-        )}
-      </span>
-    </motion.button>
-  );
+function formatCurrency(priceCents: number) {
+  return `$${(priceCents / 100).toLocaleString()}`;
+}
+
+function buildIntakeHref(ids: string[]) {
+  if (ids.length === 0) {
+    return "/checkout/intake";
+  }
+
+  if (ids.length === 1) {
+    return `/checkout/intake?item=${encodeURIComponent(ids[0])}`;
+  }
+
+  return `/checkout/intake?items=${encodeURIComponent(ids.join(","))}`;
+}
+
+function createCartItem(
+  plan: WebsitePlan | SupportPlan,
+  category: CartItem["category"],
+  billing: CartItem["billing"]
+): CartItem {
+  return {
+    id: plan.id,
+    name: plan.name,
+    priceCents: plan.priceCents,
+    billing,
+    category,
+    description: plan.summary,
+  };
 }
 
 export default function Pricing() {
-  const [view, setView] = useState<"build" | "monthly">("build");
-  const tiers = view === "build" ? buildTiers : retainerTiers;
+  const addItem = useCart((state) => state.addItem);
+  const items = useCart((state) => state.items);
+  const openCart = useCart((state) => state.openCart);
+  const checkoutHref = useCart((state) => state.checkoutHref);
+
+  const buildItem = items.find((item) => item.category === "website");
+  const supportItem = items.find((item) => item.category === "support");
+  const oneTimeTotal = items
+    .filter((item) => item.billing === "one-time")
+    .reduce((sum, item) => sum + item.priceCents, 0);
+  const monthlyTotal = items
+    .filter((item) => item.billing === "monthly")
+    .reduce((sum, item) => sum + item.priceCents, 0);
+
+  const handleAddBuild = (plan: WebsitePlan) => {
+    if (plan.checkoutMode !== "cart") {
+      return;
+    }
+
+    addItem(createCartItem(plan, "website", "one-time"));
+    openCart();
+  };
+
+  const handleAddSupport = (plan: SupportPlan) => {
+    addItem(createCartItem(plan, "support", "monthly"));
+    openCart();
+  };
 
   return (
-    <section id="pricing" className="py-20 sm:py-28 relative overflow-hidden">
-      {/* Section glow */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "radial-gradient(ellipse 70% 50% at 50% 50%, rgba(124,111,255,0.06) 0%, transparent 70%)",
-        }}
-      />
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[1px]"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(124,111,255,0.4), transparent)" }}
-      />
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <section id="pricing" className="section-pad section-rule">
+      <div className="section-shell">
         <ScrollReveal direction="blur">
-          <div className="text-center mb-14">
-            <motion.span
-              className="inline-block text-xs font-bold tracking-[0.2em] uppercase px-4 py-1.5 rounded-full mb-4"
-              style={{ background: "rgba(124,111,255,0.12)", color: "#a89fff", border: "1px solid rgba(124,111,255,0.25)" }}
-              animate={{ boxShadow: ["0 0 15px rgba(124,111,255,0.1)", "0 0 25px rgba(124,111,255,0.2)", "0 0 15px rgba(124,111,255,0.1)"] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            >
-              Pricing
-            </motion.span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mt-2 mb-4 tracking-tight">
-              Simple,{" "}
-              <span className="text-gradient">
-                Transparent
-              </span>{" "}
-              Pricing
-            </h2>
-            <p className="text-slate-400 max-w-xl mx-auto text-base mb-10">
-              Pick a build plan, add a monthly plan, and check out in seconds.
-            </p>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <span className="eyebrow">Pricing</span>
+              <h2 className="section-title mt-7 text-5xl text-stone-50 sm:text-6xl">
+                Productized where it can be, scoped where it should be.
+              </h2>
+              <p className="muted-copy mt-6 text-lg leading-8">
+                The pricing ladder is built to qualify serious local-service
+                buyers without pretending every project belongs in a tiny flat
+                fee. Smaller builds stay public. Larger authority builds move
+                into written scope review.
+              </p>
+            </div>
 
-            {/* Fancy toggle */}
-            <div
-              className="inline-flex rounded-2xl p-1.5 gap-1 relative"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(12px)" }}
-            >
-              {(["build", "monthly"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setView(tab)}
-                  className="relative px-7 py-2.5 rounded-xl text-sm font-semibold transition-colors z-10"
-                  style={{ color: view === tab ? "white" : "#64748b" }}
-                >
-                  {view === tab && (
-                    <motion.div
-                      layoutId="tab-bg"
-                      className="absolute inset-0 rounded-xl shimmer-btn"
-                      style={{ background: "linear-gradient(135deg, #7c6fff, #c165ff)", boxShadow: "0 0 25px rgba(124,111,255,0.45)" }}
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative z-10">
-                    {tab === "build" ? "Website Build" : "Monthly Plans"}
-                  </span>
-                </button>
-              ))}
+            <div className="lux-subtle rounded-[1.5rem] p-5 text-sm leading-7 text-stone-200 lg:max-w-sm">
+              Fixed launch pricing starts at{" "}
+              <span className="text-[color:var(--accent-strong)]">$3,500</span>.
+              Monthly support starts at{" "}
+              <span className="text-[color:var(--teal)]">
+                {supportOffer.priceLabel}
+              </span>.
             </div>
           </div>
         </ScrollReveal>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={view}
-            initial={{ opacity: 0, y: 20, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.98 }}
-            transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
-          >
-            {tiers.map((tier, i) => (
-              <motion.div
-                key={tier.id}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-                whileHover={{ scale: 1.03, y: -8 }}
-                className="relative rounded-2xl flex flex-col overflow-hidden group"
-                style={
-                  tier.popular
-                    ? {
-                        background: "linear-gradient(160deg, rgba(124,111,255,0.18) 0%, rgba(6,9,30,0.95) 60%)",
-                        border: "1.5px solid rgba(124,111,255,0.45)",
-                        boxShadow: "0 0 50px rgba(124,111,255,0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
-                      }
-                    : {
-                        background: "rgba(255,255,255,0.025)",
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
-                      }
-                }
-              >
-                {/* Hover glow */}
-                <div
-                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(124,111,255,0.08) 0%, transparent 60%)" }}
-                />
+        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+          {pricingRules.map((rule) => (
+            <div
+              key={rule.title}
+              className={cn(
+                "rounded-2xl border px-4 py-4 text-sm leading-7 text-stone-300",
+                rule.tone === "accent"
+                  ? "border-[rgba(216,170,115,0.16)] bg-[rgba(216,170,115,0.06)]"
+                  : rule.tone === "teal"
+                    ? "border-[rgba(125,183,176,0.18)] bg-[rgba(125,183,176,0.07)]"
+                    : "border-white/10 bg-white/[0.03]"
+              )}
+            >
+              <p className="text-sm font-semibold text-stone-100">{rule.title}</p>
+              <p className="mt-2">{rule.body}</p>
+            </div>
+          ))}
+        </div>
 
-                {/* Popular glow beam */}
-                {tier.popular && (
-                  <motion.div
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px"
-                    style={{ background: "linear-gradient(90deg, transparent, rgba(124,111,255,0.8), transparent)" }}
-                    animate={{ opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                )}
-
-                {/* Badge */}
-                {tier.badge && (
-                  <div className="absolute top-4 right-4">
-                    <motion.span
-                      className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full shimmer-btn"
-                      style={{ background: "linear-gradient(135deg, #7c6fff, #c165ff)", color: "white" }}
-                      animate={{
-                        boxShadow: [
-                          "0 0 8px rgba(124,111,255,0.3)",
-                          "0 0 20px rgba(124,111,255,0.6)",
-                          "0 0 8px rgba(124,111,255,0.3)",
-                        ],
-                      }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      {tier.badge}
-                    </motion.span>
+        <div className="mt-10 grid gap-8 xl:grid-cols-[1.04fr_0.96fr]">
+          <div className="grid gap-8">
+            <ScrollReveal delay={0.05} direction="up">
+              <PointerCard className="lux-panel rounded-[2rem] p-6 sm:p-7">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="max-w-2xl">
+                    <p className="mini-label">One-Time Builds</p>
+                    <h3 className="mt-4 text-3xl font-semibold text-stone-50">
+                      Start with the website itself.
+                    </h3>
+                    <p className="muted-copy mt-4 text-sm leading-7">
+                      The build fee covers the site, launch setup, and a clean
+                      trust signal. Monthly work stays separate and optional.
+                    </p>
                   </div>
-                )}
-
-                <div className="p-6 flex flex-col flex-1 relative z-10">
-                  {/* Icon + name */}
-                  <div className="flex items-center gap-3 mb-5">
-                    <motion.div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                      style={
-                        tier.popular
-                          ? { background: "linear-gradient(135deg, rgba(124,111,255,0.3), rgba(193,101,255,0.2))", border: "1px solid rgba(124,111,255,0.4)" }
-                          : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }
-                      }
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                    >
-                      {tier.icon}
-                    </motion.div>
-                    <div>
-                      <h3 className="text-base font-bold text-white">{tier.name}</h3>
-                      <p className="text-xs text-slate-500">{tier.type === "monthly" ? "per month" : "one-time"}</p>
-                    </div>
+                  <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm leading-7 text-stone-200">
+                    Most clients start here, then add support only if the site
+                    needs ongoing help after launch.
                   </div>
+                </div>
 
-                  {/* Price */}
-                  <div className="mb-1">
-                    <span
-                      className="text-4xl font-black tracking-tight"
-                      style={
-                        tier.popular
-                          ? { background: "linear-gradient(135deg, #7c6fff, #c165ff)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }
-                          : { color: "white" }
-                      }
-                    >
-                      {tier.priceLabel}
-                    </span>
-                  </div>
+                <div className="mt-6 grid gap-5 lg:grid-cols-2">
+                  {websitePlans.map((plan) => {
+                    const isSelected = buildItem?.id === plan.id;
+                    const scopeHref = buildIntakeHref([plan.id]);
 
-                  {tier.type === "one-time" && (
-                    <div
-                      className="text-xs mb-4 px-3 py-2 rounded-lg leading-relaxed"
-                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", color: "#94a3b8" }}
-                    >
-                      You receive the full source code via GitHub. Deploy free on Vercel yourself, no monthly fees to us.
-                    </div>
-                  )}
-
-                  <p className="text-slate-400 text-xs leading-relaxed mb-5">{tier.description}</p>
-
-                  {/* Divider */}
-                  <div className="h-px mb-5" style={{ background: "rgba(255,255,255,0.05)" }} />
-
-                  {/* Features */}
-                  <ul className="space-y-2.5 mb-6 flex-1">
-                    {tier.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2.5 text-sm text-slate-300">
-                        <div
-                          className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                          style={{ background: "rgba(124,111,255,0.2)" }}
-                        >
-                          <svg className="w-2.5 h-2.5" style={{ color: "#a89fff" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
+                    return (
+                      <article
+                        key={plan.id}
+                        className={cn(
+                          "flex h-full flex-col rounded-[1.8rem] border p-6",
+                          plan.pricingMode === "custom"
+                            ? "border-[rgba(125,183,176,0.2)] bg-[linear-gradient(180deg,rgba(125,183,176,0.08),rgba(255,255,255,0.02)_28%,rgba(255,255,255,0.02)_100%)]"
+                            : "border-[rgba(216,170,115,0.18)] bg-[rgba(216,170,115,0.06)]"
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="mini-label">
+                              {plan.pricingMode === "custom" ? "Scope-led" : "Fixed scope"}
+                            </p>
+                            <h4 className="mt-4 text-2xl font-semibold text-stone-50">
+                              {plan.name}
+                            </h4>
+                          </div>
+                          <div className="rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-semibold text-stone-100">
+                            {plan.priceLabel}
+                          </div>
                         </div>
-                        {feature}
+
+                        <p className="muted-copy mt-4 text-sm leading-7">
+                          {plan.summary}
+                        </p>
+
+                        <ul className="mt-5 flex-1 space-y-3 text-sm leading-7 text-stone-200">
+                          {plan.features.map((feature) => (
+                            <li key={feature} className="flex gap-3">
+                              <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[color:var(--accent)]" />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+
+                        <p className="mt-5 text-sm leading-7 text-stone-400">{plan.fit}</p>
+
+                        <div className="mt-6">
+                          {plan.checkoutMode === "cart" ? (
+                            <button
+                              type="button"
+                              onClick={() => handleAddBuild(plan)}
+                              className="button-primary w-full px-5 py-3.5 text-sm"
+                            >
+                              {isSelected ? "Selected In Package" : "Add Build To Package"}
+                              <ArrowRight className="h-4 w-4" />
+                            </button>
+                          ) : (
+                            <a
+                              href={scopeHref}
+                              className="button-primary w-full px-5 py-3.5 text-sm"
+                            >
+                              Request Scope Review
+                              <ArrowRight className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-6 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-[1.45rem] border border-white/10 bg-white/[0.03] p-5">
+                    <p className="mini-label">Included In The Build</p>
+                    <ul className="mt-4 space-y-3 text-sm leading-7 text-stone-200">
+                      {buildOnlyPoints.map((point) => (
+                        <li key={point} className="flex gap-3">
+                          <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[color:var(--accent)]" />
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="rounded-[1.45rem] border border-white/10 bg-white/[0.03] p-5">
+                    <p className="mini-label">Qualification Notes</p>
+                    <div className="mt-4 space-y-4">
+                      {qualificationGroups.map((group) => (
+                        <div key={group.title}>
+                          <p className="text-sm font-semibold text-stone-100">
+                            {group.title}
+                          </p>
+                          <ul className="mt-2 space-y-2 text-sm leading-7 text-stone-300">
+                            {group.bullets.map((bullet) => (
+                              <li key={bullet} className="flex gap-3">
+                                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[color:var(--teal)]" />
+                                <span>{bullet}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </PointerCard>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.12} direction="up">
+              <PointerCard className="lux-panel rounded-[2rem] p-6 sm:p-7">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="max-w-2xl">
+                    <p className="mini-label">Optional Monthly Support</p>
+                    <h3 className="mt-4 text-3xl font-semibold text-stone-50">
+                      Add support only when it earns its keep.
+                    </h3>
+                    <p className="muted-copy mt-4 text-sm leading-7">
+                      Monthly work is not baked into the build. Use it when the
+                      business wants Leadcraft to stay involved after launch.
+                    </p>
+                  </div>
+                  <div className="rounded-[1.35rem] border border-[rgba(125,183,176,0.18)] bg-[rgba(125,183,176,0.07)] px-4 py-4 text-sm leading-7 text-stone-200">
+                    Support can stand alone for an existing site or layer on top
+                    of a new build.
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-5 lg:grid-cols-2">
+                  {supportPlans.map((plan) => {
+                    const isSelected = supportItem?.id === plan.id;
+
+                    return (
+                      <article
+                        key={plan.id}
+                        className={cn(
+                          "flex h-full flex-col rounded-[1.8rem] border p-6",
+                          plan.id === "growth-support"
+                            ? "border-[rgba(125,183,176,0.2)] bg-[linear-gradient(180deg,rgba(125,183,176,0.08),rgba(255,255,255,0.02)_28%,rgba(255,255,255,0.02)_100%)]"
+                            : "border-white/10 bg-white/[0.03]"
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="mini-label">Monthly lane</p>
+                            <h4 className="mt-4 text-2xl font-semibold text-stone-50">
+                              {plan.name}
+                            </h4>
+                          </div>
+                          <div className="rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-semibold text-stone-100">
+                            {plan.priceLabel}
+                          </div>
+                        </div>
+
+                        <p className="muted-copy mt-4 text-sm leading-7">
+                          {plan.summary}
+                        </p>
+
+                        <ul className="mt-5 flex-1 space-y-3 text-sm leading-7 text-stone-200">
+                          {plan.features.map((feature) => (
+                            <li key={feature} className="flex gap-3">
+                              <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[color:var(--teal)]" />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+
+                        <p className="mt-5 text-sm leading-7 text-stone-400">{plan.fit}</p>
+
+                        <button
+                          type="button"
+                          onClick={() => handleAddSupport(plan)}
+                          className="button-primary mt-6 w-full px-5 py-3.5 text-sm"
+                        >
+                          {isSelected ? "Selected In Package" : "Add Support To Package"}
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-6 rounded-[1.45rem] border border-white/10 bg-white/[0.03] p-5">
+                  <p className="mini-label">What Monthly Support Means</p>
+                  <ul className="mt-4 space-y-3 text-sm leading-7 text-stone-200">
+                    {monthlySupportSummary.map((point) => (
+                      <li key={point} className="flex gap-3">
+                        <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[color:var(--teal)]" />
+                        <span>{point}</span>
                       </li>
                     ))}
                   </ul>
-
-                  <AddToCartButton tier={tier} />
                 </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </AnimatePresence>
+              </PointerCard>
+            </ScrollReveal>
+          </div>
 
-        {view === "build" && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-center text-slate-500 text-sm mt-8"
-          >
-            Want us to handle hosting, updates, and support?{" "}
-            <button onClick={() => setView("monthly")} className="font-semibold hover:underline" style={{ color: "#a89fff" }}>
-              View monthly plans →
-            </button>
-          </motion.p>
-        )}
+          <ScrollReveal delay={0.08} direction="up">
+            <PointerCard className="lux-panel rounded-[2rem] p-6 sm:p-7 xl:sticky xl:top-28">
+              <p className="mini-label">Selected Package</p>
+              <h3 className="mt-4 text-3xl font-semibold text-stone-50">
+                Build the likely scope before the brief.
+              </h3>
+              <p className="muted-copy mt-4 text-sm leading-7">
+                The package only frames the likely lane. Kickoff still waits for
+                written scope, timeline, signer review, and the right payment
+                path.
+              </p>
+
+              <div className="mt-6 space-y-4">
+                <SelectionCard
+                  icon={Layers3}
+                  title="Build"
+                  item={buildItem}
+                  fallback="No one-time build selected yet."
+                />
+                <SelectionCard
+                  icon={LifeBuoy}
+                  title="Monthly Support"
+                  item={supportItem}
+                  fallback="No monthly support selected yet."
+                />
+              </div>
+
+              <div className="mt-6 rounded-[1.55rem] border border-white/10 bg-white/[0.03] p-5">
+                <div className="flex items-center justify-between gap-3 text-sm text-stone-300">
+                  <span>One-time total</span>
+                  <span className="font-semibold text-stone-100">
+                    {oneTimeTotal > 0 ? formatCurrency(oneTimeTotal) : "TBD"}
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-3 text-sm text-stone-300">
+                  <span>Monthly total</span>
+                  <span className="font-semibold text-stone-100">
+                    {monthlyTotal > 0 ? `${formatCurrency(monthlyTotal)}/mo` : "Optional"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3">
+                <Link
+                  href={checkoutHref()}
+                  className="button-primary w-full px-6 py-4 text-center text-sm"
+                >
+                  Send Brief For Scope Review
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <a
+                  href={siteConfig.calendlyUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="button-secondary w-full px-6 py-4 text-center text-sm"
+                >
+                  Book Strategy Call
+                </a>
+              </div>
+
+              <p className="mt-5 text-sm leading-7 text-stone-400">
+                Need the premium custom build instead of the fixed launch lane.
+                Use scope review, not guesswork.
+              </p>
+              <a
+                href={buildIntakeHref(["authority-build"])}
+                className="mt-3 inline-flex text-sm font-semibold text-[color:var(--accent-strong)] transition-colors hover:text-stone-100"
+              >
+                Request Authority Build scope review
+              </a>
+            </PointerCard>
+          </ScrollReveal>
+        </div>
       </div>
     </section>
+  );
+}
+
+function SelectionCard({
+  icon: Icon,
+  title,
+  item,
+  fallback,
+}: {
+  icon: typeof Layers3;
+  title: string;
+  item: CartItem | undefined;
+  fallback: string;
+}) {
+  return (
+    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5">
+      <div className="flex items-start gap-3">
+        <span className="mt-1 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-stone-100">
+          <Icon className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="mini-label">{title}</p>
+          {item ? (
+            <>
+              <p className="mt-3 text-lg font-semibold text-stone-50">
+                {item.name}
+              </p>
+              <p className="mt-2 text-sm leading-7 text-stone-300">
+                {item.description}
+              </p>
+            </>
+          ) : (
+            <p className="mt-3 text-sm leading-7 text-stone-300">{fallback}</p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

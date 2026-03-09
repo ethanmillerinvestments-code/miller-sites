@@ -1,43 +1,30 @@
-import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
-import Services from "@/components/Services";
-import WhyChooseUs from "@/components/WhyChooseUs";
-import Industries from "@/components/Industries";
-import Process from "@/components/Process";
-import CTABanner from "@/components/CTABanner";
-import Results from "@/components/Results";
-import Pricing from "@/components/Pricing";
-import Testimonials from "@/components/Testimonials";
-import FAQ from "@/components/FAQ";
 import Contact from "@/components/Contact";
-import Footer from "@/components/Footer";
-import ParallaxBackground from "@/components/ParallaxBackground";
-import CartDrawer from "@/components/CartDrawer";
-import ScrollProgress from "@/components/ScrollProgress";
-import BackToTop from "@/components/BackToTop";
+import CTABanner from "@/components/CTABanner";
+import Hero from "@/components/Hero";
+import HomeAbout from "@/components/HomeAbout";
+import PackageFinder from "@/components/PackageFinder";
+import Pricing from "@/components/Pricing";
+import Process from "@/components/Process";
+import QuickAccess from "@/components/QuickAccess";
+import Services from "@/components/Services";
+import FAQ from "@/components/FAQ";
+import SiteShell from "@/components/SiteShell";
+import WhyChooseUs from "@/components/WhyChooseUs";
 
 export default function Home() {
   return (
-    <>
-      <ScrollProgress />
-      <ParallaxBackground />
-      <Navbar />
-      <main className="relative z-10">
-        <Hero />
-        <Services />
-        <WhyChooseUs />
-        <Industries />
-        <Process />
-        <CTABanner />
-        <Results />
-        <Pricing />
-        <Testimonials />
-        <FAQ />
-        <Contact />
-      </main>
-      <Footer />
-      <CartDrawer />
-      <BackToTop />
-    </>
+    <SiteShell>
+      <Hero />
+      <QuickAccess />
+      <HomeAbout />
+      <PackageFinder />
+      <Services />
+      <WhyChooseUs />
+      <Pricing />
+      <Process />
+      <FAQ />
+      <CTABanner />
+      <Contact />
+    </SiteShell>
   );
 }

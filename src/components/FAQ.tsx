@@ -1,183 +1,146 @@
-"use client";
+import { CheckCheck, FileText, ShieldCheck, Smartphone } from "lucide-react";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import ScrollReveal from "./ScrollReveal";
+import { supportOffer, supportPlans } from "@/lib/offers";
 
 const faqs = [
   {
-    question: "How long does it take to build my website?",
+    question: "How fast can a project launch?",
     answer:
-      "Most projects are delivered within 7 to 14 days from the date you approve the design mockup. The Starter plan typically takes 10 to 14 days. Growth and Premium projects run 7 to 10 days because we allocate more resources. We move fast, but we never rush at the cost of quality. Every site goes through a full quality check before it launches.",
+      "Smaller-scope service sites usually move in roughly 2 to 4 weeks after approved content is in place. Larger multi-service builds take longer, and the timeline is set during scope review before kickoff.",
   },
   {
-    question: "Do I need to provide content, copy, or photos?",
+    question: "How is pricing determined?",
     answer:
-      "No. We write all of your website copy based on a short intake form you fill out about your business. We source high-quality professional photos for your industry. If you have your own photos, customer reviews, or specific content you want included, we will absolutely use it. Your input makes the end result better, but it is never required.",
+      "Pricing moves with scope, page count, service depth, and integrations. Build fees are one-time. Monthly billing only starts if support is added after launch.",
   },
   {
-    question: "Will my site show up on Google?",
+    question: "Do you write the copy?",
     answer:
-      "Every site we build includes foundational on-page SEO: optimized title tags, meta descriptions, header structure, image alt text, schema markup, and a submitted sitemap. We also set up Google Search Console and Google Analytics. For clients who want to actively climb local rankings, our Growth and Agency Partner monthly plans include ongoing local SEO, content publishing, and citation building.",
+      "Yes. Copy is written around your services, service area, and proof. Existing reviews, photos, and offers are folded into the build.",
   },
   {
-    question: "Will my site work on phones and tablets?",
+    question: "What is included before launch?",
     answer:
-      "Yes, fully. Every site is built mobile-first and tested on iOS, Android, and all major screen sizes before launch. This is not optional for us. Over 70 percent of searches for home service businesses happen on a mobile device. If your site is slow or broken on a phone, you are losing jobs every single day.",
+      "Mobile CTA checks, form testing, anti-spam, security headers, metadata, canonical rules, robots, sitemap, and a final pass on the main lead path.",
   },
   {
-    question: "What if I want changes after the site launches?",
+    question: "Do I need a monthly plan after launch?",
     answer:
-      "All plans include a 30-day post-launch window for small tweaks and corrections at no charge. For ongoing updates, our Maintenance plan ($97/mo) covers monthly content changes, plugin and security updates, and priority support. Larger changes like new pages or redesigns are quoted separately at a fair flat rate.",
+      `No. The build can be delivered as a one-time project with a clean handoff. If you want hosting and upkeep, ${supportOffer.name} starts at ${supportOffer.priceLabel}.`,
   },
   {
-    question: "What if I do not like the design?",
+    question: "What monthly options are available after launch?",
     answer:
-      "We start every project with a full design mockup that you review and approve before we build anything. If you want changes to the mockup, we revise until you are satisfied. Once we are in development, each plan includes revision rounds for final adjustments. We do not consider a project done until you are genuinely happy with what you see.",
+      `There are two optional lanes: ${supportPlans[0].name} for hosting and maintenance, and ${supportPlans[1].name} for recurring edits, QA, and higher-touch page refinement.`,
   },
   {
-    question: "Do you offer any guarantees?",
+    question: "How do scope, signer, and payment work?",
     answer:
-      "Yes. If your site is not live within the delivery window we agreed to and the delay is on our end, we refund 10 percent of your project cost for each business day we are late. We also guarantee your site will score above 90 on Google PageSpeed for mobile performance. We stand behind the work.",
+      "Kickoff only happens after scope, deliverables, price, timeline, and signer identity are confirmed in writing. Monthly support, if added, is documented separately.",
   },
-  {
-    question: "How does the monthly subscription work?",
-    answer:
-      "After your site launches, you can add a monthly plan at any time. Plans are billed on the same day each month and can be cancelled with 30 days notice. No long-term contracts, no setup fees. Clients who add a monthly plan at the time of their build get 20 percent off for the first three months.",
-  },
-];
+] as const;
 
-function FAQItem({
-  question,
-  answer,
-  isOpen,
-  onClick,
-  index,
-}: {
-  question: string;
-  answer: string;
-  isOpen: boolean;
-  onClick: () => void;
-  index: number;
-}) {
-  return (
-    <motion.div
-      className="border-b border-white/5 last:border-b-0 group rounded-lg px-2 -mx-2 transition-colors duration-300"
-      style={{ background: isOpen ? "rgba(124,111,255,0.04)" : "transparent" }}
-      initial={false}
-    >
-      <button
-        onClick={onClick}
-        className="flex items-center justify-between w-full py-5 text-left gap-4 group/btn"
-      >
-        <span className="flex items-center gap-3">
-          <span
-            className="text-xs font-mono w-6 text-center transition-colors duration-300"
-            style={{ color: isOpen ? "#7c6fff" : "#475569" }}
-          >
-            {String(index + 1).padStart(2, "0")}
-          </span>
-          <h3 className="font-semibold text-white group-hover/btn:text-electric transition-colors duration-300 text-left">
-            {question}
-          </h3>
-        </span>
-        <motion.div
-          animate={{ rotate: isOpen ? 45 : 0 }}
-          transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
-          style={{
-            background: isOpen ? "rgba(124,111,255,0.15)" : "rgba(255,255,255,0.05)",
-            border: isOpen ? "1px solid rgba(124,111,255,0.3)" : "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          <svg
-            className="w-3.5 h-3.5 transition-colors duration-300"
-            style={{ color: isOpen ? "#7c6fff" : "#64748b" }}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        </motion.div>
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="overflow-hidden"
-          >
-            <div className="flex gap-3 pb-6">
-              {/* Accent line */}
-              <div className="w-6 shrink-0 flex justify-center">
-                <div className="w-px h-full" style={{ background: "linear-gradient(180deg, #7c6fff, transparent)" }} />
-              </div>
-              <p className="text-slate-400 leading-relaxed text-sm">{answer}</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
+const launchChecks = [
+  {
+    title: "Mobile CTA clarity",
+    body: "Above-the-fold buttons, tap targets, and route choice stay clean on phones.",
+    icon: Smartphone,
+  },
+  {
+    title: "Lead-path hardening",
+    body: "Forms, anti-spam, and error states are checked before the site is considered ready.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Scope and handoff clarity",
+    body: "Pricing, deliverables, signer identity, and monthly support are documented separately.",
+    icon: FileText,
+  },
+] as const;
 
 export default function FAQ() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
-
   return (
-    <section id="faq" className="py-24 sm:py-32 bg-navy-light/60 relative">
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[1px]"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(124,111,255,0.3), transparent)" }}
-      />
-
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <ScrollReveal direction="blur">
-          <div className="text-center mb-16">
-            <span className="text-electric text-sm font-semibold tracking-wider uppercase">
-              FAQ
-            </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mt-3 mb-4">
-              Questions We <span className="text-gradient">Always Get</span>
-            </h2>
-            <p className="text-slate-400 max-w-xl mx-auto">
-              Straight answers. No fluff.
-            </p>
-          </div>
-        </ScrollReveal>
-
-        <ScrollReveal>
-          <div className="bg-navy rounded-2xl p-6 sm:p-10 border border-white/5 hover:border-white/8 transition-colors duration-500 relative overflow-hidden">
-            {/* Subtle corner glow */}
-            <div
-              className="absolute -top-20 -right-20 w-40 h-40 rounded-full pointer-events-none"
-              style={{ background: "radial-gradient(circle, rgba(124,111,255,0.06) 0%, transparent 70%)" }}
-            />
-
-            {faqs.map((faq, i) => (
-              <FAQItem
-                key={i}
-                index={i}
-                question={faq.question}
-                answer={faq.answer}
-                isOpen={openIndex === i}
-                onClick={() => setOpenIndex(openIndex === i ? null : i)}
-              />
-            ))}
-          </div>
-        </ScrollReveal>
-
-        <ScrollReveal delay={0.2} direction="blur">
-          <p className="text-center text-slate-500 text-sm mt-8">
-            Still have questions?{" "}
-            <a href="#contact" className="text-electric hover:underline">
-              Send us a message and we will respond within a few hours.
-            </a>
+    <section id="faq" className="section-pad section-rule">
+      <div className="section-shell grid gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+        <div className="max-w-xl">
+          <span className="eyebrow">FAQ</span>
+          <h2 className="section-title mt-7 text-5xl text-stone-50 sm:text-6xl">
+            Straight answers.
+          </h2>
+          <p className="muted-copy mt-6 text-lg leading-8">
+            The questions that usually block the decision are answered here:
+            price, timeline, copy, ownership, and support.
           </p>
-        </ScrollReveal>
+
+          <div className="mt-8 rounded-[1.6rem] border border-[rgba(216,170,115,0.16)] bg-[rgba(216,170,115,0.06)] p-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(216,170,115,0.24)] bg-[rgba(216,170,115,0.12)] text-[color:var(--accent-strong)]">
+                <CheckCheck className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="mini-label">Before Launch</p>
+                <p className="mt-1 text-sm font-semibold text-stone-100">
+                  Every build is checked for the basics buyers actually notice.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {launchChecks.map((check) => {
+                const Icon = check.icon;
+
+                return (
+                  <div
+                    key={check.title}
+                    className="rounded-[1.35rem] border border-white/10 bg-white/[0.03] p-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="mt-1 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-stone-200">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-stone-50">
+                          {check.title}
+                        </p>
+                        <p className="mt-2 text-sm leading-7 text-stone-300">
+                          {check.body}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="lux-panel rounded-[2rem] px-6 py-3 sm:px-8">
+          {faqs.map((faq, index) => (
+            <details
+              key={faq.question}
+              open={index === 0}
+              className="faq-item border-b border-white/10 last:border-b-0"
+            >
+              <summary className="faq-summary focus-lux flex items-center justify-between gap-4 rounded-2xl py-5">
+                <span className="flex items-start gap-4">
+                  <span className="mini-label mt-1">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className="text-base font-semibold text-stone-50">
+                    {faq.question}
+                  </span>
+                </span>
+                <span className="faq-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-stone-300">
+                  +
+                </span>
+              </summary>
+
+              <div className="faq-content pb-5 pl-12 pr-4 text-sm leading-7 text-stone-300">
+                {faq.answer}
+              </div>
+            </details>
+          ))}
+        </div>
       </div>
     </section>
   );
