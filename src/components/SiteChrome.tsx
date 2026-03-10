@@ -14,7 +14,13 @@ const BackToTop = dynamic(() => import("@/components/BackToTop"), {
 const CartDrawer = dynamic(() => import("@/components/CartDrawer"), {
   ssr: false,
 });
+const CursorAura = dynamic(() => import("@/components/CursorAura"), {
+  ssr: false,
+});
 const MobileStickyCTA = dynamic(() => import("@/components/MobileStickyCTA"), {
+  ssr: false,
+});
+const ScrollProgress = dynamic(() => import("@/components/ScrollProgress"), {
   ssr: false,
 });
 
@@ -30,9 +36,12 @@ export default function SiteChrome({
   const pathname = usePathname();
   const isHomeRoute = pathname === "/";
   const isCheckoutRoute = pathname.startsWith("/checkout");
+  const showCursorAura = isHomeRoute || pathname === "/client-products";
 
   return (
     <>
+      <ScrollProgress />
+      {showCursorAura ? <CursorAura /> : null}
       <Navbar />
       {isHomeRoute ? <AutoPresent /> : null}
       {isHomeRoute ? <CartDrawer /> : null}

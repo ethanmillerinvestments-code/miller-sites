@@ -84,7 +84,7 @@ export const useCart = create<CartStore>()(
     }),
     {
       name: "leadcraft-cart",
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => localStorage),
       migrate: () => ({
         items: [],

@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useRef } from "react";
+import { type CSSProperties, type ReactNode, useRef } from "react";
 
 import { motion, useInView, useReducedMotion } from "framer-motion";
 
@@ -12,6 +12,7 @@ interface ScrollRevealProps {
   className?: string;
   direction?: Direction;
   duration?: number;
+  style?: CSSProperties;
 }
 
 const variants: Record<
@@ -50,6 +51,7 @@ export default function ScrollReveal({
   className = "",
   direction = "up",
   duration = 0.58,
+  style,
 }: ScrollRevealProps) {
   const reduceMotion = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
@@ -60,7 +62,11 @@ export default function ScrollReveal({
   });
 
   if (reduceMotion) {
-    return <div className={className}>{children}</div>;
+    return (
+      <div className={className} style={style}>
+        {children}
+      </div>
+    );
   }
 
   const variant = variants[direction];
@@ -85,6 +91,7 @@ export default function ScrollReveal({
         ease: [0.25, 0.46, 0.45, 0.94],
       }}
       className={className}
+      style={style}
     >
       {children}
     </motion.div>

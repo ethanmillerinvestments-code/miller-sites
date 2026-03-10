@@ -31,7 +31,7 @@ const faqs = [
   {
     question: "What monthly options are available after launch?",
     answer:
-      `There are two optional lanes: ${supportPlans[0].name} for hosting and maintenance, and ${supportPlans[1].name} for recurring edits, QA, and higher-touch page refinement.`,
+      `There are three optional lanes: ${supportPlans[0].name} for hosting and core upkeep, ${supportPlans[1].name} for broader live-site care, and ${supportPlans[2].name} for recurring edits, search-ready upkeep, and conversion refinement.`,
   },
   {
     question: "How do scope, signer, and payment work?",

@@ -16,6 +16,11 @@ type RouteConfig = {
   automationSecret: string;
 };
 
+type DeliveryReadiness = {
+  hasWebhook: boolean;
+  hasEmail: boolean;
+};
+
 const DEFAULT_SITE_URL = "https://miller-sites.vercel.app";
 const DEFAULT_CALENDLY_URL = "https://calendly.com/ethanmillerinvestments";
 const DEFAULT_CONTACT_EMAIL = "ethanmillerinvestments@gmail.com";
@@ -46,6 +51,10 @@ function isValidEmail(value: string) {
 
 function parseBoolean(value: string) {
   return value.toLowerCase() === "true";
+}
+
+function parseBooleanDefaultTrue(value: string) {
+  return value ? value.toLowerCase() !== "false" : true;
 }
 
 function getValidatedUrl(name: string) {
@@ -88,14 +97,25 @@ export function getCheckoutRouteConfig() {
     ...base,
     siteUrl: getSiteUrl(),
     stripeSecretKey: readEnv("STRIPE_SECRET_KEY"),
+    stripeWebhookSecret: readEnv("STRIPE_WEBHOOK_SECRET"),
     checkoutEnabled: parseBoolean(readEnv("LEADCRAFT_ENABLE_CHECKOUT")),
     checkoutGoLiveDate: goLiveDate || DEFAULT_CHECKOUT_GO_LIVE_DATE,
+    requireProposalApproval: parseBooleanDefaultTrue(
+      readEnv("LEADCRAFT_REQUIRE_PROPOSAL_APPROVAL")
+    ),
   };
 }
 
 export function getAutomationSigningConfig() {
   return {
     automationSecret: readEnv("LEADCRAFT_AUTOMATION_SECRET"),
+  };
+}
+
+export function getRouteDeliveryReadiness(config: RouteConfig): DeliveryReadiness {
+  return {
+    hasWebhook: Boolean(config.webhookUrl && config.automationSecret),
+    hasEmail: Boolean(config.resendApiKey),
   };
 }
 
@@ -109,8 +129,12 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
   const checkoutWebhookUrl = readEnv("LEADCRAFT_CHECKOUT_WEBHOOK_URL");
   const automationSecret = readEnv("LEADCRAFT_AUTOMATION_SECRET");
   const stripeSecretKey = readEnv("STRIPE_SECRET_KEY");
+  const stripeWebhookSecret = readEnv("STRIPE_WEBHOOK_SECRET");
   const checkoutEnabled = parseBoolean(readEnv("LEADCRAFT_ENABLE_CHECKOUT"));
   const checkoutGoLiveDate = readEnv("LEADCRAFT_CHECKOUT_GO_LIVE_DATE");
+  const requireProposalApproval = parseBooleanDefaultTrue(
+    readEnv("LEADCRAFT_REQUIRE_PROPOSAL_APPROVAL")
+  );
   const checks: SecurityConfigCheck[] = [];
 
   checks.push(
@@ -179,8 +203,8 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
     key: "RESEND_API_KEY",
     level: resendApiKey ? "pass" : "warn",
     summary: resendApiKey
-      ? "Configured. Contact and checkout emails can send normally."
-      : "Missing. Contact falls back to mailto and checkout falls back to manual review.",
+      ? "Configured. Inbox backup delivery is available."
+      : "Missing. CRM webhook can still receive submissions, but email backup is unavailable.",
   });
 
   checks.push(
@@ -198,7 +222,7 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
       : {
           key: "LEADCRAFT_CONTACT_WEBHOOK_URL",
           level: "warn",
-          summary: "Missing. Contact webhook fan-out is disabled.",
+          summary: "Missing. Contact submissions rely on inbox delivery only.",
         }
   );
 
@@ -217,7 +241,7 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
       : {
           key: "LEADCRAFT_CHECKOUT_WEBHOOK_URL",
           level: "warn",
-          summary: "Missing. Checkout webhook fan-out is disabled.",
+          summary: "Missing. Checkout intake relies on inbox delivery only.",
         }
   );
 
@@ -240,11 +264,47 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
   }
 
   checks.push({
+    key: "CONTACT_DELIVERY_READY",
+    level: contactWebhookUrl || resendApiKey ? "pass" : "fail",
+    summary:
+      contactWebhookUrl || resendApiKey
+        ? contactWebhookUrl && resendApiKey
+          ? "Contact has CRM primary delivery and inbox backup."
+          : contactWebhookUrl
+            ? "Contact has CRM delivery only. Inbox backup is missing."
+            : "Contact has inbox delivery only. CRM primary delivery is missing."
+        : "Contact has no live delivery path. Configure webhook or Resend before production use.",
+  });
+
+  checks.push({
+    key: "CHECKOUT_INTAKE_DELIVERY_READY",
+    level: checkoutWebhookUrl || resendApiKey ? "pass" : "fail",
+    summary:
+      checkoutWebhookUrl || resendApiKey
+        ? checkoutWebhookUrl && resendApiKey
+          ? "Checkout intake has CRM primary delivery and inbox backup."
+          : checkoutWebhookUrl
+            ? "Checkout intake has CRM delivery only. Inbox backup is missing."
+            : "Checkout intake has inbox delivery only. CRM primary delivery is missing."
+        : "Checkout intake has no live delivery path. Configure webhook or Resend before production use.",
+  });
+
+  checks.push({
     key: "LEADCRAFT_ENABLE_CHECKOUT",
     level: "pass",
     summary: checkoutEnabled
-      ? "Checkout is enabled."
+      ? requireProposalApproval
+        ? "Checkout route is enabled, but the proposal-approval guard keeps intake in manual review."
+        : "Checkout is enabled for direct payment sessions."
       : "Checkout is disabled. Manual review remains active.",
+  });
+
+  checks.push({
+    key: "LEADCRAFT_REQUIRE_PROPOSAL_APPROVAL",
+    level: requireProposalApproval ? "pass" : "warn",
+    summary: requireProposalApproval
+      ? "Written scope approval is required before any direct checkout redirect."
+      : "Proposal approval guard is disabled. Use this only when direct checkout is intentionally allowed.",
   });
 
   if (checkoutEnabled) {
@@ -252,7 +312,18 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
       key: "STRIPE_SECRET_KEY",
       level: stripeSecretKey ? "pass" : "fail",
       summary: stripeSecretKey
-        ? "Configured for live checkout session creation."
+        ? requireProposalApproval
+          ? "Configured, but the proposal-approval guard still keeps intake manual-review."
+          : "Configured for live checkout session creation."
+        : "Missing while checkout is enabled.",
+    });
+    checks.push({
+      key: "STRIPE_WEBHOOK_SECRET",
+      level: stripeWebhookSecret ? "pass" : "fail",
+      summary: stripeWebhookSecret
+        ? requireProposalApproval
+          ? "Configured for verified Stripe processing, but direct checkout stays blocked by the proposal-approval guard."
+          : "Configured for verified Stripe webhook processing."
         : "Missing while checkout is enabled.",
     });
     checks.push({
@@ -275,7 +346,22 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
       key: "STRIPE_SECRET_KEY",
       level: stripeSecretKey ? "warn" : "pass",
       summary: stripeSecretKey
-        ? "Configured, but checkout is disabled."
+        ? requireProposalApproval
+          ? "Configured, but checkout is disabled and proposal approval still keeps intake manual-review."
+          : "Configured, but checkout is disabled."
+        : "Not configured, which is expected while checkout is disabled.",
+    });
+    checks.push({
+      key: "STRIPE_WEBHOOK_SECRET",
+      level: stripeSecretKey
+        ? stripeWebhookSecret
+          ? "pass"
+          : "warn"
+        : "pass",
+      summary: stripeSecretKey
+        ? stripeWebhookSecret
+          ? "Configured for verified Stripe webhook processing."
+          : "Missing. Add this before exposing live checkout."
         : "Not configured, which is expected while checkout is disabled.",
     });
     checks.push({

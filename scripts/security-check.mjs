@@ -44,6 +44,10 @@ function parseBoolean(value) {
   return value.toLowerCase() === "true";
 }
 
+function parseBooleanDefaultTrue(value) {
+  return value ? value.toLowerCase() !== "false" : true;
+}
+
 function addCheck(checks, key, level, summary) {
   checks.push({ key, level, summary });
 }
@@ -59,8 +63,12 @@ function buildEnvChecks() {
   const checkoutWebhookUrl = readEnv("LEADCRAFT_CHECKOUT_WEBHOOK_URL");
   const automationSecret = readEnv("LEADCRAFT_AUTOMATION_SECRET");
   const stripeSecretKey = readEnv("STRIPE_SECRET_KEY");
+  const stripeWebhookSecret = readEnv("STRIPE_WEBHOOK_SECRET");
   const checkoutEnabled = parseBoolean(readEnv("LEADCRAFT_ENABLE_CHECKOUT"));
   const checkoutGoLiveDate = readEnv("LEADCRAFT_CHECKOUT_GO_LIVE_DATE");
+  const requireProposalApproval = parseBooleanDefaultTrue(
+    readEnv("LEADCRAFT_REQUIRE_PROPOSAL_APPROVAL")
+  );
 
   addCheck(
     checks,
@@ -113,8 +121,8 @@ function buildEnvChecks() {
     "RESEND_API_KEY",
     resendApiKey ? "pass" : "warn",
     resendApiKey
-      ? "Configured. Contact and checkout emails can send normally."
-      : "Missing. Contact falls back to mailto and checkout falls back to manual review."
+      ? "Configured. Inbox backup delivery is available."
+      : "Missing. CRM webhook can still receive submissions, but email backup is unavailable."
   );
 
   addCheck(
@@ -131,7 +139,7 @@ function buildEnvChecks() {
           ? "Configured with signing secret coverage."
           : "Configured without LEADCRAFT_AUTOMATION_SECRET."
         : "Configured but not a valid http(s) URL."
-      : "Missing. Contact webhook fan-out is disabled."
+      : "Missing. Contact submissions rely on inbox delivery only."
   );
   addCheck(
     checks,
@@ -147,7 +155,7 @@ function buildEnvChecks() {
           ? "Configured with signing secret coverage."
           : "Configured without LEADCRAFT_AUTOMATION_SECRET."
         : "Configured but not a valid http(s) URL."
-      : "Missing. Checkout webhook fan-out is disabled."
+      : "Missing. Checkout intake relies on inbox delivery only."
   );
   addCheck(
     checks,
@@ -167,11 +175,45 @@ function buildEnvChecks() {
   );
   addCheck(
     checks,
+    "CONTACT_DELIVERY_READY",
+    contactWebhookUrl || resendApiKey ? "pass" : "fail",
+    contactWebhookUrl || resendApiKey
+      ? contactWebhookUrl && resendApiKey
+        ? "Contact has CRM primary delivery and inbox backup."
+        : contactWebhookUrl
+          ? "Contact has CRM delivery only. Inbox backup is missing."
+          : "Contact has inbox delivery only. CRM primary delivery is missing."
+      : "Contact has no live delivery path. Configure webhook or Resend before production use."
+  );
+  addCheck(
+    checks,
+    "CHECKOUT_INTAKE_DELIVERY_READY",
+    checkoutWebhookUrl || resendApiKey ? "pass" : "fail",
+    checkoutWebhookUrl || resendApiKey
+      ? checkoutWebhookUrl && resendApiKey
+        ? "Checkout intake has CRM primary delivery and inbox backup."
+        : checkoutWebhookUrl
+          ? "Checkout intake has CRM delivery only. Inbox backup is missing."
+          : "Checkout intake has inbox delivery only. CRM primary delivery is missing."
+      : "Checkout intake has no live delivery path. Configure webhook or Resend before production use."
+  );
+  addCheck(
+    checks,
     "LEADCRAFT_ENABLE_CHECKOUT",
     "pass",
     checkoutEnabled
-      ? "Checkout is enabled."
+      ? requireProposalApproval
+        ? "Checkout route is enabled, but the proposal-approval guard keeps intake in manual review."
+        : "Checkout is enabled."
       : "Checkout is disabled. Manual review remains active."
+  );
+  addCheck(
+    checks,
+    "LEADCRAFT_REQUIRE_PROPOSAL_APPROVAL",
+    requireProposalApproval ? "pass" : "warn",
+    requireProposalApproval
+      ? "Written scope approval is required before any direct checkout redirect."
+      : "Proposal approval guard is disabled. Use this only when direct checkout is intentionally allowed."
   );
   addCheck(
     checks,
@@ -179,10 +221,38 @@ function buildEnvChecks() {
     checkoutEnabled ? (stripeSecretKey ? "pass" : "fail") : stripeSecretKey ? "warn" : "pass",
     checkoutEnabled
       ? stripeSecretKey
-        ? "Configured for live checkout session creation."
+        ? requireProposalApproval
+          ? "Configured, but the proposal-approval guard still keeps intake manual-review."
+          : "Configured for live checkout session creation."
         : "Missing while checkout is enabled."
       : stripeSecretKey
-        ? "Configured, but checkout is disabled."
+        ? requireProposalApproval
+          ? "Configured, but checkout is disabled and proposal approval still keeps intake manual-review."
+          : "Configured, but checkout is disabled."
+        : "Not configured, which is expected while checkout is disabled."
+  );
+  addCheck(
+    checks,
+    "STRIPE_WEBHOOK_SECRET",
+    checkoutEnabled
+      ? stripeWebhookSecret
+        ? "pass"
+        : "fail"
+      : stripeSecretKey
+        ? stripeWebhookSecret
+          ? "pass"
+          : "warn"
+        : "pass",
+    checkoutEnabled
+      ? stripeWebhookSecret
+        ? requireProposalApproval
+          ? "Configured for verified Stripe processing, but direct checkout stays blocked by the proposal-approval guard."
+          : "Configured for verified Stripe webhook processing."
+        : "Missing while checkout is enabled."
+      : stripeSecretKey
+        ? stripeWebhookSecret
+          ? "Configured for verified Stripe webhook processing."
+          : "Missing. Add this before exposing live checkout."
         : "Not configured, which is expected while checkout is disabled."
   );
   addCheck(

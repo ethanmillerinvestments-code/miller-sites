@@ -7,6 +7,21 @@ const WEBHOOK_MAX_ATTEMPTS = 3;
 const WEBHOOK_SCHEMA_VERSION = "2026-03-08";
 const WEBHOOK_SIGNATURE_VERSION = "hmac-sha256-v1";
 
+export type AutomationWebhookResult = {
+  attempted: boolean;
+  delivered: boolean;
+  attempts: number;
+  status: number | null;
+  target: string;
+  reason:
+    | "delivered"
+    | "missing_webhook_url"
+    | "missing_signing_secret"
+    | "response_not_ok"
+    | "network_error";
+  error?: string;
+};
+
 function cleanWebhookUrl(value: string | undefined) {
   if (!value) {
     return "";
@@ -61,19 +76,33 @@ function buildSignedEnvelope(payload: Record<string, unknown>, secret: string) {
 export async function postAutomationWebhook(
   webhookUrl: string | undefined,
   payload: Record<string, unknown>
-) {
+): Promise<AutomationWebhookResult> {
   const target = cleanWebhookUrl(webhookUrl);
   const { automationSecret } = getAutomationSigningConfig();
 
   if (!target) {
-    return;
+    return {
+      attempted: false,
+      delivered: false,
+      attempts: 0,
+      status: null,
+      target: "",
+      reason: "missing_webhook_url",
+    };
   }
 
   if (!automationSecret) {
     console.warn(
       "Automation webhook skipped: LEADCRAFT_AUTOMATION_SECRET is missing."
     );
-    return;
+    return {
+      attempted: false,
+      delivered: false,
+      attempts: 0,
+      status: null,
+      target,
+      reason: "missing_signing_secret",
+    };
   }
 
   const body = buildSignedEnvelope(payload, automationSecret);
@@ -91,20 +120,54 @@ export async function postAutomationWebhook(
       });
 
       if (response.ok) {
-        return;
+        return {
+          attempted: true,
+          delivered: true,
+          attempts: attempt,
+          status: response.status,
+          target,
+          reason: "delivered",
+        };
       }
 
       if (attempt === WEBHOOK_MAX_ATTEMPTS) {
         console.warn("Automation webhook failed:", response.status, target);
-        return;
+        return {
+          attempted: true,
+          delivered: false,
+          attempts: attempt,
+          status: response.status,
+          target,
+          reason: "response_not_ok",
+          error: `Received HTTP ${response.status}.`,
+        };
       }
     } catch (error) {
       if (attempt === WEBHOOK_MAX_ATTEMPTS) {
         console.warn("Automation webhook error:", error);
-        return;
+        return {
+          attempted: true,
+          delivered: false,
+          attempts: attempt,
+          status: null,
+          target,
+          reason: "network_error",
+          error:
+            error instanceof Error ? error.message : "Unknown network error.",
+        };
       }
     }
 
     await wait(300 * attempt);
   }
+
+  return {
+    attempted: true,
+    delivered: false,
+    attempts: WEBHOOK_MAX_ATTEMPTS,
+    status: null,
+    target,
+    reason: "network_error",
+    error: "Webhook delivery exhausted all attempts.",
+  };
 }

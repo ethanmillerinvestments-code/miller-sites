@@ -34,7 +34,7 @@ const workflowViews = [
       "Some owners want the site delivered cleanly and then managed internally. Others want a monthly path. Leadcraft is set up for both without forcing a retainer.",
     bullets: [
       "One-time build with clean handoff is always an option",
-      "Site Coverage and Growth Support are available after launch when ongoing help actually matters",
+      "Hosted Core, Managed Site Care, and Search and Conversion Support are available after launch when ongoing help actually matters",
       "The delivery model stays clear so the business knows what it owns and what stays managed",
     ],
   },

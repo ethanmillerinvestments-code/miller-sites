@@ -181,7 +181,9 @@ export default function CartDrawer() {
                     <p className="mini-label">Next step</p>
                     <p className="mt-2 text-sm leading-7 text-stone-300">
                       No payment happens in the cart. The selected package moves
-                      into a company brief and scope review first.
+                      into a company brief and written scope review first. If
+                      approved, Leadcraft sends the Stripe payment step after
+                      that.
                     </p>
                   </div>
                 </div>
@@ -192,7 +194,7 @@ export default function CartDrawer() {
                     onClick={closeCart}
                     className="button-primary w-full px-5 py-3.5 text-sm"
                   >
-                    Continue With Selected Package
+                    Continue To Company Brief
                   </Link>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Link

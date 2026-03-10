@@ -1,14 +1,15 @@
 import Link from "next/link";
 
 import BrandLogo from "@/components/BrandLogo";
+import { supportPlans, websitePlans } from "@/lib/offers";
 import { guidePages, siteConfig } from "@/lib/site";
 
 const sectionLinks = [
-  { href: "#services", label: "Services" },
+  { href: "#why-it-works", label: "Why It Works" },
+  { href: "#package-finder", label: "Price Quiz" },
   { href: "#pricing", label: "Pricing" },
-  { href: "#process", label: "Process" },
-  { href: "#faq", label: "FAQ" },
-  { href: "#contact", label: "Contact" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/contact", label: "Contact" },
 ] as const;
 
 export default function Footer() {
@@ -26,6 +27,19 @@ export default function Footer() {
               painting, pressure washing, garage door, and similar local
               service teams.
             </p>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-[1.3rem] border border-[rgba(216,170,115,0.16)] bg-[rgba(216,170,115,0.06)] px-4 py-4 text-sm leading-7 text-stone-200">
+                Builds:
+                {" "}
+                {websitePlans.map((plan) => `${plan.name} ${plan.priceLabel}`).join(" · ")}
+              </div>
+              <div className="rounded-[1.3rem] border border-[rgba(125,183,176,0.18)] bg-[rgba(125,183,176,0.07)] px-4 py-4 text-sm leading-7 text-stone-200">
+                Support:
+                {" "}
+                {supportPlans.map((plan) => `${plan.name} ${plan.priceLabel}`).join(" · ")}
+              </div>
+            </div>
           </div>
 
           <div>
@@ -35,7 +49,7 @@ export default function Footer() {
                 <Link
                   key={link.href}
                   className="focus-lux block rounded-full py-1 text-stone-300 transition-colors hover:text-[color:var(--accent-strong)]"
-                  href={`/${link.href}`}
+                  href={link.href.startsWith("#") ? `/${link.href}` : link.href}
                 >
                   {link.label}
                 </Link>

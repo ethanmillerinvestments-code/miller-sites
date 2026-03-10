@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowUpRight, MessageSquareQuote, ShieldCheck } from "lucide-react";
 
 import { siteConfig } from "@/lib/site";
@@ -10,20 +11,19 @@ const proofPoints = [
 
 export default function CTABanner() {
   return (
-    <section className="section-pad section-rule">
+    <section id="contact" className="section-pad section-rule">
       <div className="section-shell">
         <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(216,170,115,0.1),rgba(17,18,24,0.14)_46%,rgba(125,183,176,0.08))] px-6 py-7 sm:px-8 sm:py-9">
           <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
               <p className="eyebrow">Next Step</p>
               <h2 className="mt-6 text-3xl font-semibold text-stone-50 sm:text-4xl">
-                If the pricing looks close, the next move is a scope call, not guesswork.
+                If the pricing looks close, move into contact or a scope call.
               </h2>
               <p className="muted-copy mt-4 max-w-2xl text-sm leading-7 sm:text-base">
-                That conversation is where the service mix, page count, handoff
-                expectations, timeline, and right build path get aligned. The
-                brief and scope review come first so there is no vague kickoff
-                or unclear payment step.
+                The homepage keeps the key sales info up front. The next move
+                is either to open the contact form, book the strategy call, or
+                review proof of work before sending the brief.
               </p>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -36,10 +36,20 @@ export default function CTABanner() {
                   Book Strategy Call
                   <ArrowUpRight className="h-4 w-4" />
                 </a>
-                <a href="#contact" className="button-secondary px-6 py-3.5 text-sm">
-                  Request A 5-Point Site Audit
-                </a>
+                <Link href="/contact" className="button-secondary px-6 py-3.5 text-sm">
+                  Open Contact Form
+                </Link>
               </div>
+
+              <p className="mt-4 text-sm leading-7 text-stone-300">
+                Need to see direction first?{" "}
+                <Link
+                  href="/client-products"
+                  className="font-semibold text-[color:var(--accent-strong)] transition-colors hover:text-stone-50"
+                >
+                  View proof of work.
+                </Link>
+              </p>
             </div>
 
             <div className="grid gap-4">
@@ -52,8 +62,8 @@ export default function CTABanner() {
                     <p className="mini-label">Scope First</p>
                     <p className="mt-2 text-sm leading-7 text-stone-200">
                       Good-fit projects move through written scope,
-                      deliverables, timeline, signer clarity, and kickoff terms
-                      before any payment step.
+                      deliverables, timeline, and signer clarity before any
+                      kickoff or payment step.
                     </p>
                   </div>
                 </div>

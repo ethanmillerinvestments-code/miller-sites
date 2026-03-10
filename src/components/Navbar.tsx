@@ -13,11 +13,11 @@ const CartButton = dynamic(() => import("@/components/CartButton"), {
 });
 
 const navLinks = [
-  { href: "#services", label: "Services" },
+  { href: "#why-it-works", label: "Why It Works" },
+  { href: "#package-finder", label: "Price Quiz" },
   { href: "#pricing", label: "Pricing" },
-  { href: "#process", label: "Process" },
-  { href: "#faq", label: "FAQ" },
-  { href: "#contact", label: "Contact" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/contact", label: "Contact" },
 ] as const;
 
 export default function Navbar() {
@@ -25,6 +25,8 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const isHomeRoute = pathname === "/";
+  const activeGuidePage =
+    guidePages.find((page) => pathname === page.href) ?? null;
 
   useEffect(() => {
     function handleScroll() {
@@ -36,6 +38,10 @@ export default function Navbar() {
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   const resolveHref = (href: string) =>
     href.startsWith("#") ? (pathname === "/" ? href : `/${href}`) : href;
@@ -55,6 +61,12 @@ export default function Navbar() {
               <BrandLogo />
             </Link>
 
+            {activeGuidePage ? (
+              <div className="hidden rounded-full border border-[rgba(216,170,115,0.18)] bg-[rgba(216,170,115,0.08)] px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--accent-strong)] xl:inline-flex">
+                {activeGuidePage.label}
+              </div>
+            ) : null}
+
             <div className="hidden items-center gap-7 lg:flex">
               {navLinks.map((link) => (
                 <Link
@@ -65,6 +77,12 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              <Link
+                href="/client-products"
+                className="focus-lux rounded-full px-1 py-1 text-sm text-stone-300 transition-colors duration-200 hover:text-[color:var(--accent-strong)]"
+              >
+                Proof of Work
+              </Link>
             </div>
 
             <div className="hidden items-center gap-3 sm:flex">
@@ -187,6 +205,13 @@ export default function Navbar() {
                     </Link>
                   ))}
                 </div>
+              </div>
+
+              <div className="mt-5 rounded-[1.3rem] border border-[rgba(216,170,115,0.18)] bg-[rgba(216,170,115,0.06)] p-4">
+                <p className="mini-label">Offer Ladder</p>
+                <p className="mt-3 text-sm leading-7 text-stone-200">
+                  One-time builds from $1,650. Monthly support from $279/mo.
+                </p>
               </div>
 
               <div className="mt-5 flex flex-col gap-3 border-t border-white/10 pt-5">

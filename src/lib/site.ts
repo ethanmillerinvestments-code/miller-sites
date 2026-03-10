@@ -1,6 +1,6 @@
 export const siteConfig = {
   name: "Leadcraft Agency",
-  tagline: "Home-Service Websites That Turn Clicks Into Booked Calls",
+  tagline: "Websites That Generate Leads For Home-Service Companies",
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://miller-sites.vercel.app",
   phoneDisplay: "(513) 815-1826",
   phoneHref: "tel:5138151826",
@@ -39,5 +39,12 @@ export const guidePages = [
     title: "What partnering with Leadcraft actually looks like",
     description:
       "Communication, launch support, monthly options, and client ownership.",
+  },
+  {
+    href: "/client-products",
+    label: "Proof of Work",
+    title: "Fictional proof of work for Leadcraft's portfolio",
+    description:
+      "Category-specific concept builds showing how Leadcraft structures premium local-service sites.",
   },
 ] as const;

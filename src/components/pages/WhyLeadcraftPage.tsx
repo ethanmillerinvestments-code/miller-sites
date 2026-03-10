@@ -85,9 +85,9 @@ const workModes = [
       "Best for owners who want the site built properly and then handed off with clear ownership.",
   },
   {
-    title: "Site Coverage Or Growth Support",
+    title: "Optional Monthly Support",
     body:
-      "Best for owners who want Leadcraft handling live-site coverage after launch, either as technical maintenance or as a higher-touch monthly support lane.",
+      "Best for owners who want Leadcraft involved after launch through Hosted Core, Managed Site Care, or Search and Conversion Support instead of a full handoff.",
   },
 ] as const;
 

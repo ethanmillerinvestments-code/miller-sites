@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import BrandLogo from "@/components/BrandLogo";
+import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Checkout Cancelled",
@@ -54,7 +55,7 @@ export default function CheckoutCancelledPage() {
             Return to Price Finder
           </Link>
           <a
-            href="https://calendly.com/ethanmillerinvestments"
+            href={siteConfig.calendlyUrl}
             target="_blank"
             rel="noreferrer"
             className="button-secondary px-6 py-3.5 text-sm"

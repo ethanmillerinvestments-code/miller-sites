@@ -72,8 +72,8 @@ export default function QuickAccess() {
           <div className="rounded-[1.4rem] border border-[rgba(216,170,115,0.16)] bg-[rgba(216,170,115,0.06)] px-4 py-4 lg:max-w-sm">
             <p className="mini-label">Fast Facts</p>
             <div className="mt-3 grid gap-2 text-sm leading-7 text-stone-200">
-              <p>Builds from $3,500</p>
-              <p>Support from $349/mo</p>
+              <p>Builds from $1,650</p>
+              <p>Support from $279/mo</p>
               <p>Smaller scopes typically launch in 2-4 weeks</p>
             </div>
           </div>

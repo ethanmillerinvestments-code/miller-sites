@@ -289,18 +289,39 @@ export function formatCheckoutIntakeText(
 
 export function buildCheckoutMetadata(
   offerIds: CheckoutOfferId[],
-  intake: SanitizedCheckoutIntake
+  intake: SanitizedCheckoutIntake,
+  extra?: {
+    intakeEventId?: string;
+    sourcePage?: string;
+    referer?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    utmTerm?: string;
+    utmContent?: string;
+  }
 ) {
   return {
+    intakeEventId: truncate(extra?.intakeEventId || "", 120),
     offerIds: normalizeCheckoutOfferIds(offerIds).join(","),
     offerLabel: truncate(getCheckoutSelectionLabel(offerIds), 220),
     workflowLabel: truncate(getCheckoutWorkflowLabel(offerIds), 120),
     companyName: truncate(intake.companyName, 120),
     contactName: truncate(intake.contactName, 80),
     email: truncate(intake.email, 120),
+    phone: truncate(intake.phone, 40),
     cityState: truncate(intake.cityState, 120),
+    website: truncate(intake.website, 220),
     timeline: truncate(intake.timeline, 120),
+    sourcePage: truncate(extra?.sourcePage || "", 220),
+    referer: truncate(extra?.referer || "", 220),
+    utmSource: truncate(extra?.utmSource || "", 120),
+    utmMedium: truncate(extra?.utmMedium || "", 120),
+    utmCampaign: truncate(extra?.utmCampaign || "", 160),
+    utmTerm: truncate(extra?.utmTerm || "", 160),
+    utmContent: truncate(extra?.utmContent || "", 160),
     services: truncate(intake.services.replace(/\n/g, " "), 350),
     primaryGoal: truncate(intake.primaryGoal.replace(/\n/g, " "), 350),
+    currentPain: truncate(intake.currentPain.replace(/\n/g, " "), 350),
   };
 }

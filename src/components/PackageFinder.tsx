@@ -60,8 +60,8 @@ const finderQuestions: readonly FinderQuestion[] = [
           "There is no usable website, or what exists is too weak to launch from.",
         tag: "Fresh launch",
         tone: "accent",
-        build: { "lead-launch": 2, "authority-build": 1 },
-        support: { "site-coverage": 1 },
+        build: { "launch-site": 2, "growth-build": 1 },
+        support: { "hosted-core": 1 },
         reason:
           "You need a finished trust-building asset first, not just edits on something weak.",
       },
@@ -72,8 +72,8 @@ const finderQuestions: readonly FinderQuestion[] = [
           "The current site exists, but it does not build trust well, route leads cleanly, or support stronger positioning.",
         tag: "Rebuild",
         tone: "teal",
-        build: { "authority-build": 2, "lead-launch": 1 },
-        support: { "growth-support": 1 },
+        build: { "growth-build": 2, "authority-build": 1 },
+        support: { "managed-site-care": 1 },
         reason:
           "The bigger problem is positioning and page depth, not just keeping the current site online.",
       },
@@ -84,7 +84,7 @@ const finderQuestions: readonly FinderQuestion[] = [
           "A rebuild is not the main priority right now. Stability, edits, and upkeep matter more.",
         tag: "Support first",
         tone: "neutral",
-        support: { "site-coverage": 2, "growth-support": 1 },
+        support: { "hosted-core": 2, "managed-site-care": 1 },
         reason:
           "The strongest immediate lift comes from protecting and refining the live site instead of replacing it first.",
       },
@@ -104,8 +104,8 @@ const finderQuestions: readonly FinderQuestion[] = [
           "The business mainly needs one clear trust upgrade, one strong homepage flow, and clean lead routing.",
         tag: "Lean scope",
         tone: "accent",
-        build: { "lead-launch": 2 },
-        support: { "site-coverage": 1 },
+        build: { "launch-site": 2, "growth-build": 1 },
+        support: { "hosted-core": 1 },
         reason:
           "The scope is tight enough that a fixed-price build can stay realistic without overselling.",
       },
@@ -116,8 +116,8 @@ const finderQuestions: readonly FinderQuestion[] = [
           "The site needs deeper structure, stronger trust handling, and room to grow without boxing the project in.",
         tag: "Authority scope",
         tone: "teal",
-        build: { "authority-build": 2 },
-        support: { "growth-support": 1 },
+        build: { "authority-build": 2, "growth-build": 1 },
+        support: { "search-conversion-support": 1 },
         reason:
           "This is larger than an entry build and should be shaped through scope review, not squeezed into a small package.",
       },
@@ -137,8 +137,8 @@ const finderQuestions: readonly FinderQuestion[] = [
           "The main goal is to replace a weak site with a stronger trust signal and a clearer lead path.",
         tag: "Launch",
         tone: "accent",
-        build: { "lead-launch": 2 },
-        support: { "site-coverage": 1 },
+        build: { "launch-site": 2, "growth-build": 1 },
+        support: { "hosted-core": 1 },
         reason:
           "A scoped launch build is the right first move when the priority is getting the fundamentals right fast.",
       },
@@ -149,8 +149,8 @@ const finderQuestions: readonly FinderQuestion[] = [
           "The site needs a stronger authority layer, deeper pages, and a better pre-call buying experience.",
         tag: "Authority",
         tone: "neutral",
-        build: { "authority-build": 2 },
-        support: { "growth-support": 1 },
+        build: { "growth-build": 1, "authority-build": 2 },
+        support: { "search-conversion-support": 1 },
         reason:
           "This is a premium positioning problem, not just a quick replacement project.",
       },
@@ -161,7 +161,7 @@ const finderQuestions: readonly FinderQuestion[] = [
           "The business mostly needs stability, upkeep, and recurring help without rebuilding first.",
         tag: "Coverage",
         tone: "teal",
-        support: { "site-coverage": 2, "growth-support": 1 },
+        support: { "hosted-core": 1, "managed-site-care": 2 },
         reason:
           "The operational problem is support, so the recommendation should not force a rebuild.",
       },
@@ -172,8 +172,8 @@ const finderQuestions: readonly FinderQuestion[] = [
           "The business changes promos, service pushes, or page messaging often enough to justify a higher-touch lane.",
         tag: "Refinement",
         tone: "teal",
-        build: { "authority-build": 1 },
-        support: { "growth-support": 2 },
+        build: { "growth-build": 1, "authority-build": 1 },
+        support: { "managed-site-care": 1, "search-conversion-support": 2 },
         reason:
           "Recurring refinements matter here, so the higher-touch support lane earns its place.",
       },
@@ -193,7 +193,7 @@ const finderQuestions: readonly FinderQuestion[] = [
           "The main need is a strong finished asset. Ongoing monthly help can stay optional.",
         tag: "Handoff",
         tone: "accent",
-        build: { "lead-launch": 1, "authority-build": 1 },
+        build: { "launch-site": 1, "growth-build": 1, "authority-build": 1 },
         reason:
           "The one-time project should do the heavy lifting here without forcing recurring work.",
       },
@@ -204,7 +204,7 @@ const finderQuestions: readonly FinderQuestion[] = [
           "Leadcraft should stay on for hosting, maintenance, monitoring, and live-site stability.",
         tag: "Technical",
         tone: "teal",
-        support: { "site-coverage": 3 },
+        support: { "hosted-core": 1, "managed-site-care": 3 },
         reason:
           "The lighter monthly lane is enough when the main goal is technical ownership without internal website work.",
       },
@@ -215,7 +215,7 @@ const finderQuestions: readonly FinderQuestion[] = [
           "The business wants recurring edits, QA, and ongoing page improvements after launch.",
         tag: "Growth",
         tone: "neutral",
-        support: { "growth-support": 3 },
+        support: { "search-conversion-support": 3 },
         reason:
           "The higher-touch monthly lane makes sense when the site should keep evolving instead of just staying online.",
       },
@@ -264,12 +264,14 @@ function createCartItem(
 
 function getRecommendation(answers: FinderAnswers) {
   const buildScores: Record<WebsitePlanId, number> = {
-    "lead-launch": 0,
+    "launch-site": 0,
+    "growth-build": 0,
     "authority-build": 0,
   };
   const supportScores: Record<SupportPlanId, number> = {
-    "site-coverage": 0,
-    "growth-support": 0,
+    "hosted-core": 0,
+    "managed-site-care": 0,
+    "search-conversion-support": 0,
   };
 
   const reasons: string[] = [];
@@ -371,25 +373,28 @@ export default function PackageFinder() {
             </h2>
             <p className="muted-copy mt-6 text-lg leading-8">
               This is not a gimmick quote calculator. It is a fast way to sort
-              whether the business needs a scoped launch, a custom authority
-              build, technical coverage, or the higher-touch monthly lane.
+              whether the business needs a Launch Site, Growth Build, Authority
+              Build, or one of the three optional monthly lanes after launch.
             </p>
           </div>
         </ScrollReveal>
 
         <div className="mt-10 grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
-          <div className="grid gap-5">
+          <div className="grid gap-4">
             {finderQuestions.map((question) => (
-              <PointerCard key={question.id} className="lux-panel rounded-[1.9rem] p-6 sm:p-7">
+              <PointerCard
+                key={question.id}
+                className="lux-panel rounded-[1.9rem] p-5 sm:p-6"
+              >
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="max-w-2xl">
+                  <div className="max-w-3xl">
                     <p className="mini-label">
                       {question.number} / {finderQuestions.length.toString().padStart(2, "0")}
                     </p>
-                    <h3 className="mt-4 text-2xl font-semibold text-stone-50">
+                    <h3 className="mt-4 text-xl font-semibold text-stone-50 sm:text-[1.65rem]">
                       {question.prompt}
                     </h3>
-                    <p className="muted-copy mt-3 text-sm leading-7">
+                    <p className="muted-copy mt-2 max-w-2xl text-sm leading-6">
                       {question.helper}
                     </p>
                   </div>
@@ -408,7 +413,7 @@ export default function PackageFinder() {
                         type="button"
                         onClick={() => handleAnswer(question.id, option.id)}
                         className={cn(
-                          "rounded-[1.45rem] border px-5 py-5 text-left transition-colors",
+                          "rounded-[1.45rem] border px-4 py-4 text-left transition-colors sm:px-5",
                           getToneClasses(option.tone),
                           isActive
                             ? "ring-1 ring-[rgba(216,170,115,0.28)]"
@@ -420,7 +425,7 @@ export default function PackageFinder() {
                             <p className="text-base font-semibold text-stone-50">
                               {option.title}
                             </p>
-                            <p className="mt-2 text-sm leading-7 text-stone-300">
+                            <p className="mt-2 text-sm leading-6 text-stone-300">
                               {option.detail}
                             </p>
                           </div>
@@ -445,9 +450,10 @@ export default function PackageFinder() {
                   : "Finish the questions to unlock the likely fit."}
               </h3>
               <p className="muted-copy mt-4 text-sm leading-7">
-                The recommendation stays honest to the live offer ladder. Fixed
-                pricing is only shown where the scope can stay tight. Larger
-                builds move into written scope review first.
+                The recommendation stays honest to the live offer ladder. The
+                build recommendation points to the most likely one-time tier,
+                and the support recommendation only shows up if monthly help
+                actually looks justified.
               </p>
 
               {recommendation ? (
@@ -457,7 +463,13 @@ export default function PackageFinder() {
                       icon={Layers3}
                       title="Build path"
                       plan={recommendation.buildPlan}
-                      tone={recommendation.buildPlan.pricingMode === "custom" ? "neutral" : "accent"}
+                      tone={
+                        recommendation.buildPlan.id === "launch-site"
+                          ? "accent"
+                          : recommendation.buildPlan.id === "growth-build"
+                            ? "teal"
+                            : "neutral"
+                      }
                     />
                   ) : (
                     <EmptyLaneCard
@@ -472,7 +484,13 @@ export default function PackageFinder() {
                       icon={LifeBuoy}
                       title="Monthly lane"
                       plan={recommendation.supportPlan}
-                      tone={recommendation.supportPlan.id === "growth-support" ? "teal" : "neutral"}
+                      tone={
+                        recommendation.supportPlan.id === "search-conversion-support"
+                          ? "teal"
+                          : recommendation.supportPlan.id === "managed-site-care"
+                            ? "accent"
+                            : "neutral"
+                      }
                     />
                   ) : (
                     <EmptyLaneCard

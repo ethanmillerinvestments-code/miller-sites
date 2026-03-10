@@ -1,8 +1,10 @@
-import { after } from "next/server";
-import { Resend } from "resend";
+import { randomUUID } from "node:crypto";
 
-import { postAutomationWebhook } from "@/lib/automation";
-import { getContactRouteConfig } from "@/lib/env";
+import { buildContactIntakeEvent } from "@/lib/intake-events";
+import {
+  getContactRouteConfig,
+  getRouteDeliveryReadiness,
+} from "@/lib/env";
 import {
   cleanField,
   cleanTextarea,
@@ -21,6 +23,7 @@ import {
   jsonNoStore,
   takeRateLimitHit,
 } from "@/lib/security";
+import { deliverSubmission } from "@/lib/submission-routing";
 
 const CONTACT_RATE_LIMIT_MAX = 5;
 const CONTACT_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -28,22 +31,10 @@ const CONTACT_MAX_BODY_BYTES = 12_000;
 const MIN_FORM_COMPLETION_MS = 2_500;
 const MAX_FORM_COMPLETION_MS = 12 * 60 * 60 * 1000;
 
-function buildMailtoLink(to: string, subject: string, body: string) {
-  const params = new URLSearchParams({
-    subject,
-    body,
-  });
-
-  return `mailto:${encodeURIComponent(to)}?${params.toString()}`;
-}
-
 export async function POST(request: Request) {
   try {
     if (!ensureJsonRequest(request, CONTACT_MAX_BODY_BYTES)) {
-      return jsonNoStore(
-        { error: "Invalid request." },
-        { status: 400 }
-      );
+      return jsonNoStore({ error: "Invalid request." }, { status: 400 });
     }
 
     if (!isSameOriginRequest(request)) {
@@ -85,6 +76,7 @@ export async function POST(request: Request) {
         : ({} as Record<string, unknown>);
     const marketing = getRequestMarketingContext(request);
     const config = getContactRouteConfig();
+    const deliveryReadiness = getRouteDeliveryReadiness(config);
 
     const name = cleanField(body.name, 80);
     const email = cleanField(body.email, 120, { lowercase: true });
@@ -92,6 +84,23 @@ export async function POST(request: Request) {
     const business = cleanField(body.business, 120);
     const service = cleanField(body.service || body.industry, 80);
     const timeline = cleanField(body.timeline, 80);
+    const submissionKindInput = cleanField(body.submissionKind, 40, {
+      lowercase: true,
+    });
+    const submissionKind =
+      submissionKindInput === "package_inquiry"
+        ? "package_inquiry"
+        : "contact_inquiry";
+    const packageInterest = cleanField(
+      body.packageInterest || body.packageLabel || body.package,
+      220
+    );
+    const workflowLabel = cleanField(body.workflowLabel, 120);
+    const resolvedWorkflowLabel =
+      workflowLabel ||
+      (submissionKind === "package_inquiry"
+        ? "Package Inquiry"
+        : "Contact Inquiry");
     const websiteInput = cleanField(body.website, 180);
     const website = normalizeWebsite(websiteInput);
     const message = cleanTextarea(body.message, 3000);
@@ -157,6 +166,17 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!deliveryReadiness.hasWebhook && !deliveryReadiness.hasEmail) {
+      console.error("Contact delivery unavailable: no webhook or email route.");
+      return jsonNoStore(
+        {
+          error:
+            "Lead routing is unavailable on this deployment. Please call or email directly until the intake path is configured.",
+        },
+        { status: 503 }
+      );
+    }
+
     const html = `
       <h2>New Leadcraft inquiry</h2>
       <p><strong>Name:</strong> ${escapeHtml(name)}</p>
@@ -164,6 +184,11 @@ export async function POST(request: Request) {
       ${phone ? `<p><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ""}
       ${business ? `<p><strong>Business:</strong> ${escapeHtml(business)}</p>` : ""}
       ${service ? `<p><strong>Need:</strong> ${escapeHtml(service)}</p>` : ""}
+      ${
+        packageInterest
+          ? `<p><strong>Package Interest:</strong> ${escapeHtml(packageInterest)}</p>`
+          : ""
+      }
       ${timeline ? `<p><strong>Timeline:</strong> ${escapeHtml(timeline)}</p>` : ""}
       ${website ? `<p><strong>Website:</strong> ${escapeHtml(website)}</p>` : ""}
       ${marketing.sourcePage ? `<p><strong>Source Page:</strong> ${escapeHtml(marketing.sourcePage)}</p>` : ""}
@@ -178,6 +203,7 @@ export async function POST(request: Request) {
       phone ? `Phone: ${phone}` : "",
       business ? `Business: ${business}` : "",
       service ? `Need: ${service}` : "",
+      packageInterest ? `Package Interest: ${packageInterest}` : "",
       timeline ? `Timeline: ${timeline}` : "",
       website ? `Website: ${website}` : "",
       marketing.sourcePage ? `Source Page: ${marketing.sourcePage}` : "",
@@ -191,10 +217,11 @@ export async function POST(request: Request) {
       .filter(Boolean)
       .join("\n");
 
-    const automationPayload = {
-      eventType: "leadcraft.contact_inquiry",
-      occurredAt: new Date().toISOString(),
+    const eventId = randomUUID();
+    const automationPayload = buildContactIntakeEvent({
+      eventId,
       source: "leadcraft-site-contact-form",
+      marketing,
       name,
       email,
       phone,
@@ -203,62 +230,53 @@ export async function POST(request: Request) {
       timeline,
       website,
       message,
-      sourcePage: marketing.sourcePage,
-      referer: marketing.referer,
-      utmSource: marketing.utmSource,
-      utmMedium: marketing.utmMedium,
-      utmCampaign: marketing.utmCampaign,
-      utmTerm: marketing.utmTerm,
-      utmContent: marketing.utmContent,
-    };
-    const subject = `Leadcraft inquiry | ${name}${business ? ` | ${business}` : ""}`;
+      submissionKind,
+      workflowLabel: resolvedWorkflowLabel,
+      packageInterest,
+    });
+    const subject = `${resolvedWorkflowLabel} | ${name}${business ? ` | ${business}` : ""}`;
+    const delivery = await deliverSubmission(
+      {
+        webhookUrl: config.webhookUrl,
+        email: config.resendApiKey
+          ? {
+              fromEmail: config.fromEmail,
+              toEmail: config.toEmail,
+              resendApiKey: config.resendApiKey,
+              replyTo: email,
+              subject,
+              html,
+              text,
+            }
+          : undefined,
+      },
+      automationPayload
+    );
 
-    if (!config.resendApiKey) {
-      const mailto = buildMailtoLink(config.toEmail, subject, text);
+    console.info("Contact submission delivery", {
+      eventId,
+      mode: delivery.mode,
+      webhookDelivered: delivery.webhook.delivered,
+      emailDelivered: delivery.email.delivered,
+    });
 
-      console.warn("Contact form email provider is not configured. Falling back to mailto.");
-      after(async () => {
-        await postAutomationWebhook(
-          config.webhookUrl,
-          {
-            ...automationPayload,
-            deliveryMode: "mailto_fallback",
-            fallbackEmail: config.toEmail,
-          }
-        );
-      });
-      return jsonNoStore({
-        success: true,
-        mode: "mailto",
-        mailto,
-        message:
-          "Lead routing is using a manual fallback right now. Open the drafted email or call directly.",
-      });
+    if (!delivery.ok) {
+      return jsonNoStore(
+        {
+          error:
+            "Lead routing could not be completed right now. Please try again shortly or contact Leadcraft directly.",
+        },
+        { status: 502 }
+      );
     }
 
-    const resend = new Resend(config.resendApiKey);
-
-    await resend.emails.send({
-      from: config.fromEmail,
-      to: [config.toEmail],
-      replyTo: email,
-      subject,
-      html,
-      text,
+    return jsonNoStore({
+      success: true,
+      mode: "accepted",
+      deliveryMode: delivery.mode,
+      message:
+        "Request received. If the project looks like a fit, the next reply moves into audit notes, scope, timeline, and the right build direction.",
     });
-
-    after(async () => {
-      await postAutomationWebhook(
-        config.webhookUrl,
-        {
-          ...automationPayload,
-          deliveryMode: "resend_email",
-          inboxTarget: config.toEmail,
-        }
-      );
-    });
-
-    return jsonNoStore({ success: true });
   } catch (error) {
     console.error("Contact form error:", error);
     return jsonNoStore(

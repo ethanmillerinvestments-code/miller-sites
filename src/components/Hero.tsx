@@ -1,4 +1,4 @@
-import { BadgeCheck, Clock3, DollarSign, PhoneCall, ShieldCheck } from "lucide-react";
+import { BadgeCheck, Clock3, DollarSign, ShieldCheck } from "lucide-react";
 
 import AutoPresentTrigger from "@/components/AutoPresentTrigger";
 import { supportOffer } from "@/lib/offers";
@@ -6,26 +6,31 @@ import { siteConfig } from "@/lib/site";
 
 const proofPills = [
   {
-    icon: PhoneCall,
-    title: "Phone-first CTA",
-    detail: "Calls and quote paths stay visible on mobile.",
+    icon: ShieldCheck,
+    title: "Written scope first",
+    detail: "Deliverables, timeline, and signer clarity are locked before kickoff.",
   },
   {
-    icon: ShieldCheck,
-    title: "Scope before payment",
-    detail: "Price, timeline, and deliverables are confirmed in writing.",
+    icon: Clock3,
+    title: "2-4 week launch window",
+    detail: "Smaller builds usually launch fast once scope and content are approved.",
   },
   {
     icon: BadgeCheck,
-    title: "Launch-ready build",
-    detail: "Forms, QA, metadata, and handoff are handled before go-live.",
+    title: "QA is included",
+    detail: "Forms, anti-spam, metadata, and lead-path checks are part of launch.",
+  },
+  {
+    icon: DollarSign,
+    title: "Support stays optional",
+    detail: "The one-time build stands on its own before any monthly lane is added.",
   },
 ] as const;
 
 const fastFacts = [
   {
     label: "Builds",
-    value: "From $3,500",
+    value: "From $1,650",
   },
   {
     label: "Launches",
@@ -91,7 +96,7 @@ export default function Hero() {
             <p>
               Need a direct teardown first?{" "}
               <a
-                href="#contact"
+                href="/contact"
                 className="text-[color:var(--accent-strong)] transition-colors hover:text-stone-100"
               >
                 Request a 5-point site audit.
@@ -99,12 +104,12 @@ export default function Hero() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-3 sm:grid-cols-3">
+          <div className="mt-10 grid gap-3 sm:grid-cols-2">
             {proofPills.map((item) => {
               const Icon = item.icon;
 
               return (
-                <div key={item.title} className="lux-subtle rounded-[1.45rem] p-4 sm:p-5">
+                <div key={item.title} className="lux-subtle rounded-[1.45rem] p-4">
                   <div className="flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(216,170,115,0.2)] bg-[rgba(216,170,115,0.1)] text-[color:var(--accent-strong)]">
                       <Icon className="h-4 w-4" />
@@ -120,11 +125,6 @@ export default function Hero() {
               );
             })}
           </div>
-
-          <p className="mt-8 max-w-2xl text-sm leading-6 text-stone-500">
-            One-time builds first. Monthly support only if it helps after
-            launch.
-          </p>
         </div>
 
         <aside id="hero-display" className="lux-panel rounded-[2rem] p-5 sm:p-7">
@@ -188,7 +188,7 @@ export default function Hero() {
                     Compare packages and pricing
                   </a>
                   <a
-                    href="#contact"
+                    href="/contact"
                     className="rounded-[1.2rem] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-stone-200 transition-colors hover:border-[rgba(125,183,176,0.22)] hover:text-stone-50"
                   >
                     Request an audit and scope review

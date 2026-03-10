@@ -1,9 +1,6 @@
-import { after } from "next/server";
-import { Resend } from "resend";
-import Stripe from "stripe";
+import { randomUUID } from "node:crypto";
 
-import { postAutomationWebhook } from "@/lib/automation";
-import { getCheckoutRouteConfig } from "@/lib/env";
+import { buildCheckoutIntakeEvent } from "@/lib/intake-events";
 import {
   buildCheckoutMetadata,
   formatCheckoutIntakeHtml,
@@ -14,7 +11,12 @@ import {
   sanitizeCheckoutIntake,
   type CheckoutOfferId,
 } from "@/lib/checkout-intake";
+import {
+  getCheckoutRouteConfig,
+  getRouteDeliveryReadiness,
+} from "@/lib/env";
 import { cleanField, parseTimestamp } from "@/lib/form-utils";
+import { getRequestMarketingContext } from "@/lib/marketing-context";
 import {
   getCheckoutOffer,
   getSupportPlan,
@@ -23,7 +25,6 @@ import {
   type SupportPlanId,
   type WebsitePlanId,
 } from "@/lib/offers";
-import { getRequestMarketingContext } from "@/lib/marketing-context";
 import {
   ensureJsonRequest,
   getClientAddress,
@@ -33,6 +34,8 @@ import {
   takeRateLimitHit,
 } from "@/lib/security";
 import { siteConfig } from "@/lib/site";
+import { createStripeClient } from "@/lib/stripe-server";
+import { deliverSubmission } from "@/lib/submission-routing";
 
 type CheckoutBody = {
   itemId?: CheckoutOfferId;
@@ -75,7 +78,6 @@ function getCheckoutItem(itemId: CheckoutOfferId | undefined) {
       name: supportPlan.name,
       description: supportPlan.summary,
       recurring: { interval: "month" as const },
-      support: true,
     };
   }
 
@@ -93,7 +95,6 @@ function getCheckoutItem(itemId: CheckoutOfferId | undefined) {
       plan.pricingMode === "custom"
         ? `${plan.summary} The next step is written scope review before any payment path is chosen.`
         : `${plan.summary} Final scope still gets confirmed before kickoff.`,
-    support: false,
   };
 }
 
@@ -119,13 +120,39 @@ function getCheckoutGoLiveTimestamp() {
     : Date.parse(DEFAULT_CHECKOUT_GO_LIVE_DATE);
 }
 
-function buildMailtoLink(to: string, subject: string, body: string) {
-  const params = new URLSearchParams({
-    subject,
-    body,
-  });
+function getManualReviewReason(options: {
+  checkoutWindowOpen: boolean;
+  checkoutEnabled: boolean;
+  requireProposalApproval: boolean;
+  paymentPathReady: boolean;
+  hasMultipleOffers: boolean;
+  hasScopeOnlyOffer: boolean;
+}) {
+  if (!options.checkoutWindowOpen) {
+    return "Checkout is blocked until April 27, 2026 and requires manual scope review.";
+  }
 
-  return `mailto:${encodeURIComponent(to)}?${params.toString()}`;
+  if (!options.checkoutEnabled) {
+    return "Checkout is disabled, so the request stays in manual scope review.";
+  }
+
+  if (options.requireProposalApproval) {
+    return "Proposal approval is required before any payment request can be issued.";
+  }
+
+  if (!options.paymentPathReady) {
+    return "Payment path is not fully configured, so the request stays in manual review.";
+  }
+
+  if (options.hasMultipleOffers) {
+    return "Multiple offers were selected, so the request needs one combined scope review.";
+  }
+
+  if (options.hasScopeOnlyOffer) {
+    return "The selected offer requires written scope review before any payment step.";
+  }
+
+  return "Manual scope review is required before any payment step.";
 }
 
 export async function POST(request: Request) {
@@ -151,7 +178,7 @@ export async function POST(request: Request) {
 
     if (ipRate.limited) {
       return jsonNoStore(
-        { error: "Too many checkout attempts. Please try again shortly." },
+        { error: "Too many project brief attempts. Please try again shortly." },
         {
           status: 429,
           headers: getRateLimitHeaders(ipRate.remaining, ipRate.resetAt),
@@ -173,6 +200,7 @@ export async function POST(request: Request) {
         : ({} as CheckoutBody);
     const marketing = getRequestMarketingContext(request);
     const config = getCheckoutRouteConfig();
+    const deliveryReadiness = getRouteDeliveryReadiness(config);
     const honeypot = cleanField(body.honeypot, 120);
     const startedAt = parseTimestamp(body.startedAt);
     const intakeStartAge = Date.now() - startedAt;
@@ -201,7 +229,7 @@ export async function POST(request: Request) {
 
     if (!primaryOffer || !item || offerIds.length === 0 || !primaryOfferId) {
       return jsonNoStore(
-        { error: "Please choose a valid offer before checkout." },
+        { error: "Please choose a valid offer before submitting the brief." },
         { status: 400 }
       );
     }
@@ -224,7 +252,7 @@ export async function POST(request: Request) {
 
     if (emailRate.limited) {
       return jsonNoStore(
-        { error: "Too many checkout attempts. Please try again shortly." },
+        { error: "Too many project brief attempts. Please try again shortly." },
         {
           status: 429,
           headers: getRateLimitHeaders(emailRate.remaining, emailRate.resetAt),
@@ -232,32 +260,114 @@ export async function POST(request: Request) {
       );
     }
 
-    const secretKey = config.stripeSecretKey;
-    const resendApiKey = config.resendApiKey;
+    if (!deliveryReadiness.hasWebhook && !deliveryReadiness.hasEmail) {
+      console.error("Checkout intake delivery unavailable: no webhook or email route.");
+      return jsonNoStore(
+        {
+          error:
+            "Project brief routing is unavailable on this deployment. Please call or email directly until the intake path is configured.",
+        },
+        { status: 503 }
+      );
+    }
+
     const checkoutEnabled = config.checkoutEnabled;
     const checkoutGoLiveTimestamp = getCheckoutGoLiveTimestamp();
     const checkoutWindowOpen = Date.now() >= checkoutGoLiveTimestamp;
+    const paymentPathReady = Boolean(
+      config.stripeSecretKey && config.stripeWebhookSecret
+    );
+    const hasMultipleOffers = offerIds.length > 1;
+    const hasScopeOnlyOffer = offerIds.some((offerId) => isScopeOnlyOffer(offerId));
     const manualReviewRequired =
       !checkoutWindowOpen ||
       !checkoutEnabled ||
-      offerIds.length > 1 ||
-      offerIds.some((offerId) => isScopeOnlyOffer(offerId));
+      config.requireProposalApproval ||
+      !paymentPathReady ||
+      hasMultipleOffers ||
+      hasScopeOnlyOffer;
+    const manualReviewReason = getManualReviewReason({
+      checkoutWindowOpen,
+      checkoutEnabled,
+      requireProposalApproval: config.requireProposalApproval,
+      paymentPathReady,
+      hasMultipleOffers,
+      hasScopeOnlyOffer,
+    });
 
     const packageWorkflowLabel = getCheckoutWorkflowLabel(offerIds);
     const packageLabel = getCheckoutSelectionLabel(offerIds);
+    const htmlBody = formatCheckoutIntakeHtml(offerIds, intake);
     const textBody = formatCheckoutIntakeText(offerIds, intake);
     const manualSubject = `${packageWorkflowLabel} | ${intake.companyName} | ${packageLabel}`;
-    const automationPayload = {
-      eventType: "leadcraft.checkout_intake",
-      occurredAt: new Date().toISOString(),
+    const intakeEventId = randomUUID();
+    const automationPayload = buildCheckoutIntakeEvent({
+      eventId: intakeEventId,
       source: "leadcraft-site-checkout-intake",
-      workflowLabel: packageWorkflowLabel,
-      packageLabel,
+      marketing,
       offerIds,
-      intake,
+      packageLabel,
+      workflowLabel: packageWorkflowLabel,
       checkoutWindowOpen,
       checkoutEnabled,
       manualReviewRequired,
+      intake,
+    });
+    automationPayload.manualReviewReason = manualReviewReason;
+
+    const delivery = await deliverSubmission(
+      {
+        webhookUrl: config.webhookUrl,
+        email: config.resendApiKey
+          ? {
+              fromEmail: config.fromEmail,
+              toEmail: config.toEmail,
+              resendApiKey: config.resendApiKey,
+              replyTo: intake.email,
+              subject: manualSubject,
+              html: htmlBody,
+              text: textBody,
+            }
+          : undefined,
+      },
+      automationPayload
+    );
+
+    console.info("Checkout intake delivery", {
+      eventId: intakeEventId,
+      mode: delivery.mode,
+      manualReviewRequired,
+      webhookDelivered: delivery.webhook.delivered,
+      emailDelivered: delivery.email.delivered,
+    });
+
+    if (!delivery.ok) {
+      return jsonNoStore(
+        {
+          error:
+            "Project brief routing could not be completed right now. Please try again shortly or contact Leadcraft directly.",
+        },
+        { status: 502 }
+      );
+    }
+
+    if (manualReviewRequired || !config.stripeSecretKey) {
+      return jsonNoStore({
+        success: true,
+        mode: "manual_review",
+        deliveryMode: delivery.mode,
+        message: !checkoutWindowOpen
+          ? "Company brief captured. Before April 27, 2026, the next step is manual scope review, signer confirmation, and kickoff planning."
+          : config.requireProposalApproval
+            ? "Company brief captured. The next step is written scope review. If the scope is approved, Leadcraft sends a Stripe payment link or invoice manually."
+            : "Company brief captured. The next step is manual scope review before any payment step.",
+      });
+    }
+
+    const stripe = createStripeClient(config.stripeSecretKey);
+    const baseUrl = getBaseUrl(request);
+    const sessionMetadata = buildCheckoutMetadata(offerIds, intake, {
+      intakeEventId,
       sourcePage: marketing.sourcePage,
       referer: marketing.referer,
       utmSource: marketing.utmSource,
@@ -265,64 +375,7 @@ export async function POST(request: Request) {
       utmCampaign: marketing.utmCampaign,
       utmTerm: marketing.utmTerm,
       utmContent: marketing.utmContent,
-    };
-
-    if (!resendApiKey) {
-      after(async () => {
-        await postAutomationWebhook(
-          config.webhookUrl,
-          {
-            ...automationPayload,
-            deliveryMode: "manual_review_mailto_fallback",
-            inboxTarget: config.toEmail,
-          }
-        );
-      });
-      return jsonNoStore({
-        success: true,
-        mode: "manual_review",
-        mailto: buildMailtoLink(config.toEmail, manualSubject, textBody),
-        message:
-          "Company brief captured. Open the drafted email so the request can move into manual scope review.",
-      });
-    }
-
-    const resend = new Resend(resendApiKey);
-
-    await resend.emails.send({
-      from: config.fromEmail,
-      to: [config.toEmail],
-      replyTo: intake.email,
-      subject: manualSubject,
-      html: formatCheckoutIntakeHtml(offerIds, intake),
-      text: textBody,
     });
-
-    if (manualReviewRequired || !secretKey) {
-      after(async () => {
-        await postAutomationWebhook(
-          config.webhookUrl,
-          {
-            ...automationPayload,
-            deliveryMode: "manual_review",
-            inboxTarget: config.toEmail,
-          }
-        );
-      });
-      return jsonNoStore({
-        success: true,
-        mode: "manual_review",
-        mailto: buildMailtoLink(config.toEmail, manualSubject, textBody),
-        message: !checkoutWindowOpen
-          ? "Company brief captured. Before April 27, 2026, the next step is manual scope review and kickoff planning."
-          : "Company brief captured. The next step is manual scope review before any payment step.",
-      });
-    }
-
-    const stripe = new Stripe(secretKey, {
-      apiVersion: "2026-02-25.clover",
-    });
-    const baseUrl = getBaseUrl(request);
 
     const session = await stripe.checkout.sessions.create({
       mode: item.mode,
@@ -347,30 +400,44 @@ export async function POST(request: Request) {
           },
         },
       ],
-      metadata: buildCheckoutMetadata(offerIds, intake),
+      metadata: sessionMetadata,
+      ...(item.mode === "payment"
+        ? {
+            payment_intent_data: {
+              metadata: sessionMetadata,
+            },
+          }
+        : {
+            subscription_data: {
+              metadata: sessionMetadata,
+            },
+          }),
     });
 
     if (!session.url) {
       throw new Error("Stripe checkout URL was not created.");
     }
 
-    after(async () => {
-      await postAutomationWebhook(
-        config.webhookUrl,
-        {
-          ...automationPayload,
-          deliveryMode: "stripe_checkout_created",
-          stripeSessionId: session.id,
-        }
-      );
+    console.info("Stripe checkout session created", {
+      intakeEventId,
+      stripeSessionId: session.id,
+      packageLabel,
     });
 
-    return jsonNoStore({ url: session.url });
+    return jsonNoStore({
+      success: true,
+      mode: "checkout_redirect",
+      deliveryMode: delivery.mode,
+      url: session.url,
+    });
   } catch (error) {
     console.error("Stripe checkout error:", error);
 
     return jsonNoStore(
-      { error: "Secure checkout is unavailable right now. Please try again shortly." },
+      {
+        error:
+          "The project brief was not routed cleanly into the next step. Please try again shortly.",
+      },
       { status: 500 }
     );
   }

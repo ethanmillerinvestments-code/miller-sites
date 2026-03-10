@@ -29,11 +29,11 @@ const nextSteps = [
 ] as const;
 
 export default function Contact() {
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error" | "fallback"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
+    "idle"
+  );
   const [errorMsg, setErrorMsg] = useState("");
-  const [fallbackMailto, setFallbackMailto] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [startedAt, setStartedAt] = useState(() => Date.now().toString());
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -63,24 +63,20 @@ export default function Contact() {
       });
 
       const body = (await response.json()) as {
+        deliveryMode?: string;
         error?: string;
-        mailto?: string;
         message?: string;
         mode?: string;
       };
-
-      if (body.mode === "mailto" && body.mailto) {
-        setFallbackMailto(body.mailto);
-        setStatus("fallback");
-        form.reset();
-        setStartedAt(Date.now().toString());
-        return;
-      }
 
       if (!response.ok) {
         throw new Error(body.error || "Something went wrong. Please try again.");
       }
 
+      setSuccessMsg(
+        body.message ||
+          "The details came through. If the request looks like a fit, the next reply will move into audit notes, scope, timeline, and the right build direction."
+      );
       setStatus("success");
       form.reset();
       setStartedAt(Date.now().toString());
@@ -114,7 +110,7 @@ export default function Contact() {
                 Home-service only
               </div>
               <div className="rounded-[1.3rem] border border-[rgba(216,170,115,0.16)] bg-[rgba(216,170,115,0.06)] px-4 py-4 text-sm text-stone-200">
-                Builds from $3,500
+                Builds from $1,650
               </div>
               <div className="rounded-[1.3rem] border border-[rgba(125,183,176,0.18)] bg-[rgba(125,183,176,0.07)] px-4 py-4 text-sm text-stone-200">
                 Support starts at {supportOffer.priceLabel}
@@ -213,15 +209,14 @@ export default function Contact() {
                   Request received
                 </h3>
                 <p className="muted-copy mx-auto mt-4 max-w-lg text-sm leading-7">
-                  The details came through. If the request looks like a fit, the
-                  next reply will move into audit notes, scope, timeline, and
-                  the right build direction.
+                  {successMsg}
                 </p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
                   <button
                     type="button"
                     onClick={() => {
                       setStatus("idle");
+                      setSuccessMsg("");
                       setStartedAt(Date.now().toString());
                     }}
                     className="button-secondary w-full px-5 py-3 text-sm sm:w-auto"
@@ -236,49 +231,6 @@ export default function Contact() {
                   >
                     Book Strategy Call
                   </a>
-                </div>
-              </motion.div>
-            ) : status === "fallback" ? (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="py-10 text-center"
-              >
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[rgba(216,170,115,0.28)] bg-[rgba(216,170,115,0.12)] text-[color:var(--accent-strong)]">
-                  <ShieldCheck className="h-7 w-7" />
-                </div>
-                <h3 className="mt-5 text-3xl font-semibold text-stone-50">
-                  Manual fallback ready
-                </h3>
-                <p className="muted-copy mx-auto mt-4 max-w-lg text-sm leading-7">
-                  The form captured the details, but direct inbox routing is not
-                  configured on this deployment yet. Use the drafted email below
-                  or call directly so the request still moves forward.
-                </p>
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-                  <a
-                    href={fallbackMailto}
-                    className="button-primary w-full px-5 py-3 text-sm sm:w-auto"
-                  >
-                    Open Email Draft
-                  </a>
-                  <a
-                    href={siteConfig.phoneHref}
-                    className="button-secondary w-full px-5 py-3 text-sm sm:w-auto"
-                  >
-                    Call Instead
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStatus("idle");
-                      setFallbackMailto("");
-                      setStartedAt(Date.now().toString());
-                    }}
-                    className="button-secondary w-full px-5 py-3 text-sm sm:w-auto"
-                  >
-                    Start Over
-                  </button>
                 </div>
               </motion.div>
             ) : (
@@ -363,8 +315,11 @@ export default function Contact() {
                       <option value="site-audit">5-point site audit</option>
                       <option value="landing-page">Landing page</option>
                       <option value="search-ready-structure">Search-ready structure</option>
-                      <option value="site-coverage">Site Coverage</option>
-                      <option value="growth-support">Growth Support</option>
+                      <option value="hosted-core">Hosted Core</option>
+                      <option value="managed-site-care">Managed Site Care</option>
+                      <option value="search-conversion-support">
+                        Search and Conversion Support
+                      </option>
                     </select>
                   </div>
                   <div>

@@ -42,12 +42,12 @@ const qualificationGroups = [
 const pricingRules = [
   {
     title: "Fixed where scope stays tight",
-    body: "Lead Launch stays public because the scope can remain controlled and fulfillment-safe.",
+    body: "Launch Site and Growth Build stay public because those scopes can remain controlled and fulfillment-safe.",
     tone: "accent",
   },
   {
-    title: "Custom where scope expands",
-    body: "Authority Build moves into scope review instead of pretending a larger project fits a flat card.",
+    title: "Scope review where complexity expands",
+    body: "Authority Build still shows its fixed price, but the next step stays scope review instead of pretending a larger project should behave like a one-click buy.",
     tone: "neutral",
   },
   {
@@ -137,7 +137,7 @@ export default function Pricing() {
 
             <div className="lux-subtle rounded-[1.5rem] p-5 text-sm leading-7 text-stone-200 lg:max-w-sm">
               Fixed launch pricing starts at{" "}
-              <span className="text-[color:var(--accent-strong)]">$3,500</span>.
+              <span className="text-[color:var(--accent-strong)]">$1,650</span>.
               Monthly support starts at{" "}
               <span className="text-[color:var(--teal)]">
                 {supportOffer.priceLabel}
@@ -195,18 +195,20 @@ export default function Pricing() {
                       <article
                         key={plan.id}
                         className={cn(
-                          "flex h-full flex-col rounded-[1.8rem] border p-6",
-                          plan.pricingMode === "custom"
+                          "flex h-full flex-col rounded-[1.8rem] border p-5",
+                          plan.checkoutMode === "scope"
                             ? "border-[rgba(125,183,176,0.2)] bg-[linear-gradient(180deg,rgba(125,183,176,0.08),rgba(255,255,255,0.02)_28%,rgba(255,255,255,0.02)_100%)]"
-                            : "border-[rgba(216,170,115,0.18)] bg-[rgba(216,170,115,0.06)]"
+                            : plan.featured
+                              ? "border-[rgba(216,170,115,0.22)] bg-[rgba(216,170,115,0.08)]"
+                              : "border-white/10 bg-white/[0.03]"
                         )}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="mini-label">
-                              {plan.pricingMode === "custom" ? "Scope-led" : "Fixed scope"}
+                              {plan.checkoutMode === "scope" ? "Scope review" : "Fixed scope"}
                             </p>
-                            <h4 className="mt-4 text-2xl font-semibold text-stone-50">
+                            <h4 className="mt-3 text-[1.6rem] font-semibold text-stone-50">
                               {plan.name}
                             </h4>
                           </div>
@@ -215,11 +217,11 @@ export default function Pricing() {
                           </div>
                         </div>
 
-                        <p className="muted-copy mt-4 text-sm leading-7">
+                        <p className="muted-copy mt-3 text-sm leading-6">
                           {plan.summary}
                         </p>
 
-                        <ul className="mt-5 flex-1 space-y-3 text-sm leading-7 text-stone-200">
+                        <ul className="mt-4 flex-1 space-y-3 text-sm leading-6 text-stone-200">
                           {plan.features.map((feature) => (
                             <li key={feature} className="flex gap-3">
                               <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[color:var(--accent)]" />
@@ -228,9 +230,11 @@ export default function Pricing() {
                           ))}
                         </ul>
 
-                        <p className="mt-5 text-sm leading-7 text-stone-400">{plan.fit}</p>
+                        <p className="mt-4 border-t border-white/10 pt-4 text-sm leading-6 text-stone-400">
+                          {plan.fit}
+                        </p>
 
-                        <div className="mt-6">
+                        <div className="mt-5">
                           {plan.checkoutMode === "cart" ? (
                             <button
                               type="button"
@@ -318,16 +322,18 @@ export default function Pricing() {
                       <article
                         key={plan.id}
                         className={cn(
-                          "flex h-full flex-col rounded-[1.8rem] border p-6",
-                          plan.id === "growth-support"
+                          "flex h-full flex-col rounded-[1.8rem] border p-5",
+                          plan.id === "search-conversion-support"
                             ? "border-[rgba(125,183,176,0.2)] bg-[linear-gradient(180deg,rgba(125,183,176,0.08),rgba(255,255,255,0.02)_28%,rgba(255,255,255,0.02)_100%)]"
-                            : "border-white/10 bg-white/[0.03]"
+                            : plan.featured
+                              ? "border-[rgba(216,170,115,0.2)] bg-[rgba(216,170,115,0.06)]"
+                              : "border-white/10 bg-white/[0.03]"
                         )}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="mini-label">Monthly lane</p>
-                            <h4 className="mt-4 text-2xl font-semibold text-stone-50">
+                            <h4 className="mt-3 text-[1.6rem] font-semibold text-stone-50">
                               {plan.name}
                             </h4>
                           </div>
@@ -336,11 +342,11 @@ export default function Pricing() {
                           </div>
                         </div>
 
-                        <p className="muted-copy mt-4 text-sm leading-7">
+                        <p className="muted-copy mt-3 text-sm leading-6">
                           {plan.summary}
                         </p>
 
-                        <ul className="mt-5 flex-1 space-y-3 text-sm leading-7 text-stone-200">
+                        <ul className="mt-4 flex-1 space-y-3 text-sm leading-6 text-stone-200">
                           {plan.features.map((feature) => (
                             <li key={feature} className="flex gap-3">
                               <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[color:var(--teal)]" />
@@ -349,12 +355,14 @@ export default function Pricing() {
                           ))}
                         </ul>
 
-                        <p className="mt-5 text-sm leading-7 text-stone-400">{plan.fit}</p>
+                        <p className="mt-4 border-t border-white/10 pt-4 text-sm leading-6 text-stone-400">
+                          {plan.fit}
+                        </p>
 
                         <button
                           type="button"
                           onClick={() => handleAddSupport(plan)}
-                          className="button-primary mt-6 w-full px-5 py-3.5 text-sm"
+                          className="button-primary mt-5 w-full px-5 py-3.5 text-sm"
                         >
                           {isSelected ? "Selected In Package" : "Add Support To Package"}
                           <ArrowRight className="h-4 w-4" />
@@ -440,7 +448,7 @@ export default function Pricing() {
               </div>
 
               <p className="mt-5 text-sm leading-7 text-stone-400">
-                Need the premium custom build instead of the fixed launch lane.
+                Need the highest-tier build instead of the tighter public lanes.
                 Use scope review, not guesswork.
               </p>
               <a
