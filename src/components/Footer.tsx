@@ -2,11 +2,10 @@ import Link from "next/link";
 
 import BrandLogo from "@/components/BrandLogo";
 import { supportPlans, websitePlans } from "@/lib/offers";
-import { guidePages, siteConfig } from "@/lib/site";
+import { guidePages, legalPages, siteConfig } from "@/lib/site";
 
 const sectionLinks = [
-  { href: "#why-it-works", label: "Why It Works" },
-  { href: "#package-finder", label: "Price Quiz" },
+  { href: "#package-finder", label: "Quiz" },
   { href: "#pricing", label: "Pricing" },
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
@@ -14,18 +13,23 @@ const sectionLinks = [
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-[rgba(8,9,12,0.92)]">
+    <footer className="footer-glow-strip bg-[rgba(8,9,12,0.92)]">
       <div className="section-shell py-10 sm:py-12">
         <div className="grid gap-10 md:grid-cols-[1.15fr_0.85fr_0.85fr_0.85fr]">
           <div className="max-w-lg">
             <BrandLogo />
             <h2 className="mt-4 text-3xl font-semibold text-stone-50">
-              Websites for home-service companies that need better calls, quotes, and first impressions.
+              Editorial websites for home-service companies that need stronger trust, sharper positioning, and better calls.
             </h2>
             <p className="muted-copy mt-4 text-sm leading-7">
               Built for HVAC, plumbing, roofing, electrical, landscaping,
               painting, pressure washing, garage door, and similar local
               service teams.
+            </p>
+            <p className="mt-4 text-sm leading-7 text-stone-300">
+              {siteConfig.operatingModel}. Based in {siteConfig.locationDisplay}.
+              {" "}
+              {siteConfig.responseStandard}.
             </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -40,6 +44,12 @@ export default function Footer() {
                 {supportPlans.map((plan) => `${plan.name} ${plan.priceLabel}`).join(" · ")}
               </div>
             </div>
+
+            <div className="mt-4 rounded-[1.3rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm leading-7 text-stone-300">
+              The fastest next step is the audit intake. Send the current site,
+              the market, the biggest issue, and the main growth goal so the
+              reply can move straight into direction.
+            </div>
           </div>
 
           <div>
@@ -48,7 +58,7 @@ export default function Footer() {
               {sectionLinks.map((link) => (
                 <Link
                   key={link.href}
-                  className="focus-lux block rounded-full py-1 text-stone-300 transition-colors hover:text-[color:var(--accent-strong)]"
+                  className="nav-link-slide focus-lux block rounded-full py-1 text-stone-300 transition-colors hover:text-[color:var(--accent-strong)]"
                   href={link.href.startsWith("#") ? `/${link.href}` : link.href}
                 >
                   {link.label}
@@ -63,7 +73,7 @@ export default function Footer() {
               {guidePages.map((link) => (
                 <Link
                   key={link.href}
-                  className="focus-lux block rounded-full py-1 text-stone-300 transition-colors hover:text-[color:var(--accent-strong)]"
+                  className="nav-link-slide focus-lux block rounded-full py-1 text-stone-300 transition-colors hover:text-[color:var(--accent-strong)]"
                   href={link.href}
                 >
                   {link.label}
@@ -95,6 +105,21 @@ export default function Footer() {
               >
                 Book Strategy Call
               </a>
+            </div>
+
+            <div className="mt-6">
+              <p className="mini-label">Legal</p>
+              <div className="mt-4 space-y-3 text-sm">
+                {legalPages.map((link) => (
+                  <Link
+                    key={link.href}
+                    className="focus-lux block rounded-full py-1 text-stone-300 transition-colors hover:text-[color:var(--accent-strong)]"
+                    href={link.href}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -1,210 +1,246 @@
-import { BadgeCheck, Clock3, DollarSign, ShieldCheck } from "lucide-react";
+import {
+  ArrowDownRight,
+  BadgeCheck,
+  Clock3,
+  FileCheck2,
+  ShieldCheck,
+} from "lucide-react";
 
+import AnimatedValue from "@/components/AnimatedValue";
 import AutoPresentTrigger from "@/components/AutoPresentTrigger";
+import EditorialReveal from "@/components/EditorialReveal";
+import GradientReveal from "@/components/GradientReveal";
+import MagneticButton from "@/components/MagneticButton";
+import ScrollReveal from "@/components/ScrollReveal";
+import SectionDivider from "@/components/SectionDivider";
+import SectionSpotlight from "@/components/SectionSpotlight";
 import { supportOffer } from "@/lib/offers";
 import { siteConfig } from "@/lib/site";
 
-const proofPills = [
-  {
-    icon: ShieldCheck,
-    title: "Written scope first",
-    detail: "Deliverables, timeline, and signer clarity are locked before kickoff.",
-  },
-  {
-    icon: Clock3,
-    title: "2-4 week launch window",
-    detail: "Smaller builds usually launch fast once scope and content are approved.",
-  },
-  {
-    icon: BadgeCheck,
-    title: "QA is included",
-    detail: "Forms, anti-spam, metadata, and lead-path checks are part of launch.",
-  },
-  {
-    icon: DollarSign,
-    title: "Support stays optional",
-    detail: "The one-time build stands on its own before any monthly lane is added.",
-  },
-] as const;
+type FastFact = {
+  label: string;
+  value: string;
+  animatedValue?: number;
+  animatedPrefix?: string;
+  animatedSuffix?: string;
+};
 
-const fastFacts = [
+const fastFacts: FastFact[] = [
   {
     label: "Builds",
     value: "From $1,650",
-  },
-  {
-    label: "Launches",
-    value: "2-4 weeks",
+    animatedValue: 1650,
+    animatedPrefix: "From $",
   },
   {
     label: "Support",
     value: `Optional ${supportOffer.priceLabel}`,
   },
   {
-    label: "Best fit",
-    value: "Outdated or generic sites",
+    label: "Quiz",
+    value: "4 questions",
+    animatedValue: 4,
+    animatedSuffix: " questions",
+  },
+  {
+    label: "Launches",
+    value: "2-4 weeks",
+  },
+];
+
+const assuranceCards = [
+  {
+    icon: FileCheck2,
+    title: "Scope before kickoff",
+    detail: "Written scope, signer clarity, and the launch path are locked before the project starts.",
+    tone: "accent",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Hardened intake path",
+    detail: "Anti-spam, lead routing, form checks, and QA are built into the delivery path instead of treated as extras.",
+    tone: "teal",
+  },
+  {
+    icon: Clock3,
+    title: "Shorter sales path",
+    detail: "The homepage is designed to get buyers to the right lane fast, then move them into scope review or booking cleanly.",
+    tone: "neutral",
   },
 ] as const;
 
+const launchSteps = [
+  "Take the 4-question package match.",
+  "Review the live pricing ladder and fit.",
+  "Send the brief or book the call for written scope.",
+] as const;
+
 const includedChecks = [
-  "Mobile CTA checks",
-  "Forms and anti-spam",
+  "Mobile CTA placement",
+  "Anti-spam and lead routing",
   "Metadata, robots, and sitemap",
-  "Clean handoff or hosted support",
+  "Launch QA before go-live",
 ] as const;
 
 export default function Hero() {
   return (
-    <section id="hero-overview" className="section-pad pt-32 sm:pt-36">
-      <div className="section-shell grid items-start gap-12 lg:grid-cols-[1.02fr_0.98fr] lg:gap-10">
-        <div className="max-w-2xl">
-          <span className="eyebrow">Leadcraft Agency</span>
+    <section id="hero-overview" className="relative section-pad pb-10 pt-32 sm:pt-36 sm:pb-12">
+      <SectionSpotlight tone="gold" />
+      <div className="section-shell">
+        <div className="grid items-start gap-8 xl:grid-cols-[1.06fr_0.94fr] xl:gap-10">
+          <div className="max-w-3xl">
+            <span className="eyebrow">Leadcraft Agency</span>
 
-          <h1 className="display-title mt-7 max-w-4xl text-[clamp(2.8rem,9vw,5.45rem)] text-stone-50">
-            Home-service websites built to earn trust and drive calls.
-          </h1>
+            <ScrollReveal delay={0.03} direction="blur">
+              <p className="editorial-kicker mt-7 max-w-xl">
+                Editorial-grade websites for service operators who need a better
+                first impression before the call even starts.
+              </p>
+            </ScrollReveal>
 
-          <p className="mt-5 max-w-2xl text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--accent-strong)] sm:text-base">
-            HVAC. Plumbing. Roofing. Electrical. Landscaping. Painting.
-          </p>
+            <EditorialReveal
+              className="mt-5"
+              lineClassName="display-title max-w-4xl text-[clamp(2.85rem,8vw,5.35rem)] text-stone-50"
+              animateKerning
+              lines={[
+                <span key="hero-line-1">Websites that make</span>,
+                <span key="hero-line-2">
+                  home-service companies look{" "}
+                  <GradientReveal text="established" className="headline-accent" delayOffset={0.16} />
+                </span>,
+                <span key="hero-line-3">before the call starts.</span>,
+              ]}
+            />
 
-          <p className="muted-copy mt-6 max-w-xl text-lg leading-8 sm:text-xl">
-            Built for local service companies with weak mobile trust, muddy
-            service messaging, or a quote path that makes the next step too
-            hard.
-          </p>
-
-          <div className="mt-8 flex max-w-xl flex-col gap-4 sm:flex-row sm:items-center">
-            <a
-              href="#package-finder"
-              className="button-primary w-full px-7 py-4 text-base sm:w-auto"
-            >
-              Find My Price
-            </a>
-            <a
-              href={siteConfig.calendlyUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="button-secondary w-full px-7 py-4 text-base sm:w-auto"
-            >
-              Book Strategy Call
-            </a>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3 text-sm leading-7 text-stone-400">
-            <AutoPresentTrigger />
-            <p>
-              Need a direct teardown first?{" "}
-              <a
-                href="/contact"
-                className="text-[color:var(--accent-strong)] transition-colors hover:text-stone-100"
-              >
-                Request a 5-point site audit.
-              </a>
+            <p className="mt-5 max-w-2xl text-sm font-semibold uppercase tracking-[0.24em] text-[color:var(--accent-strong)] sm:text-base">
+              HVAC. Plumbing. Roofing. Electrical. Landscaping. Painting.
             </p>
-          </div>
 
-          <div className="mt-10 grid gap-3 sm:grid-cols-2">
-            {proofPills.map((item) => {
-              const Icon = item.icon;
+            <p className="muted-copy mt-6 max-w-2xl text-lg leading-8 sm:text-xl">
+              Leadcraft rebuilds weak, generic local-service sites into premium
+              sales assets with sharper trust, stronger service positioning, and
+              a cleaner path to calls, quotes, and scope review.
+            </p>
 
-              return (
-                <div key={item.title} className="lux-subtle rounded-[1.45rem] p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(216,170,115,0.2)] bg-[rgba(216,170,115,0.1)] text-[color:var(--accent-strong)]">
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <p className="text-sm font-semibold text-stone-100">
-                      {item.title}
-                    </p>
-                  </div>
-                  <p className="mt-4 text-sm leading-7 text-stone-300">
-                    {item.detail}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <aside id="hero-display" className="lux-panel rounded-[2rem] p-5 sm:p-7">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-5">
-            <div className="max-w-md">
-              <p className="mini-label">At A Glance</p>
-              <h2 className="mt-2 text-2xl font-semibold text-stone-50 sm:text-[2rem]">
-                The key info buyers usually want is all here first.
-              </h2>
+            <div className="mt-8 flex max-w-xl flex-col gap-4 sm:flex-row sm:items-center">
+              <MagneticButton>
+                <a
+                  href="#package-finder"
+                  data-analytics-event="cta_clicked"
+                  data-analytics-label="Start The 4-Question Quiz"
+                  data-analytics-location="hero"
+                  className="button-primary w-full px-7 py-4 text-base sm:w-auto"
+                >
+                  Start The 4-Question Quiz
+                </a>
+              </MagneticButton>
+              <a
+                href={siteConfig.calendlyUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="button-secondary w-full px-7 py-4 text-base sm:w-auto"
+              >
+                Book Strategy Call
+              </a>
             </div>
 
-            <div className="rounded-[1.35rem] border border-[rgba(216,170,115,0.18)] bg-[rgba(216,170,115,0.08)] px-4 py-4 text-sm leading-7 text-stone-200">
-              <p className="mini-label">What changes</p>
-              <p className="mt-2">
-                Stronger first impression, clearer service pages, and a simpler
-                route to calls or quote requests.
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3 text-sm leading-7 text-stone-400">
+              <AutoPresentTrigger />
+              <p>Audit-first direction. Scope-first intake. No fake instant quote or vague handoff.</p>
+            </div>
+
+            <div className="mt-7 flex flex-wrap gap-3">
+              <span className="rounded-full border border-[rgba(216,170,115,0.18)] bg-[rgba(216,170,115,0.06)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--accent-strong)]">
+                Trust-first buyer flow
+              </span>
+              <span className="rounded-full border border-[rgba(125,183,176,0.18)] bg-[rgba(125,183,176,0.08)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--teal)]">
+                Anti-spam and launch QA included
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-stone-300">
+                One-time build first
+              </span>
+            </div>
+          </div>
+
+          <aside className="lux-panel editorial-frame rounded-[2rem] p-5 sm:p-7">
+            <div className="rounded-[1.65rem] border border-[rgba(216,170,115,0.18)] bg-[rgba(216,170,115,0.06)] p-5">
+              <p className="mini-label">Shortest Path</p>
+              <h2 className="mt-3 text-2xl font-semibold text-stone-50 sm:text-[2rem]">
+                The homepage stays premium, but buyers now hit the real decision point sooner.
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-stone-200">
+                The visual system is richer, the flow is tighter, and the site
+                moves from first impression to fit, pricing, and scope without
+                wasting attention.
               </p>
             </div>
-          </div>
 
-          <div className="mt-6 grid gap-4">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {fastFacts.map((fact, index) => (
                 <div
                   key={fact.label}
-                  className={`rounded-[1.45rem] border p-4 ${
+                  className={`rounded-[1.35rem] border p-4 ${
                     index === 0
                       ? "border-[rgba(216,170,115,0.18)] bg-[rgba(216,170,115,0.06)]"
-                      : index === 2
-                        ? "border-[rgba(125,183,176,0.2)] bg-[rgba(125,183,176,0.08)]"
+                      : index === 1
+                        ? "border-[rgba(125,183,176,0.18)] bg-[rgba(125,183,176,0.08)]"
                         : "border-white/10 bg-white/[0.03]"
                   }`}
                 >
                   <p className="mini-label">{fact.label}</p>
                   <p className="mt-3 text-lg font-semibold text-stone-50">
-                    {fact.value}
+                    {fact.animatedValue != null ? (
+                      <AnimatedValue
+                        value={fact.animatedValue}
+                        prefix={fact.animatedPrefix}
+                        suffix={fact.animatedSuffix}
+                      />
+                    ) : (
+                      fact.value
+                    )}
                   </p>
                 </div>
               ))}
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="lux-subtle rounded-[1.4rem] p-5">
+            <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="lux-subtle rounded-[1.45rem] p-5">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(216,170,115,0.2)] bg-[rgba(216,170,115,0.1)] text-[color:var(--accent-strong)]">
-                    <Clock3 className="h-4 w-4" />
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(216,170,115,0.24)] bg-[rgba(216,170,115,0.12)] text-[color:var(--accent-strong)]">
+                    <ArrowDownRight className="h-4 w-4" />
                   </span>
                   <div>
-                    <p className="mini-label">Most Buyers Do This</p>
+                    <p className="mini-label">What Happens First</p>
                     <p className="mt-1 text-sm font-semibold text-stone-100">
-                      Find price, compare scope, then book the call.
+                      Buyers should reach the right lane in one pass.
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-5 grid gap-3">
-                  <a
-                    href="#pricing"
-                    className="rounded-[1.2rem] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-stone-200 transition-colors hover:border-[rgba(216,170,115,0.22)] hover:text-stone-50"
-                  >
-                    Compare packages and pricing
-                  </a>
-                  <a
-                    href="/contact"
-                    className="rounded-[1.2rem] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-stone-200 transition-colors hover:border-[rgba(125,183,176,0.22)] hover:text-stone-50"
-                  >
-                    Request an audit and scope review
-                  </a>
+                  {launchSteps.map((step, index) => (
+                    <div
+                      key={step}
+                      className="rounded-[1.2rem] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-7 text-stone-200"
+                    >
+                      <span className="mr-2 font-semibold text-[color:var(--accent-strong)]">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      {step}
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="lux-subtle rounded-[1.4rem] p-5">
+              <div className="lux-subtle rounded-[1.45rem] p-5">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(125,183,176,0.22)] bg-[rgba(125,183,176,0.1)] text-[color:var(--teal)]">
-                    <DollarSign className="h-4 w-4" />
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(125,183,176,0.24)] bg-[rgba(125,183,176,0.12)] text-[color:var(--teal)]">
+                    <BadgeCheck className="h-4 w-4" />
                   </span>
                   <div>
                     <p className="mini-label">Included Before Launch</p>
                     <p className="mt-1 text-sm font-semibold text-stone-100">
-                      The technical basics are part of the build, not add-ons.
+                      Security, lead routing, and trust basics stay in the core build.
                     </p>
                   </div>
                 </div>
@@ -219,8 +255,39 @@ export default function Hero() {
                 </ul>
               </div>
             </div>
-          </div>
-        </aside>
+          </aside>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          {assuranceCards.map((item, index) => {
+            const Icon = item.icon;
+            const depth = index === 0 ? "near" : index === 1 ? "mid" : "far";
+
+            return (
+              <ScrollReveal key={item.title} delay={0.04 + index * 0.06} depth={depth}>
+              <article
+                className={`rounded-[1.55rem] border p-5 ${
+                  item.tone === "accent"
+                    ? "border-[rgba(216,170,115,0.18)] bg-[rgba(216,170,115,0.06)]"
+                    : item.tone === "teal"
+                      ? "border-[rgba(125,183,176,0.18)] bg-[rgba(125,183,176,0.07)]"
+                      : "border-white/10 bg-white/[0.03]"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-stone-100">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <p className="text-sm font-semibold text-stone-100">{item.title}</p>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-stone-300">{item.detail}</p>
+              </article>
+              </ScrollReveal>
+            );
+          })}
+        </div>
+
+        <SectionDivider tone="accent" className="mt-10" />
       </div>
     </section>
   );

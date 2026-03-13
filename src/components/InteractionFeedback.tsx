@@ -9,6 +9,7 @@ type ClickPulse = {
   x: number;
   y: number;
   tone: "accent" | "teal";
+  satellite?: boolean;
 };
 
 const INTERACTIVE_SELECTOR =
@@ -46,18 +47,34 @@ export default function InteractionFeedback() {
         return;
       }
 
+      const baseId = Date.now() + Math.round(Math.random() * 1000);
+      const tone = event.pointerType === "touch" ? "teal" : "accent";
+
       const pulse: ClickPulse = {
-        id: Date.now() + Math.round(Math.random() * 1000),
+        id: baseId,
         x: event.clientX,
         y: event.clientY,
-        tone: event.pointerType === "touch" ? "teal" : "accent",
+        tone,
       };
 
-      setPulses((current) => [...current, pulse]);
+      const satellites: ClickPulse[] = Array.from({ length: 3 }, (_, i) => {
+        const angle = (Math.PI * 2 * i) / 3 + Math.random() * 0.8;
+        const dist = 12 + Math.random() * 10;
+        return {
+          id: baseId + i + 1,
+          x: event.clientX + Math.cos(angle) * dist,
+          y: event.clientY + Math.sin(angle) * dist,
+          tone,
+          satellite: true,
+        };
+      });
 
+      setPulses((current) => [...current, pulse, ...satellites]);
+
+      const allIds = new Set([pulse.id, ...satellites.map((s) => s.id)]);
       const timeoutId = window.setTimeout(() => {
-        setPulses((current) => current.filter((entry) => entry.id !== pulse.id));
-      }, 520);
+        setPulses((current) => current.filter((entry) => !allIds.has(entry.id)));
+      }, 620);
 
       cleanupTimers.current.push(timeoutId);
     }
@@ -81,18 +98,30 @@ export default function InteractionFeedback() {
         {pulses.map((pulse) => (
           <motion.span
             key={pulse.id}
-            initial={{ opacity: 0.55, scale: 0.32 }}
-            animate={{ opacity: 0, scale: 2.4 }}
+            initial={{
+              opacity: pulse.satellite ? 0.4 : 0.55,
+              scale: pulse.satellite ? 0.2 : 0.32,
+            }}
+            animate={{
+              opacity: 0,
+              scale: pulse.satellite ? 1.6 : 2.4,
+            }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className={`absolute h-12 w-12 rounded-full border ${
+            transition={{
+              duration: pulse.satellite ? 0.4 : 0.5,
+              ease: "easeOut",
+              delay: pulse.satellite ? 0.04 : 0,
+            }}
+            className={`absolute rounded-full border ${
+              pulse.satellite ? "h-6 w-6" : "h-12 w-12"
+            } ${
               pulse.tone === "teal"
                 ? "border-[rgba(125,183,176,0.5)] bg-[rgba(125,183,176,0.18)]"
                 : "border-[rgba(216,170,115,0.46)] bg-[rgba(216,170,115,0.14)]"
             }`}
             style={{
-              left: pulse.x - 24,
-              top: pulse.y - 24,
+              left: pulse.x - (pulse.satellite ? 12 : 24),
+              top: pulse.y - (pulse.satellite ? 12 : 24),
             }}
           />
         ))}

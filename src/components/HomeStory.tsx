@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import ScrollReveal from "@/components/ScrollReveal";
+import SectionDivider from "@/components/SectionDivider";
 import { siteConfig } from "@/lib/site";
 
 const buyerSignals = [
@@ -57,7 +58,8 @@ const projectSteps = [
 
 export default function HomeStory() {
   return (
-    <section id="why-it-works" className="section-pad section-rule">
+    <section id="why-it-works" className="section-pad">
+      <SectionDivider tone="mixed" className="mb-16" />
       <div className="section-shell">
         <ScrollReveal direction="blur">
           <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr] xl:items-end">
@@ -105,6 +107,7 @@ export default function HomeStory() {
                 key={card.title}
                 delay={0.04 + index * 0.05}
                 direction={index === 1 ? "blur" : "up"}
+                depth={index === 0 ? "near" : "far"}
               >
                 <article
                   className={`h-full rounded-[1.75rem] border p-5 sm:p-6 ${

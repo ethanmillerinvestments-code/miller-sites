@@ -5,6 +5,13 @@ import { type CSSProperties, type ReactNode, useRef } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 
 type Direction = "up" | "down" | "left" | "right" | "zoom" | "blur";
+type Depth = "near" | "mid" | "far";
+
+const depthConfig: Record<Depth, { yMultiplier: number; duration: number; scale: number }> = {
+  near: { yMultiplier: 0.67, duration: 0.5, scale: 0.995 },
+  mid: { yMultiplier: 1, duration: 0.58, scale: 0.99 },
+  far: { yMultiplier: 1.56, duration: 0.72, scale: 0.975 },
+};
 
 interface ScrollRevealProps {
   children: ReactNode;
@@ -12,6 +19,7 @@ interface ScrollRevealProps {
   className?: string;
   direction?: Direction;
   duration?: number;
+  depth?: Depth;
   style?: CSSProperties;
 }
 
@@ -50,7 +58,8 @@ export default function ScrollReveal({
   delay = 0,
   className = "",
   direction = "up",
-  duration = 0.58,
+  duration,
+  depth = "mid",
   style,
 }: ScrollRevealProps) {
   const reduceMotion = useReducedMotion();
@@ -69,9 +78,21 @@ export default function ScrollReveal({
     );
   }
 
+  const config = depthConfig[depth];
+  const resolvedDuration = duration ?? config.duration;
   const variant = variants[direction];
+  const scaledInitial = { ...variant.initial };
+  if ("y" in scaledInitial && typeof scaledInitial.y === "number") {
+    scaledInitial.y = scaledInitial.y * config.yMultiplier;
+  }
+  if ("x" in scaledInitial && typeof scaledInitial.x === "number") {
+    scaledInitial.x = scaledInitial.x * config.yMultiplier;
+  }
+  if (depth !== "mid") {
+    scaledInitial.scale = config.scale;
+  }
   const hiddenState = {
-    ...variant.initial,
+    ...scaledInitial,
     filter: direction === "blur" ? "blur(8px)" : "blur(0px)",
   };
   const visibleState = {
@@ -86,9 +107,9 @@ export default function ScrollReveal({
       animate={isInView ? visibleState : hiddenState}
       data-reveal="true"
       transition={{
-        duration,
+        duration: resolvedDuration,
         delay,
-        ease: [0.25, 0.46, 0.45, 0.94],
+        ease: [0.22, 1, 0.36, 1],
       }}
       className={className}
       style={style}

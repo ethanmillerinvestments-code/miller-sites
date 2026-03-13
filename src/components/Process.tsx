@@ -28,9 +28,12 @@ const checklist = [
   "Approved proof positioned where it helps the sale",
 ] as const;
 
+import SectionDivider from "@/components/SectionDivider";
+
 export default function Process() {
   return (
-    <section id="process" className="section-pad section-rule">
+    <section id="process" className="section-pad">
+      <SectionDivider tone="accent" className="mb-16" />
       <div className="section-shell grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
         <div>
           <span className="eyebrow">Process</span>

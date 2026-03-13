@@ -12,13 +12,13 @@ export default function Aurora() {
   const reduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll();
 
-  const warmX = useTransform(scrollYProgress, [0, 0.45, 1], ["20%", "31%", "48%"]);
-  const warmY = useTransform(scrollYProgress, [0, 0.5, 1], ["14%", "22%", "32%"]);
-  const coolX = useTransform(scrollYProgress, [0, 0.5, 1], ["78%", "68%", "54%"]);
-  const coolY = useTransform(scrollYProgress, [0, 0.55, 1], ["18%", "31%", "52%"]);
+  const warmX = useTransform(scrollYProgress, [0, 0.2, 0.45, 0.7, 1], ["20%", "26%", "31%", "36%", "48%"]);
+  const warmY = useTransform(scrollYProgress, [0, 0.2, 0.5, 0.7, 1], ["14%", "18%", "22%", "26%", "32%"]);
+  const coolX = useTransform(scrollYProgress, [0, 0.2, 0.5, 0.7, 1], ["78%", "74%", "68%", "62%", "54%"]);
+  const coolY = useTransform(scrollYProgress, [0, 0.2, 0.55, 0.7, 1], ["18%", "24%", "31%", "42%", "52%"]);
 
-  const upperGlowOpacity = useTransform(scrollYProgress, [0, 0.45, 1], [0.48, 0.38, 0.24]);
-  const lowerGlowOpacity = useTransform(scrollYProgress, [0, 0.55, 1], [0.12, 0.21, 0.32]);
+  const upperGlowOpacity = useTransform(scrollYProgress, [0, 0.2, 0.45, 0.7, 1], [0.52, 0.44, 0.32, 0.38, 0.28]);
+  const lowerGlowOpacity = useTransform(scrollYProgress, [0, 0.2, 0.45, 0.7, 1], [0.1, 0.14, 0.28, 0.22, 0.32]);
   const surfaceOpacity = useTransform(scrollYProgress, [0, 1], [0.18, 0.34]);
   const veilOpacity = useTransform(scrollYProgress, [0, 1], [0.12, 0.22]);
 
