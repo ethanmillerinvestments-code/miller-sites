@@ -5,10 +5,10 @@ import { ArrowRight, Layers3, LifeBuoy } from "lucide-react";
 
 import PointerCard from "@/components/PointerCard";
 import ScrollReveal from "@/components/ScrollReveal";
-import SectionDivider from "@/components/SectionDivider";
+import SectionBridge from "@/components/SectionBridge";
+import StaggerReveal from "@/components/StaggerReveal";
 import SectionSpotlight from "@/components/SectionSpotlight";
 import {
-  trackCtaClick,
   trackPricingCtaClick,
 } from "@/lib/analytics";
 import {
@@ -18,7 +18,6 @@ import {
   websitePlans,
   type WebsitePlan,
 } from "@/lib/offers";
-import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { useCart, type CartItem } from "@/store/cart";
 
@@ -140,8 +139,8 @@ export default function Pricing() {
   };
 
   return (
-    <section id="pricing" className="relative section-pad">
-      <SectionDivider tone="teal" className="mb-16" />
+    <section id="pricing" className="relative section-pad section-bg-elevated">
+      <SectionBridge variant="glow-pulse" tone="teal" className="mb-16" />
       <SectionSpotlight tone="teal" />
       <div className="section-shell">
         <ScrollReveal direction="blur">
@@ -176,7 +175,7 @@ export default function Pricing() {
           </div>
         </ScrollReveal>
 
-        <div className="mt-8 grid gap-3 lg:grid-cols-3">
+        <StaggerReveal staggerDelay={0.08} direction="blur" pattern="sequential" className="mt-8 grid gap-3 lg:grid-cols-3">
           {pricingRules.map((rule) => (
             <div
               key={rule.title}
@@ -193,9 +192,9 @@ export default function Pricing() {
               <p className="mt-2">{rule.body}</p>
             </div>
           ))}
-        </div>
+        </StaggerReveal>
 
-        <ScrollReveal delay={0.05} direction="up" depth="far">
+        <ScrollReveal delay={0.05} direction="scale-blur" depth="far">
           <PointerCard className="lux-panel mt-10 rounded-[2.2rem] p-6 sm:p-8">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-3xl">
@@ -244,7 +243,7 @@ export default function Pricing() {
                       plan.checkoutMode === "scope"
                         ? "border-[rgba(125,183,176,0.2)] bg-[linear-gradient(180deg,rgba(125,183,176,0.08),rgba(255,255,255,0.02)_26%,rgba(255,255,255,0.02)_100%)]"
                         : plan.featured
-                          ? "border-[rgba(216,170,115,0.22)] bg-[linear-gradient(180deg,rgba(216,170,115,0.08),rgba(255,255,255,0.02)_26%,rgba(255,255,255,0.02)_100%)]"
+                          ? "lux-card-raised border-[rgba(216,170,115,0.22)] bg-[linear-gradient(180deg,rgba(216,170,115,0.08),rgba(255,255,255,0.02)_26%,rgba(255,255,255,0.02)_100%)]"
                           : "border-white/10 bg-white/[0.03]"
                     )}
                   >
@@ -374,7 +373,7 @@ export default function Pricing() {
           </PointerCard>
         </ScrollReveal>
 
-        <ScrollReveal delay={0.12} direction="up" depth="far">
+        <ScrollReveal delay={0.12} direction="scale-blur" depth="far">
           <PointerCard className="lux-panel mt-8 rounded-[2.2rem] p-6 sm:p-8">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-3xl">
@@ -464,7 +463,7 @@ export default function Pricing() {
           </PointerCard>
         </ScrollReveal>
 
-        <ScrollReveal delay={0.18} direction="up" depth="near">
+        <ScrollReveal delay={0.18} direction="blur" depth="near">
           <PointerCard className="lux-panel mt-8 rounded-[2.2rem] p-6 sm:p-8">
             <div className="grid gap-8 xl:grid-cols-[0.95fr_1.05fr] xl:items-start">
               <div>
@@ -524,7 +523,7 @@ export default function Pricing() {
               </div>
             </div>
 
-            <div className="mt-8 grid gap-3 lg:grid-cols-[1fr_1fr_auto]">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 href={checkoutHref()}
                 onClick={() =>
@@ -534,31 +533,17 @@ export default function Pricing() {
                     offer_ids: items.map((item) => item.id),
                   })
                 }
-                className="button-primary w-full px-6 py-4 text-center text-sm"
+                className="button-primary px-6 py-4 text-center text-sm"
               >
                 Send Brief For Scope Review
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/working-with-leadcraft"
-                className="button-secondary w-full px-6 py-4 text-center text-sm"
+                className="text-sm font-semibold text-stone-300 underline underline-offset-4 decoration-white/20 transition-colors hover:text-[color:var(--accent-strong)] hover:decoration-[rgba(216,170,115,0.35)]"
               >
                 See The Full Process
               </Link>
-              <a
-                href={siteConfig.calendlyUrl}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() =>
-                  trackCtaClick({
-                    cta_label: "Book Strategy Call",
-                    cta_location: "pricing_package_summary",
-                  })
-                }
-                className="button-secondary w-full px-6 py-4 text-center text-sm lg:w-auto"
-              >
-                Book Strategy Call
-              </a>
             </div>
           </PointerCard>
         </ScrollReveal>

@@ -4,9 +4,8 @@ import { ArrowUpRight, MessageSquareQuote, ShieldCheck } from "lucide-react";
 import EditorialReveal from "@/components/EditorialReveal";
 import GradientReveal from "@/components/GradientReveal";
 import MagneticButton from "@/components/MagneticButton";
-import SectionDivider from "@/components/SectionDivider";
+import SectionBridge from "@/components/SectionBridge";
 import SectionSpotlight from "@/components/SectionSpotlight";
-import { siteConfig } from "@/lib/site";
 
 const proofPoints = [
   "Written scope, 50% deposit, and clear launch gate",
@@ -16,8 +15,8 @@ const proofPoints = [
 
 export default function CTABanner() {
   return (
-    <section id="contact" className="relative section-pad">
-      <SectionDivider tone="mixed" className="mb-16" />
+    <section id="next-step" className="relative section-pad">
+      <SectionBridge variant="diamond" tone="mixed" className="mb-16" />
       <SectionSpotlight tone="gold" />
       <div className="section-shell">
         <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(216,170,115,0.1),rgba(17,18,24,0.14)_46%,rgba(125,183,176,0.08))] px-6 py-7 sm:px-8 sm:py-9">
@@ -44,19 +43,20 @@ export default function CTABanner() {
                 into written scope.
               </p>
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <MagneticButton>
                   <a
-                    href={siteConfig.calendlyUrl}
-                    target="_blank"
-                    rel="noreferrer"
+                    href="#homepage-lead-form"
                     className="button-primary px-6 py-3.5 text-sm"
                   >
-                    Book Strategy Call
+                    Send Quick Request
                     <ArrowUpRight className="h-4 w-4" />
                   </a>
                 </MagneticButton>
-                <Link href="/contact" className="button-secondary px-6 py-3.5 text-sm">
+                <Link
+                  href="/contact"
+                  className="text-sm font-semibold text-stone-300 underline underline-offset-4 decoration-white/20 transition-colors hover:text-[color:var(--accent-strong)] hover:decoration-[rgba(216,170,115,0.35)]"
+                >
                   Open Audit Intake
                 </Link>
               </div>

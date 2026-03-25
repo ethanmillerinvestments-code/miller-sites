@@ -1,6 +1,9 @@
 import Link from "next/link";
 
+import ScrollReveal from "@/components/ScrollReveal";
+import SectionBridge from "@/components/SectionBridge";
 import SiteShell from "@/components/SiteShell";
+import StaggerReveal from "@/components/StaggerReveal";
 import { siteConfig } from "@/lib/site";
 
 const perspectiveViews = [
@@ -69,62 +72,82 @@ const buyerTakeaways = [
   "The ownership model should stay obvious so the business knows what is handed off and what is optionally managed.",
 ] as const;
 
-export default function AboutPage() {
+export default function AboutPage({
+  breadcrumbs,
+}: {
+  breadcrumbs?: React.ReactNode;
+}) {
   return (
     <SiteShell>
       <section className="section-pad pt-32 sm:pt-40">
         <div className="section-shell max-w-6xl">
+          {breadcrumbs}
           <span className="eyebrow">About</span>
           <div className="mt-7 grid gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-end">
             <div>
-              <h1 className="display-title text-[clamp(2.8rem,9vw,5.8rem)] text-stone-50">
-                About Ethan, and why Leadcraft stays focused on conversion-led home-service sites.
-              </h1>
-              <p className="muted-copy mt-6 max-w-3xl text-lg leading-8">
-                The agency is built around direct execution, cleaner sales structure,
-                and websites that make local businesses look more established online.
-              </p>
+              <ScrollReveal direction="blur" depth="near">
+                <h1 className="display-title text-[clamp(2.8rem,9vw,5.8rem)] text-stone-50">
+                  About Ethan, and why Leadcraft runs as a direct operator studio for home-service companies.
+                </h1>
+              </ScrollReveal>
+              <ScrollReveal direction="up" delay={0.06}>
+                <p className="muted-copy mt-6 max-w-3xl text-lg leading-8">
+                  Leadcraft is based in {siteConfig.locationDisplay} and built around
+                  direct execution, cleaner sales structure, and websites that make
+                  local businesses look more established online.
+                </p>
+              </ScrollReveal>
 
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                {operatingMarkers.map((item) => (
-                  <div key={item} className="stat-pill text-sm leading-6">
-                    {item}
-                  </div>
-                ))}
+              <ScrollReveal direction="scale-blur" delay={0.14}>
+                <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                  {operatingMarkers.map((item) => (
+                    <div key={item} className="stat-pill text-sm leading-6">
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </ScrollReveal>
+            </div>
+
+            <ScrollReveal direction="blur" delay={0.1}>
+              <div className="lux-subtle rounded-[1.9rem] p-6 sm:p-7">
+                <p className="mini-label">Working Principle</p>
+                <p className="mt-4 text-lg leading-8 text-stone-100">
+                  Work directly with the person shaping scope, structure, and launch
+                  standards from the first conversation through delivery.
+                </p>
+                <p className="muted-copy mt-4 text-sm leading-7">
+                  Leadcraft stays intentionally narrow so scope, offer framing,
+                  build quality, and launch standards do not get diluted across
+                  too many layers or too many business types.
+                </p>
               </div>
-            </div>
-
-            <div className="lux-subtle rounded-[1.9rem] p-6 sm:p-7">
-              <p className="mini-label">Working Principle</p>
-              <p className="mt-4 text-lg leading-8 text-stone-100">
-                Make the site clearer, stronger on mobile, and easier to trust
-                before the buyer ever calls.
-              </p>
-              <p className="muted-copy mt-4 text-sm leading-7">
-                Leadcraft stays intentionally narrow so scope, offer framing,
-                build quality, and launch standards do not get diluted across
-                too many layers or too many business types.
-              </p>
-            </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
+
+      <SectionBridge variant="gradient-wipe" tone="mixed" className="my-12" />
 
       <section className="section-pad section-rule">
         <div className="section-shell">
           <div className="max-w-3xl">
             <span className="eyebrow">Perspective</span>
-            <h2 className="section-title mt-7 text-5xl text-stone-50 sm:text-6xl">
-              Three angles that explain how Leadcraft is set up.
-            </h2>
-            <p className="muted-copy mt-6 text-lg leading-8">
-              Each angle answers a different buyer question: why the agency exists,
-              how the work is run, and which companies get the most lift from this
-              model.
-            </p>
+            <ScrollReveal direction="blur" depth="near">
+              <h2 className="section-title mt-7 text-5xl text-stone-50 sm:text-6xl">
+                Three angles that explain how Leadcraft is set up.
+              </h2>
+            </ScrollReveal>
+            <ScrollReveal direction="up" delay={0.06}>
+              <p className="muted-copy mt-6 text-lg leading-8">
+                Each angle answers a different buyer question: why the agency exists,
+                how the work is run, and which companies get the most lift from this
+                model.
+              </p>
+            </ScrollReveal>
           </div>
 
-          <div className="mt-10 grid gap-5 xl:grid-cols-3">
+          <StaggerReveal staggerDelay={0.08} direction="up" pattern="sequential" className="mt-10 grid gap-5 xl:grid-cols-3">
             {perspectiveViews.map((view, index) => (
               <article
                 key={view.label}
@@ -149,21 +172,25 @@ export default function AboutPage() {
                 </ul>
               </article>
             ))}
-          </div>
+          </StaggerReveal>
         </div>
       </section>
+
+      <SectionBridge variant="diamond" tone="accent" className="my-12" />
 
       <section className="section-pad section-rule">
         <div className="section-shell grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <div>
             <div className="max-w-3xl">
               <span className="eyebrow">What You Can Expect</span>
-              <h2 className="section-title mt-7 text-5xl text-stone-50 sm:text-6xl">
-                The operating style behind the work.
-              </h2>
+              <ScrollReveal direction="blur" depth="near">
+                <h2 className="section-title mt-7 text-5xl text-stone-50 sm:text-6xl">
+                  The operating style behind the work.
+                </h2>
+              </ScrollReveal>
             </div>
 
-            <div className="mt-10 grid gap-5 xl:grid-cols-3">
+            <StaggerReveal staggerDelay={0.08} direction="zoom" pattern="sequential" className="mt-10 grid gap-5 xl:grid-cols-3">
               {aboutPoints.map((item) => (
                 <article key={item.title} className="lux-panel rounded-[1.85rem] p-6">
                   <p className="mini-label">About Leadcraft</p>
@@ -173,54 +200,61 @@ export default function AboutPage() {
                   <p className="muted-copy mt-4 text-sm leading-7">{item.body}</p>
                 </article>
               ))}
-            </div>
+            </StaggerReveal>
           </div>
 
-          <div className="lux-subtle rounded-[2rem] p-6 sm:p-7">
-            <p className="mini-label">Buyer Takeaway</p>
-            <h3 className="section-title mt-4 text-3xl text-stone-50 sm:text-4xl">
-              What this should feel like from the client side.
-            </h3>
-            <ul className="mt-6 space-y-4 text-sm leading-7 text-stone-200">
-              {buyerTakeaways.map((item) => (
-                <li key={item} className="flex gap-3">
-                  <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[color:var(--teal)]" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ScrollReveal direction="right" delay={0.1}>
+            <div className="lux-subtle rounded-[2rem] p-6 sm:p-7">
+              <p className="mini-label">Buyer Takeaway</p>
+              <h3 className="section-title mt-4 text-3xl text-stone-50 sm:text-4xl">
+                What this should feel like from the client side.
+              </h3>
+              <ul className="mt-6 space-y-4 text-sm leading-7 text-stone-200">
+                {buyerTakeaways.map((item) => (
+                  <li key={item} className="flex gap-3">
+                    <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[color:var(--teal)]" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
+      <SectionBridge variant="dot-trail" tone="teal" className="my-12" />
+
       <section className="section-pad section-rule">
         <div className="section-shell">
-          <div className="lux-subtle rounded-[1.95rem] p-6 sm:p-8">
-            <p className="mini-label">Next Step</p>
-            <h2 className="mt-4 text-3xl font-semibold text-stone-50 sm:text-4xl">
-              If the current site is underselling the business, the next move is a scope call.
-            </h2>
-            <p className="muted-copy mt-4 max-w-3xl text-sm leading-7">
-              That call is where the services, pricing, handoff model, and launch
-              path get aligned before any build work starts.
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <a
-                href={siteConfig.calendlyUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="button-primary px-6 py-3 text-sm"
-              >
-                Book Strategy Call
-              </a>
-              <Link
-                href="/#package-finder"
-                className="button-secondary px-6 py-3 text-sm"
-              >
-                Find My Price
-              </Link>
+          <ScrollReveal direction="scale-blur" delay={0.04}>
+            <div className="lux-subtle rounded-[1.95rem] p-6 sm:p-8">
+              <p className="mini-label">Next Step</p>
+              <h2 className="mt-4 text-3xl font-semibold text-stone-50 sm:text-4xl">
+                If the current site is underselling the business, the next move is a scope call.
+              </h2>
+              <p className="muted-copy mt-4 max-w-3xl text-sm leading-7">
+                That call is where the services, pricing, handoff model, and launch
+                path get aligned before any build work starts. Initial fit review
+                should happen within one business day.
+              </p>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <a
+                  href={siteConfig.calendlyUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="button-primary px-6 py-3 text-sm"
+                >
+                  Book Strategy Call
+                </a>
+                <Link
+                  href="/#package-finder"
+                  className="button-secondary px-6 py-3 text-sm"
+                >
+                  Find My Price
+                </Link>
+              </div>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
       </section>
     </SiteShell>

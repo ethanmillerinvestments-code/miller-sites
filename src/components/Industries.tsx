@@ -1,3 +1,6 @@
+import ScrollReveal from "@/components/ScrollReveal";
+import StaggerReveal from "@/components/StaggerReveal";
+
 const industries = [
   ["HVAC", "Emergency service, maintenance, replacements"],
   ["Plumbing", "Residential, commercial, and drain work"],
@@ -13,6 +16,7 @@ export default function Industries() {
   return (
     <section id="industries" className="section-pad section-rule">
       <div className="section-shell grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+        <ScrollReveal direction="left" depth="mid">
         <div className="max-w-xl">
           <span className="eyebrow">Ideal Fit</span>
           <h2 className="section-title mt-7 text-5xl text-stone-50 sm:text-6xl">
@@ -30,12 +34,13 @@ export default function Industries() {
             <p>Best fit for teams ready to look more established before the first call.</p>
           </div>
         </div>
+        </ScrollReveal>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <StaggerReveal staggerDelay={0.06} direction="right" pattern="wave" className="grid gap-4 sm:grid-cols-2">
           {industries.map(([title, detail], index) => (
             <article
               key={title}
-              className={`lux-panel rounded-[1.4rem] p-5 ${
+              className={`lux-panel rounded-[1.4rem] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[rgba(216,170,115,0.28)] hover:shadow-[0_8px_32px_rgba(216,170,115,0.08)] ${
                 index === 0
                   ? "border-[rgba(216,170,115,0.18)]"
                   : index === 4
@@ -50,7 +55,7 @@ export default function Industries() {
               <p className="muted-copy mt-3 text-sm leading-7">{detail}</p>
             </article>
           ))}
-        </div>
+        </StaggerReveal>
       </div>
     </section>
   );

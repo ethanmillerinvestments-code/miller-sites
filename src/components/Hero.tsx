@@ -12,8 +12,9 @@ import EditorialReveal from "@/components/EditorialReveal";
 import GradientReveal from "@/components/GradientReveal";
 import MagneticButton from "@/components/MagneticButton";
 import ScrollReveal from "@/components/ScrollReveal";
-import SectionDivider from "@/components/SectionDivider";
+import SectionBridge from "@/components/SectionBridge";
 import SectionSpotlight from "@/components/SectionSpotlight";
+import StaggerReveal from "@/components/StaggerReveal";
 import { supportOffer } from "@/lib/offers";
 import { siteConfig } from "@/lib/site";
 
@@ -98,10 +99,16 @@ export default function Hero() {
               </p>
             </ScrollReveal>
 
+            <h1 className="sr-only">
+              Websites that make home-service companies look established before
+              the call starts.
+            </h1>
+
             <EditorialReveal
               className="mt-5"
               lineClassName="display-title max-w-4xl text-[clamp(2.85rem,8vw,5.35rem)] text-stone-50"
               animateKerning
+              lcpFirst
               lines={[
                 <span key="hero-line-1">Websites that make</span>,
                 <span key="hero-line-2">
@@ -163,6 +170,7 @@ export default function Hero() {
           </div>
 
           <aside className="lux-panel editorial-frame rounded-[2rem] p-5 sm:p-7">
+            <ScrollReveal direction="blur" depth="near">
             <div className="rounded-[1.65rem] border border-[rgba(216,170,115,0.18)] bg-[rgba(216,170,115,0.06)] p-5">
               <p className="mini-label">Shortest Path</p>
               <h2 className="mt-3 text-2xl font-semibold text-stone-50 sm:text-[2rem]">
@@ -174,8 +182,9 @@ export default function Hero() {
                 wasting attention.
               </p>
             </div>
+            </ScrollReveal>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <StaggerReveal staggerDelay={0.07} direction="scale-blur" pattern="wave" className="mt-5 grid min-h-[11rem] gap-3 sm:min-h-[10rem] sm:grid-cols-2">
               {fastFacts.map((fact, index) => (
                 <div
                   key={fact.label}
@@ -201,7 +210,7 @@ export default function Hero() {
                   </p>
                 </div>
               ))}
-            </div>
+            </StaggerReveal>
 
             <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="lux-subtle rounded-[1.45rem] p-5">
@@ -258,14 +267,12 @@ export default function Hero() {
           </aside>
         </div>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          {assuranceCards.map((item, index) => {
+        <StaggerReveal staggerDelay={0.08} direction="scale-blur" pattern="sequential" className="mt-6 grid gap-4 lg:grid-cols-3">
+          {assuranceCards.map((item) => {
             const Icon = item.icon;
-            const depth = index === 0 ? "near" : index === 1 ? "mid" : "far";
 
             return (
-              <ScrollReveal key={item.title} delay={0.04 + index * 0.06} depth={depth}>
-              <article
+              <article key={item.title}
                 className={`rounded-[1.55rem] border p-5 ${
                   item.tone === "accent"
                     ? "border-[rgba(216,170,115,0.18)] bg-[rgba(216,170,115,0.06)]"
@@ -282,12 +289,11 @@ export default function Hero() {
                 </div>
                 <p className="mt-4 text-sm leading-7 text-stone-300">{item.detail}</p>
               </article>
-              </ScrollReveal>
             );
           })}
-        </div>
+        </StaggerReveal>
 
-        <SectionDivider tone="accent" className="mt-10" />
+        <SectionBridge variant="diamond" tone="accent" className="mt-10" />
       </div>
     </section>
   );

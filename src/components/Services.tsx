@@ -1,5 +1,8 @@
 import { BadgeCheck, Blocks, Map } from "lucide-react";
 
+import ScrollReveal from "@/components/ScrollReveal";
+import StaggerReveal from "@/components/StaggerReveal";
+
 const services = [
   {
     title: "Website Build",
@@ -43,18 +46,20 @@ export default function Services() {
   return (
     <section id="services" className="section-pad section-rule">
       <div className="section-shell">
-        <div className="max-w-3xl">
-          <span className="eyebrow">Services</span>
-          <h2 className="section-title mt-7 text-5xl text-stone-50 sm:text-6xl">
-            What you are actually buying.
-          </h2>
-          <p className="muted-copy mt-6 max-w-2xl text-lg leading-8">
-            The core offer is simple: stronger first impression, clearer
-            service pages, and a cleaner lead path before launch.
-          </p>
-        </div>
+        <ScrollReveal direction="blur" depth="near">
+          <div className="max-w-3xl">
+            <span className="eyebrow">Services</span>
+            <h2 className="section-title mt-7 text-5xl text-stone-50 sm:text-6xl">
+              What you are actually buying.
+            </h2>
+            <p className="muted-copy mt-6 max-w-2xl text-lg leading-8">
+              The core offer is simple: stronger first impression, clearer
+              service pages, and a cleaner lead path before launch.
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div className="mt-12 grid gap-5 xl:grid-cols-3">
+        <StaggerReveal staggerDelay={0.1} direction="up" pattern="sequential" className="mt-12 grid gap-5 xl:grid-cols-3">
           {services.map((service, index) => {
             const Icon = service.icon;
 
@@ -106,7 +111,7 @@ export default function Services() {
               </article>
             );
           })}
-        </div>
+        </StaggerReveal>
       </div>
     </section>
   );

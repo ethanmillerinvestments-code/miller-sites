@@ -8,7 +8,7 @@
   --panel: rgba(18, 20, 26, 0.86);
   --panel-strong: rgba(12, 14, 19, 0.96);
   --copy: #f7f1e9;
-  --muted: #aaa093;
+  --muted: #b8ad9e;
   --line: rgba(255, 255, 255, 0.09);
   --line-strong: rgba(216, 170, 115, 0.28);
   --accent: #d8aa73;
@@ -126,6 +126,7 @@ textarea {
       inset 0 1px 0 rgba(255, 255, 255, 0.06),
       inset 0 0 12px rgba(216, 170, 115, 0.04),
       inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
 
   .lux-subtle {
@@ -167,6 +168,7 @@ textarea {
     border-radius: 999px;
     background: var(--accent);
     box-shadow: 0 0 18px rgba(216, 170, 115, 0.65);
+    animation: eyebrow-pulse 2.4s ease-in-out infinite;
   }
 
   .display-title {
@@ -276,6 +278,7 @@ textarea {
 
   .button-primary {
     background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+    background-size: 200% 200%;
     color: var(--accent-ink);
     box-shadow: 0 18px 38px rgba(216, 170, 115, 0.25);
   }
@@ -283,6 +286,7 @@ textarea {
   .button-primary:hover {
     transform: translateY(-1px);
     box-shadow: 0 24px 42px rgba(216, 170, 115, 0.32);
+    background-position: right center;
   }
 
   .button-primary:hover::after,
@@ -301,6 +305,7 @@ textarea {
     transform: translateY(-1px);
     border-color: rgba(216, 170, 115, 0.35);
     color: var(--accent-strong);
+    box-shadow: 0 0 20px rgba(216, 170, 115, 0.08);
   }
 
   .button-primary:active,
@@ -313,8 +318,8 @@ textarea {
   .focus-lux:focus-visible {
     outline: none;
     box-shadow:
-      0 0 0 4px rgba(216, 170, 115, 0.14),
-      0 18px 38px rgba(0, 0, 0, 0.18);
+      0 0 0 3px rgba(216, 170, 115, 0.35),
+      0 0 0 6px rgba(216, 170, 115, 0.12);
   }
 
   .stat-pill {
@@ -330,7 +335,7 @@ textarea {
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: #8f8679;
+    color: #9e9487;
   }
 
   .form-field {
@@ -350,9 +355,16 @@ textarea {
 
   .form-field:focus-visible {
     outline: none;
-    border-color: rgba(216, 170, 115, 0.5);
+    border-color: rgba(216, 170, 115, 0.55);
     background: rgba(255, 255, 255, 0.04);
-    box-shadow: 0 0 0 4px rgba(216, 170, 115, 0.12);
+    box-shadow:
+      0 0 0 3px rgba(216, 170, 115, 0.35),
+      0 0 0 6px rgba(216, 170, 115, 0.12),
+      0 0 16px rgba(216, 170, 115, 0.08);
+  }
+
+  .form-field:hover:not(:focus-visible) {
+    border-color: rgba(255, 255, 255, 0.14);
   }
 
   .pointer-card {
@@ -556,6 +568,43 @@ textarea {
     background:
       radial-gradient(circle at 50% 22%, transparent 0%, transparent 38%, rgba(6, 7, 11, 0.12) 78%, rgba(6, 7, 11, 0.38) 100%);
   }
+
+  .section-bg-warm {
+    background: linear-gradient(180deg, rgba(216,170,115,0.04) 0%, transparent 60%);
+  }
+  .section-bg-cool {
+    background: linear-gradient(180deg, rgba(125,183,176,0.03) 0%, transparent 60%);
+  }
+  .section-bg-elevated {
+    background-color: var(--page-elevated);
+  }
+
+  .lux-card-raised {
+    border: 1px solid var(--line-strong);
+    background: linear-gradient(180deg, rgba(21,22,27,0.94) 0%, rgba(12,13,18,0.98) 100%);
+    box-shadow: var(--panel-shadow), inset 0 1px 0 rgba(255,255,255,0.08);
+    transform: translateY(-2px);
+  }
+
+  .lux-card-inset {
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(0,0,0,0.2);
+  }
+
+  @media (max-width: 768px) {
+    .ambient-plate,
+    .ambient-thread,
+    .ambient-mote {
+      display: none;
+    }
+    .ambient-bloom {
+      animation-play-state: paused;
+      opacity: 0.12 !important;
+    }
+    .grain-overlay {
+      animation: none;
+    }
+  }
 }
 
 section[id],
@@ -685,6 +734,19 @@ body[data-auto-present-running="true"] [aria-label="Back to top"] {
   height: 2px;
   background: linear-gradient(90deg, transparent 5%, var(--accent) 30%, var(--teal) 70%, transparent 95%);
   animation: footer-breathe 6s ease-in-out infinite;
+}
+
+@keyframes eyebrow-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 18px rgba(216, 170, 115, 0.65);
+  }
+
+  50% {
+    transform: scale(1.18);
+    box-shadow: 0 0 24px rgba(216, 170, 115, 0.85);
+  }
 }
 
 @keyframes ambient-float {

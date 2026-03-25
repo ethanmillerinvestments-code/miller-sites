@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import Footer from "@/components/Footer";
+import PageEntrance from "@/components/PageEntrance";
 import SiteAtmosphere from "@/components/SiteAtmosphere";
 import SiteChrome from "@/components/SiteChrome";
 import { cn } from "@/lib/utils";
@@ -26,7 +27,9 @@ export default function SiteShell({
       />
       <main id="top" className={cn("relative z-10 overflow-hidden", mainClassName)}>
         <SiteAtmosphere />
-        <div className="relative z-10">{children}</div>
+        <PageEntrance>
+          <div className="relative z-10">{children}</div>
+        </PageEntrance>
       </main>
       <Footer />
     </>

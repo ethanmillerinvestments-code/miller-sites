@@ -4,7 +4,7 @@ import { type CSSProperties, type ReactNode, useRef } from "react";
 
 import { motion, useInView, useReducedMotion } from "framer-motion";
 
-type Direction = "up" | "down" | "left" | "right" | "zoom" | "blur";
+type Direction = "up" | "down" | "left" | "right" | "zoom" | "blur" | "slide" | "scale-blur";
 type Depth = "near" | "mid" | "far";
 
 const depthConfig: Record<Depth, { yMultiplier: number; duration: number; scale: number }> = {
@@ -51,6 +51,14 @@ const variants: Record<
     initial: { opacity: 0, y: 10, scale: 0.99 },
     animate: { opacity: 1, y: 0, scale: 1 },
   },
+  slide: {
+    initial: { opacity: 0, x: 40 },
+    animate: { opacity: 1, x: 0 },
+  },
+  "scale-blur": {
+    initial: { opacity: 0, scale: 0.92 },
+    animate: { opacity: 1, scale: 1 },
+  },
 };
 
 export default function ScrollReveal({
@@ -93,7 +101,7 @@ export default function ScrollReveal({
   }
   const hiddenState = {
     ...scaledInitial,
-    filter: direction === "blur" ? "blur(8px)" : "blur(0px)",
+    filter: direction === "blur" || direction === "scale-blur" ? "blur(12px)" : "blur(0px)",
   };
   const visibleState = {
     ...variant.animate,
