@@ -151,28 +151,28 @@ export const deliveryViews: DeliveryView[] = [
     label: "One-Time Build",
     title: "What the one-time build actually covers",
     intro:
-      "The build fee covers a scoped website project, not an endless retainer. The goal is a finished sales asset with the main lead path and launch setup handled cleanly.",
+      "The build fee covers a scoped website project, not an endless retainer. The goal is a finished sales asset with a clear scope, a real deposit step, and launch setup handled cleanly.",
     bullets: [
       "Website architecture matched to the selected build tier",
       "Mobile CTA hierarchy for calls, quote requests, and intake flow",
       "Form routing, anti-spam, metadata, canonical setup, robots, sitemap, and launch QA",
       "Custom-coded front end with a stronger trust signal than a generic template setup",
     ],
-    note: "Best for owners who want the website built right and scoped once.",
+    note: "Best for owners who want the website built right, approved in writing, and launched on a clean process.",
   },
   {
     id: "handoff",
     label: "Handoff",
     title: "What clean handoff means after launch",
     intro:
-      "If no monthly plan is selected, the site is delivered with clear ownership boundaries. The business knows what Leadcraft handled and what comes next.",
+      "If no monthly plan is selected, the site is delivered with clear ownership boundaries. The business knows what Leadcraft handled, when final payment clears, and what comes next.",
     bullets: [
       "Finished site shipped with the selected build scope already handled",
       "Clear split between build scope and future ongoing work",
-      "Handoff notes around hosting ownership and next-step options",
+      "Handoff notes around hosting ownership, deployment responsibility, and next-step options",
       "No forced monthly plan hidden inside the build price",
     ],
-    note: "Best for teams with internal help or an outside hosting partner.",
+    note: "Best for teams with internal help or an outside hosting partner that will actually manage the site after transfer.",
   },
   {
     id: "hosted",
@@ -185,19 +185,19 @@ export const deliveryViews: DeliveryView[] = [
       "Managed Site Care for a steadier maintenance and update lane",
       "Search and Conversion Support for recurring edits and conversion-minded refinement",
     ],
-    note: "Best for owners who want the site managed instead of fully handed off.",
+    note: "Best for owners who want the cleaner default, Leadcraft-hosted launch and ongoing technical control instead of full handoff.",
   },
 ];
 
 export const buildOnlyPoints = [
-  "One-time project fee with written scope and launch checklist",
+  "One-time project fee with written scope, deposit step, and launch checklist",
   "Finished custom-coded website and clean handoff",
   "Public-launch standard includes validated forms, anti-spam protection, metadata, and QA",
-  "Optional monthly support can be added after launch if it earns its keep",
+  "Optional monthly support can be added after launch, with Leadcraft-hosted launch as the default recommendation",
 ] as const;
 
 export const monthlySupportSummary = [
-  "Hosted Core for hosting, maintenance, and technical stability",
+  "Hosted Core for hosting, maintenance, and the default post-launch path",
   "Managed Site Care for broader upkeep and recurring live-site updates",
   "Search and Conversion Support for recurring edits, QA, and stronger page refinement",
 ] as const;

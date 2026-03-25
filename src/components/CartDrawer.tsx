@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Layers3, ShoppingCart, X } from "lucide-react";
 
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useCart, type CartItem, type CartOfferId } from "@/store/cart";
 
 function formatCurrency(priceCents: number) {
@@ -12,6 +13,7 @@ function formatCurrency(priceCents: number) {
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, clearCart, checkoutHref } = useCart();
+  useBodyScrollLock(isOpen);
 
   const buildItem = items.find((item) => item.category === "website");
   const supportItem = items.find((item) => item.category === "support");
@@ -66,7 +68,7 @@ export default function CartDrawer() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-5">
               {items.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center text-center">
                   <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-stone-400">

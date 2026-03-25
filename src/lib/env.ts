@@ -23,10 +23,13 @@ type DeliveryReadiness = {
 
 const DEFAULT_SITE_URL = "https://miller-sites.vercel.app";
 const DEFAULT_CALENDLY_URL = "https://calendly.com/ethanmillerinvestments";
-const DEFAULT_CONTACT_EMAIL = "ethanmillerinvestments@gmail.com";
+const DEFAULT_CONTACT_EMAIL = "leadcraftscale@gmail.com";
 const DEFAULT_FROM_EMAIL = "Leadcraft Agency <onboarding@resend.dev>";
 const DEFAULT_CHECKOUT_GO_LIVE_DATE = "2026-04-27T00:00:00-04:00";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const GTM_ID_PATTERN = /^GTM-[A-Z0-9]+$/i;
+const GA4_MEASUREMENT_ID_PATTERN = /^G-[A-Z0-9]+$/i;
+const NUMERIC_ID_PATTERN = /^\d+$/;
 
 function readEnv(name: string) {
   return (process.env[name] || "").trim();
@@ -47,6 +50,18 @@ function isValidUrl(value: string) {
 
 function isValidEmail(value: string) {
   return EMAIL_PATTERN.test(value);
+}
+
+function isValidGtmId(value: string) {
+  return GTM_ID_PATTERN.test(value);
+}
+
+function isValidGa4MeasurementId(value: string) {
+  return GA4_MEASUREMENT_ID_PATTERN.test(value);
+}
+
+function isNumericId(value: string) {
+  return NUMERIC_ID_PATTERN.test(value);
 }
 
 function parseBoolean(value: string) {
@@ -112,6 +127,14 @@ export function getAutomationSigningConfig() {
   };
 }
 
+export function getSubmissionBackupConfig() {
+  return {
+    url: getValidatedUrl("SUPABASE_URL"),
+    serviceRoleKey: readEnv("SUPABASE_SERVICE_ROLE_KEY"),
+    tableName: readEnv("SUPABASE_LEAD_FORM_TABLE") || "lead_form_submissions",
+  };
+}
+
 export function getRouteDeliveryReadiness(config: RouteConfig): DeliveryReadiness {
   return {
     hasWebhook: Boolean(config.webhookUrl && config.automationSecret),
@@ -122,6 +145,10 @@ export function getRouteDeliveryReadiness(config: RouteConfig): DeliveryReadines
 export function getSecurityConfigChecks(): SecurityConfigCheck[] {
   const explicitSiteUrl = readEnv("NEXT_PUBLIC_SITE_URL");
   const explicitCalendlyUrl = readEnv("NEXT_PUBLIC_CALENDLY_URL");
+  const explicitGtmId = readEnv("NEXT_PUBLIC_GTM_ID");
+  const explicitGa4MeasurementId = readEnv("NEXT_PUBLIC_GA4_MEASUREMENT_ID");
+  const explicitFbPixelId = readEnv("NEXT_PUBLIC_FB_PIXEL_ID");
+  const explicitHotjarId = readEnv("NEXT_PUBLIC_HOTJAR_ID");
   const explicitContactEmail = readEnv("CONTACT_EMAIL_TO");
   const explicitFromEmail = readEnv("CONTACT_FROM_EMAIL");
   const resendApiKey = readEnv("RESEND_API_KEY");
@@ -130,11 +157,18 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
   const automationSecret = readEnv("LEADCRAFT_AUTOMATION_SECRET");
   const stripeSecretKey = readEnv("STRIPE_SECRET_KEY");
   const stripeWebhookSecret = readEnv("STRIPE_WEBHOOK_SECRET");
+  const supabaseUrl = readEnv("SUPABASE_URL");
+  const supabaseServiceRoleKey = readEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const supabaseLeadFormTable = readEnv("SUPABASE_LEAD_FORM_TABLE");
   const checkoutEnabled = parseBoolean(readEnv("LEADCRAFT_ENABLE_CHECKOUT"));
   const checkoutGoLiveDate = readEnv("LEADCRAFT_CHECKOUT_GO_LIVE_DATE");
   const requireProposalApproval = parseBooleanDefaultTrue(
     readEnv("LEADCRAFT_REQUIRE_PROPOSAL_APPROVAL")
   );
+  const contactWebhookReady =
+    isValidUrl(contactWebhookUrl) && Boolean(automationSecret);
+  const checkoutWebhookReady =
+    isValidUrl(checkoutWebhookUrl) && Boolean(automationSecret);
   const checks: SecurityConfigCheck[] = [];
 
   checks.push(
@@ -166,6 +200,72 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
           key: "NEXT_PUBLIC_CALENDLY_URL",
           level: "warn",
           summary: `Using code fallback (${DEFAULT_CALENDLY_URL}).`,
+        }
+  );
+
+  checks.push(
+    explicitGtmId
+      ? {
+          key: "NEXT_PUBLIC_GTM_ID",
+          level: isValidGtmId(explicitGtmId) ? "pass" : "fail",
+          summary: isValidGtmId(explicitGtmId)
+            ? "Configured with a GTM container ID."
+            : "Configured but not a valid GTM container ID.",
+        }
+      : {
+          key: "NEXT_PUBLIC_GTM_ID",
+          level: "warn",
+          summary: "Missing. GTM-based analytics is disabled.",
+        }
+  );
+
+  checks.push(
+    explicitGa4MeasurementId
+      ? {
+          key: "NEXT_PUBLIC_GA4_MEASUREMENT_ID",
+          level: isValidGa4MeasurementId(explicitGa4MeasurementId)
+            ? "pass"
+            : "fail",
+          summary: isValidGa4MeasurementId(explicitGa4MeasurementId)
+            ? "Configured with a GA4 measurement ID."
+            : "Configured but not a valid GA4 measurement ID.",
+        }
+      : {
+          key: "NEXT_PUBLIC_GA4_MEASUREMENT_ID",
+          level: "warn",
+          summary: "Missing. Direct GA4 fallback is disabled.",
+      }
+  );
+
+  checks.push(
+    explicitFbPixelId
+      ? {
+          key: "NEXT_PUBLIC_FB_PIXEL_ID",
+          level: isNumericId(explicitFbPixelId) ? "pass" : "fail",
+          summary: isNumericId(explicitFbPixelId)
+            ? "Configured with a Meta Pixel ID."
+            : "Configured but not a valid numeric Pixel ID.",
+        }
+      : {
+          key: "NEXT_PUBLIC_FB_PIXEL_ID",
+          level: "warn",
+          summary: "Missing. Meta Pixel is disabled.",
+        }
+  );
+
+  checks.push(
+    explicitHotjarId
+      ? {
+          key: "NEXT_PUBLIC_HOTJAR_ID",
+          level: isNumericId(explicitHotjarId) ? "pass" : "fail",
+          summary: isNumericId(explicitHotjarId)
+            ? "Configured with a Hotjar site ID."
+            : "Configured but not a valid numeric Hotjar ID.",
+        }
+      : {
+          key: "NEXT_PUBLIC_HOTJAR_ID",
+          level: "warn",
+          summary: "Missing. Hotjar is disabled.",
         }
   );
 
@@ -204,7 +304,7 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
     level: resendApiKey ? "pass" : "warn",
     summary: resendApiKey
       ? "Configured. Inbox backup delivery is available."
-      : "Missing. CRM webhook can still receive submissions, but email backup is unavailable.",
+      : "Missing. CRM delivery can still run, but inbox backup is unavailable.",
   });
 
   checks.push(
@@ -222,7 +322,7 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
       : {
           key: "LEADCRAFT_CONTACT_WEBHOOK_URL",
           level: "warn",
-          summary: "Missing. Contact submissions rely on inbox delivery only.",
+          summary: "Missing. Contact submissions cannot go live without CRM delivery.",
         }
   );
 
@@ -241,7 +341,7 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
       : {
           key: "LEADCRAFT_CHECKOUT_WEBHOOK_URL",
           level: "warn",
-          summary: "Missing. Checkout intake relies on inbox delivery only.",
+          summary: "Missing. Checkout intake cannot go live without CRM delivery.",
         }
   );
 
@@ -265,28 +365,50 @@ export function getSecurityConfigChecks(): SecurityConfigCheck[] {
 
   checks.push({
     key: "CONTACT_DELIVERY_READY",
-    level: contactWebhookUrl || resendApiKey ? "pass" : "fail",
+    level: contactWebhookReady ? "pass" : "fail",
     summary:
-      contactWebhookUrl || resendApiKey
-        ? contactWebhookUrl && resendApiKey
+      contactWebhookReady
+        ? resendApiKey
           ? "Contact has CRM primary delivery and inbox backup."
-          : contactWebhookUrl
-            ? "Contact has CRM delivery only. Inbox backup is missing."
-            : "Contact has inbox delivery only. CRM primary delivery is missing."
-        : "Contact has no live delivery path. Configure webhook or Resend before production use.",
+          : "Contact has canonical CRM delivery. Inbox backup is missing."
+        : "Contact cannot go live until the signed CRM webhook path is configured.",
   });
 
   checks.push({
     key: "CHECKOUT_INTAKE_DELIVERY_READY",
-    level: checkoutWebhookUrl || resendApiKey ? "pass" : "fail",
+    level: checkoutWebhookReady ? "pass" : "fail",
     summary:
-      checkoutWebhookUrl || resendApiKey
-        ? checkoutWebhookUrl && resendApiKey
+      checkoutWebhookReady
+        ? resendApiKey
           ? "Checkout intake has CRM primary delivery and inbox backup."
-          : checkoutWebhookUrl
-            ? "Checkout intake has CRM delivery only. Inbox backup is missing."
-            : "Checkout intake has inbox delivery only. CRM primary delivery is missing."
-        : "Checkout intake has no live delivery path. Configure webhook or Resend before production use.",
+          : "Checkout intake has canonical CRM delivery. Inbox backup is missing."
+        : "Checkout intake cannot go live until the signed CRM webhook path is configured.",
+  });
+
+  checks.push({
+    key: "SUPABASE_URL",
+    level: supabaseUrl ? (isValidUrl(supabaseUrl) ? "pass" : "fail") : "warn",
+    summary: supabaseUrl
+      ? isValidUrl(supabaseUrl)
+        ? "Configured for durable submission backups."
+        : "Configured but not a valid http(s) URL."
+      : "Missing. Durable submission backups are disabled.",
+  });
+
+  checks.push({
+    key: "SUPABASE_SERVICE_ROLE_KEY",
+    level: supabaseServiceRoleKey ? "pass" : "warn",
+    summary: supabaseServiceRoleKey
+      ? "Configured for server-side submission backup writes."
+      : "Missing. Durable submission backups are disabled.",
+  });
+
+  checks.push({
+    key: "SUPABASE_LEAD_FORM_TABLE",
+    level: "pass",
+    summary: supabaseLeadFormTable
+      ? "Configured with an explicit lead backup table."
+      : "Using code fallback (lead_form_submissions).",
   });
 
   checks.push({

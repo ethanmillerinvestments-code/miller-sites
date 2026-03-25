@@ -1,7 +1,7 @@
 const operatingMarkers = [
   "Direct operator-to-owner communication",
   "Built for home-service companies only",
-  "Written scope before any payment step",
+  "Written scope and deposit before build work starts",
 ] as const;
 
 const aboutPoints = [
@@ -18,7 +18,7 @@ const aboutPoints = [
   {
     title: "Clear ownership after launch",
     body:
-      "One-time build, handoff, and optional monthly support stay separated so the business knows exactly what it owns.",
+      "One-time build, Leadcraft-hosted launch, handoff, and optional monthly support stay separated so the business knows exactly what it owns.",
   },
 ] as const;
 

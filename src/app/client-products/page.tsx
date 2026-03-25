@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 
+import Breadcrumbs from "@/components/Breadcrumbs";
 import ClientProductsDirectoryPage from "@/components/client-products/ClientProductsDirectoryPage";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Proof Of Work",
   description:
-    "Fictional proof-of-work concepts by Leadcraft Agency showing category-specific website direction for roofing, HVAC, and outdoor-living businesses.",
+    "Category-specific concept builds by Leadcraft Agency showing website direction for roofing, HVAC, and outdoor-living local service companies.",
   alternates: {
     canonical: `${siteConfig.siteUrl}/client-products`,
   },
@@ -38,5 +39,13 @@ export const metadata: Metadata = {
 };
 
 export default function ClientProductsIndexRoute() {
-  return <ClientProductsDirectoryPage />;
+  return (
+    <ClientProductsDirectoryPage
+      breadcrumbs={
+        <Breadcrumbs
+          items={[{ label: "Proof of Work", href: "/client-products" }]}
+        />
+      }
+    />
+  );
 }

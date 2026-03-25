@@ -12,7 +12,29 @@ const fieldform = getClientProduct("fieldform-outdoor-living");
 const northline = getClientProduct("northline-climate");
 const summit = getClientProduct("summit-shield-roofing");
 
-export default function ClientProductsDirectoryPage() {
+const proofLadder = [
+  {
+    title: "Concept builds",
+    body:
+      "These public examples show design range, structure decisions, and category-specific thinking without pretending they are live client sites.",
+  },
+  {
+    title: "Teardown reasoning",
+    body:
+      "Leadcraft uses teardown notes and audit thinking during scope conversations instead of publishing fake case studies or padded proof.",
+  },
+  {
+    title: "Approved live proof",
+    body:
+      "Live client results are added only when they are real, approved for public use, and specific enough to defend cleanly.",
+  },
+] as const;
+
+export default function ClientProductsDirectoryPage({
+  breadcrumbs,
+}: {
+  breadcrumbs?: React.ReactNode;
+}) {
   if (!fieldform || !northline || !summit) {
     return null;
   }
@@ -30,6 +52,7 @@ export default function ClientProductsDirectoryPage() {
         />
 
         <div className="section-shell relative z-10">
+          {breadcrumbs}
           <ScrollReveal direction="blur" className="max-w-5xl">
             <span className="eyebrow">Proof Of Work</span>
             <h1 className="display-title mt-7 text-[clamp(3rem,9vw,6.15rem)] text-stone-50">
@@ -102,6 +125,34 @@ export default function ClientProductsDirectoryPage() {
                 </a>
               </div>
             </ScrollReveal>
+          </div>
+
+          <div className="mt-10 grid gap-5 lg:grid-cols-3">
+            {proofLadder.map((item, index) => (
+              <ScrollReveal
+                key={item.title}
+                direction={index === 1 ? "blur" : "up"}
+                delay={0.04 + index * 0.05}
+              >
+                <article
+                  className={`h-full rounded-[1.75rem] border p-5 sm:p-6 ${
+                    index === 0
+                      ? "border-[rgba(216,170,115,0.18)] bg-[rgba(216,170,115,0.06)]"
+                      : index === 2
+                        ? "border-[rgba(125,183,176,0.18)] bg-[rgba(125,183,176,0.07)]"
+                        : "border-white/10 bg-white/[0.03]"
+                  }`}
+                >
+                  <p className="mini-label">Proof Ladder</p>
+                  <h2 className="mt-4 text-[1.7rem] font-semibold text-stone-50">
+                    {item.title}
+                  </h2>
+                  <p className="mt-3 text-sm leading-7 text-stone-300">
+                    {item.body}
+                  </p>
+                </article>
+              </ScrollReveal>
+            ))}
           </div>
 
           <div className="mt-12 grid gap-6">

@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -6,10 +7,13 @@ import { fileURLToPath } from "node:url";
 const projectRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const defaultSiteUrl = "https://miller-sites.vercel.app";
 const defaultCalendlyUrl = "https://calendly.com/ethanmillerinvestments";
-const defaultContactEmail = "ethanmillerinvestments@gmail.com";
+const defaultContactEmail = "leadcraftscale@gmail.com";
 const defaultFromEmail = "Leadcraft Agency <onboarding@resend.dev>";
 const defaultGoLiveDate = "2026-04-27T00:00:00-04:00";
 const requestTimeoutMs = 8000;
+const gtmIdPattern = /^GTM-[A-Z0-9]+$/i;
+const ga4MeasurementIdPattern = /^G-[A-Z0-9]+$/i;
+const numericIdPattern = /^\d+$/;
 const requiredHeaders = [
   "content-security-policy",
   "strict-transport-security",
@@ -18,6 +22,62 @@ const requiredHeaders = [
   "referrer-policy",
   "permissions-policy",
 ];
+
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return;
+  }
+
+  const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const separatorIndex = trimmed.indexOf("=");
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    if (!key || process.env[key]) {
+      continue;
+    }
+
+    let value = trimmed.slice(separatorIndex + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    // `vercel env pull` may encode trailing newlines as `\n` inside quoted values.
+    value = value
+      .replace(/\\n/g, "\n")
+      .replace(/\\r/g, "\r")
+      .replace(/\\t/g, "\t");
+
+    process.env[key] = value;
+  }
+}
+
+function loadProjectEnv() {
+  const candidates = [
+    ".env",
+    ".env.production",
+    ".env.local",
+    ".env.production.local",
+  ];
+
+  candidates.forEach((fileName) => {
+    loadEnvFile(path.join(projectRoot, fileName));
+  });
+}
+
+loadProjectEnv();
 
 function readEnv(name) {
   return (process.env[name] || "").trim();
@@ -40,6 +100,18 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+function isValidGtmId(value) {
+  return gtmIdPattern.test(value);
+}
+
+function isValidGa4MeasurementId(value) {
+  return ga4MeasurementIdPattern.test(value);
+}
+
+function isNumericId(value) {
+  return numericIdPattern.test(value);
+}
+
 function parseBoolean(value) {
   return value.toLowerCase() === "true";
 }
@@ -56,6 +128,10 @@ function buildEnvChecks() {
   const checks = [];
   const explicitSiteUrl = readEnv("NEXT_PUBLIC_SITE_URL");
   const explicitCalendlyUrl = readEnv("NEXT_PUBLIC_CALENDLY_URL");
+  const explicitGtmId = readEnv("NEXT_PUBLIC_GTM_ID");
+  const explicitGa4MeasurementId = readEnv("NEXT_PUBLIC_GA4_MEASUREMENT_ID");
+  const explicitFbPixelId = readEnv("NEXT_PUBLIC_FB_PIXEL_ID");
+  const explicitHotjarId = readEnv("NEXT_PUBLIC_HOTJAR_ID");
   const explicitContactEmail = readEnv("CONTACT_EMAIL_TO");
   const explicitFromEmail = readEnv("CONTACT_FROM_EMAIL");
   const resendApiKey = readEnv("RESEND_API_KEY");
@@ -64,11 +140,18 @@ function buildEnvChecks() {
   const automationSecret = readEnv("LEADCRAFT_AUTOMATION_SECRET");
   const stripeSecretKey = readEnv("STRIPE_SECRET_KEY");
   const stripeWebhookSecret = readEnv("STRIPE_WEBHOOK_SECRET");
+  const supabaseUrl = readEnv("SUPABASE_URL");
+  const supabaseServiceRoleKey = readEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const supabaseLeadFormTable = readEnv("SUPABASE_LEAD_FORM_TABLE");
   const checkoutEnabled = parseBoolean(readEnv("LEADCRAFT_ENABLE_CHECKOUT"));
   const checkoutGoLiveDate = readEnv("LEADCRAFT_CHECKOUT_GO_LIVE_DATE");
   const requireProposalApproval = parseBooleanDefaultTrue(
     readEnv("LEADCRAFT_REQUIRE_PROPOSAL_APPROVAL")
   );
+  const contactWebhookReady =
+    isValidUrl(contactWebhookUrl) && Boolean(automationSecret);
+  const checkoutWebhookReady =
+    isValidUrl(checkoutWebhookUrl) && Boolean(automationSecret);
 
   addCheck(
     checks,
@@ -93,6 +176,50 @@ function buildEnvChecks() {
         ? "Configured with an explicit Calendly URL."
         : "Configured but not a valid http(s) URL."
       : `Using code fallback (${defaultCalendlyUrl}).`
+  );
+  addCheck(
+    checks,
+    "NEXT_PUBLIC_GTM_ID",
+    explicitGtmId ? (isValidGtmId(explicitGtmId) ? "pass" : "fail") : "warn",
+    explicitGtmId
+      ? isValidGtmId(explicitGtmId)
+        ? "Configured with a GTM container ID."
+        : "Configured but not a valid GTM container ID."
+      : "Missing. GTM-based analytics is disabled."
+  );
+  addCheck(
+    checks,
+    "NEXT_PUBLIC_GA4_MEASUREMENT_ID",
+    explicitGa4MeasurementId
+      ? isValidGa4MeasurementId(explicitGa4MeasurementId)
+        ? "pass"
+        : "fail"
+      : "warn",
+    explicitGa4MeasurementId
+      ? isValidGa4MeasurementId(explicitGa4MeasurementId)
+        ? "Configured with a GA4 measurement ID."
+        : "Configured but not a valid GA4 measurement ID."
+      : "Missing. Direct GA4 fallback is disabled."
+  );
+  addCheck(
+    checks,
+    "NEXT_PUBLIC_FB_PIXEL_ID",
+    explicitFbPixelId ? (isNumericId(explicitFbPixelId) ? "pass" : "fail") : "warn",
+    explicitFbPixelId
+      ? isNumericId(explicitFbPixelId)
+        ? "Configured with a Meta Pixel ID."
+        : "Configured but not a valid numeric Pixel ID."
+      : "Missing. Meta Pixel is disabled."
+  );
+  addCheck(
+    checks,
+    "NEXT_PUBLIC_HOTJAR_ID",
+    explicitHotjarId ? (isNumericId(explicitHotjarId) ? "pass" : "fail") : "warn",
+    explicitHotjarId
+      ? isNumericId(explicitHotjarId)
+        ? "Configured with a Hotjar site ID."
+        : "Configured but not a valid numeric Hotjar ID."
+      : "Missing. Hotjar is disabled."
   );
   addCheck(
     checks,
@@ -122,7 +249,7 @@ function buildEnvChecks() {
     resendApiKey ? "pass" : "warn",
     resendApiKey
       ? "Configured. Inbox backup delivery is available."
-      : "Missing. CRM webhook can still receive submissions, but email backup is unavailable."
+      : "Missing. CRM delivery can still run, but inbox backup is unavailable."
   );
 
   addCheck(
@@ -139,7 +266,7 @@ function buildEnvChecks() {
           ? "Configured with signing secret coverage."
           : "Configured without LEADCRAFT_AUTOMATION_SECRET."
         : "Configured but not a valid http(s) URL."
-      : "Missing. Contact submissions rely on inbox delivery only."
+      : "Missing. Contact submissions cannot go live without CRM delivery."
   );
   addCheck(
     checks,
@@ -155,7 +282,7 @@ function buildEnvChecks() {
           ? "Configured with signing secret coverage."
           : "Configured without LEADCRAFT_AUTOMATION_SECRET."
         : "Configured but not a valid http(s) URL."
-      : "Missing. Checkout intake relies on inbox delivery only."
+      : "Missing. Checkout intake cannot go live without CRM delivery."
   );
   addCheck(
     checks,
@@ -176,26 +303,48 @@ function buildEnvChecks() {
   addCheck(
     checks,
     "CONTACT_DELIVERY_READY",
-    contactWebhookUrl || resendApiKey ? "pass" : "fail",
-    contactWebhookUrl || resendApiKey
-      ? contactWebhookUrl && resendApiKey
+    contactWebhookReady ? "pass" : "fail",
+    contactWebhookReady
+      ? resendApiKey
         ? "Contact has CRM primary delivery and inbox backup."
-        : contactWebhookUrl
-          ? "Contact has CRM delivery only. Inbox backup is missing."
-          : "Contact has inbox delivery only. CRM primary delivery is missing."
-      : "Contact has no live delivery path. Configure webhook or Resend before production use."
+        : "Contact has canonical CRM delivery. Inbox backup is missing."
+      : "Contact cannot go live until the signed CRM webhook path is configured."
   );
   addCheck(
     checks,
     "CHECKOUT_INTAKE_DELIVERY_READY",
-    checkoutWebhookUrl || resendApiKey ? "pass" : "fail",
-    checkoutWebhookUrl || resendApiKey
-      ? checkoutWebhookUrl && resendApiKey
+    checkoutWebhookReady ? "pass" : "fail",
+    checkoutWebhookReady
+      ? resendApiKey
         ? "Checkout intake has CRM primary delivery and inbox backup."
-        : checkoutWebhookUrl
-          ? "Checkout intake has CRM delivery only. Inbox backup is missing."
-          : "Checkout intake has inbox delivery only. CRM primary delivery is missing."
-      : "Checkout intake has no live delivery path. Configure webhook or Resend before production use."
+        : "Checkout intake has canonical CRM delivery. Inbox backup is missing."
+        : "Checkout intake cannot go live until the signed CRM webhook path is configured."
+  );
+  addCheck(
+    checks,
+    "SUPABASE_URL",
+    supabaseUrl ? (isValidUrl(supabaseUrl) ? "pass" : "fail") : "warn",
+    supabaseUrl
+      ? isValidUrl(supabaseUrl)
+        ? "Configured for durable submission backups."
+        : "Configured but not a valid http(s) URL."
+      : "Missing. Durable submission backups are disabled."
+  );
+  addCheck(
+    checks,
+    "SUPABASE_SERVICE_ROLE_KEY",
+    supabaseServiceRoleKey ? "pass" : "warn",
+    supabaseServiceRoleKey
+      ? "Configured for server-side submission backup writes."
+      : "Missing. Durable submission backups are disabled."
+  );
+  addCheck(
+    checks,
+    "SUPABASE_LEAD_FORM_TABLE",
+    "pass",
+    supabaseLeadFormTable
+      ? "Configured with an explicit lead backup table."
+      : "Using code fallback (lead_form_submissions)."
   );
   addCheck(
     checks,
@@ -360,8 +509,67 @@ async function assertApiBehavior(siteUrl, path, allowedBody) {
   }
 }
 
+function checkWebhookHealth(label, webhookUrl) {
+  let body = "";
+
+  try {
+    body = execFileSync("curl", ["-sSL", webhookUrl], {
+      cwd: projectRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  } catch (error) {
+    throw new Error(
+      `${label} health check failed: ${String(error.stderr || error.message || error).trim()}`
+    );
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    throw new Error(
+      `${label} did not return JSON health output. The configured webhook target does not look like a public Apps Script web app.`
+    );
+  }
+
+  if (!parsed || parsed.ok !== true || parsed.webhook !== "online") {
+    throw new Error(`${label} did not confirm ok: true and webhook: "online".`);
+  }
+}
+
 function formatCheck({ key, level, summary }) {
   return `${level.toUpperCase()}  ${key}: ${summary}`;
+}
+
+function printRemediationHints(failures) {
+  const joined = failures.join("\n");
+  const needsContactDelivery =
+    joined.includes("CONTACT_DELIVERY_READY") ||
+    joined.includes("LEADCRAFT_CONTACT_WEBHOOK_URL");
+  const needsCheckoutDelivery =
+    joined.includes("CHECKOUT_INTAKE_DELIVERY_READY") ||
+    joined.includes("LEADCRAFT_CHECKOUT_WEBHOOK_URL");
+  const needsSigningSecret = joined.includes("LEADCRAFT_AUTOMATION_SECRET");
+
+  if (!(needsContactDelivery || needsCheckoutDelivery || needsSigningSecret)) {
+    return;
+  }
+
+  console.log("");
+  console.log("Recommended next steps");
+  console.log(
+    "- Set signed webhook delivery in production with LEADCRAFT_CONTACT_WEBHOOK_URL, LEADCRAFT_CHECKOUT_WEBHOOK_URL, and LEADCRAFT_AUTOMATION_SECRET."
+  );
+  console.log(
+    "- Set Resend backup with RESEND_API_KEY, CONTACT_EMAIL_TO, and CONTACT_FROM_EMAIL."
+  );
+  console.log(
+    "- Redeploy the site, then rerun npm run security:check."
+  );
+  console.log(
+    "- Use /Users/ethanmiller/business/miller sites/PRODUCTION_INTAKE_GO_LIVE_CHECKLIST.md as the source of truth."
+  );
 }
 
 async function main() {
@@ -396,6 +604,19 @@ async function main() {
   }
 
   if (failures.length === 0) {
+    const contactWebhookUrl = readEnv("LEADCRAFT_CONTACT_WEBHOOK_URL");
+    const checkoutWebhookUrl = readEnv("LEADCRAFT_CHECKOUT_WEBHOOK_URL");
+
+    if (isValidUrl(contactWebhookUrl)) {
+      checkWebhookHealth("CONTACT_WEBHOOK_HEALTH", contactWebhookUrl);
+      console.log("PASS  Contact webhook health: configured receiver responded with the expected CRM health JSON.");
+    }
+
+    if (isValidUrl(checkoutWebhookUrl) && checkoutWebhookUrl !== contactWebhookUrl) {
+      checkWebhookHealth("CHECKOUT_WEBHOOK_HEALTH", checkoutWebhookUrl);
+      console.log("PASS  Checkout webhook health: configured receiver responded with the expected CRM health JSON.");
+    }
+
     await checkLiveHeaders(siteUrl);
     console.log(`PASS  Live headers: ${siteUrl} exposes the required security headers.`);
 
@@ -416,6 +637,7 @@ async function main() {
     console.log("");
     console.error("Security check failed");
     failures.forEach((failure) => console.error(`- ${failure}`));
+    printRemediationHints(failures);
     process.exitCode = 1;
     return;
   }

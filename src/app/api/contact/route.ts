@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { buildContactIntakeEvent } from "@/lib/intake-events";
+import { buildContactIntakeEvent } from "@/lib/intake/intake-events";
 import {
   getContactRouteConfig,
   getRouteDeliveryReadiness,
@@ -8,13 +8,17 @@ import {
 import {
   cleanField,
   cleanTextarea,
-  escapeHtml,
   isValidEmail,
   isValidPhone,
   normalizeWebsite,
   parseTimestamp,
 } from "@/lib/form-utils";
+import {
+  formatIntakeEmailHtml,
+  formatIntakeEmailText,
+} from "@/lib/intake/intake-email";
 import { getRequestMarketingContext } from "@/lib/marketing-context";
+import { persistSubmissionBackup } from "@/lib/intake/submission-backup";
 import {
   ensureJsonRequest,
   getClientAddress,
@@ -23,7 +27,7 @@ import {
   jsonNoStore,
   takeRateLimitHit,
 } from "@/lib/security";
-import { deliverSubmission } from "@/lib/submission-routing";
+import { deliverSubmission } from "@/lib/intake/submission-routing";
 
 const CONTACT_RATE_LIMIT_MAX = 5;
 const CONTACT_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -83,6 +87,13 @@ export async function POST(request: Request) {
     const phone = cleanField(body.phone, 30);
     const business = cleanField(body.business, 120);
     const service = cleanField(body.service || body.industry, 80);
+    const serviceArea = cleanField(body.serviceArea || body.market, 120);
+    const teamSize = cleanField(body.teamSize, 80);
+    const primaryGoal = cleanField(body.primaryGoal, 120);
+    const currentSiteIssue = cleanField(
+      body.currentSiteIssue || body.auditFocus,
+      120
+    );
     const timeline = cleanField(body.timeline, 80);
     const submissionKindInput = cleanField(body.submissionKind, 40, {
       lowercase: true,
@@ -90,7 +101,11 @@ export async function POST(request: Request) {
     const submissionKind =
       submissionKindInput === "package_inquiry"
         ? "package_inquiry"
+        : submissionKindInput === "homepage_lead_capture"
+          ? "homepage_lead_capture"
         : "contact_inquiry";
+    const isPackageInquiry = submissionKind === "package_inquiry";
+    const isHomepageLeadCapture = submissionKind === "homepage_lead_capture";
     const packageInterest = cleanField(
       body.packageInterest || body.packageLabel || body.package,
       220
@@ -98,8 +113,10 @@ export async function POST(request: Request) {
     const workflowLabel = cleanField(body.workflowLabel, 120);
     const resolvedWorkflowLabel =
       workflowLabel ||
-      (submissionKind === "package_inquiry"
+      (isPackageInquiry
         ? "Package Inquiry"
+        : isHomepageLeadCapture
+          ? "Homepage Lead Capture"
         : "Contact Inquiry");
     const websiteInput = cleanField(body.website, 180);
     const website = normalizeWebsite(websiteInput);
@@ -136,6 +153,24 @@ export async function POST(request: Request) {
       );
     }
 
+    if (
+      !isPackageInquiry &&
+      !isHomepageLeadCapture &&
+      (!business ||
+        !service ||
+        !serviceArea ||
+        !primaryGoal ||
+        !currentSiteIssue)
+    ) {
+      return jsonNoStore(
+        {
+          error:
+            "Business, requested help, service area, biggest website issue, and primary goal are required for an audit intake.",
+        },
+        { status: 400 }
+      );
+    }
+
     if (!isValidEmail(email)) {
       return jsonNoStore(
         { error: "Please enter a valid email address." },
@@ -166,56 +201,155 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!deliveryReadiness.hasWebhook && !deliveryReadiness.hasEmail) {
-      console.error("Contact delivery unavailable: no webhook or email route.");
+    if (!deliveryReadiness.hasWebhook) {
+      console.error(
+        "Contact delivery unavailable: canonical CRM webhook path is not configured."
+      );
       return jsonNoStore(
         {
           error:
-            "Lead routing is unavailable on this deployment. Please call or email directly until the intake path is configured.",
+            "Lead routing is unavailable on this deployment until the CRM webhook path is configured. Please call or email directly until intake is restored.",
         },
         { status: 503 }
       );
     }
 
-    const html = `
-      <h2>New Leadcraft inquiry</h2>
-      <p><strong>Name:</strong> ${escapeHtml(name)}</p>
-      <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-      ${phone ? `<p><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ""}
-      ${business ? `<p><strong>Business:</strong> ${escapeHtml(business)}</p>` : ""}
-      ${service ? `<p><strong>Need:</strong> ${escapeHtml(service)}</p>` : ""}
-      ${
-        packageInterest
-          ? `<p><strong>Package Interest:</strong> ${escapeHtml(packageInterest)}</p>`
-          : ""
-      }
-      ${timeline ? `<p><strong>Timeline:</strong> ${escapeHtml(timeline)}</p>` : ""}
-      ${website ? `<p><strong>Website:</strong> ${escapeHtml(website)}</p>` : ""}
-      ${marketing.sourcePage ? `<p><strong>Source Page:</strong> ${escapeHtml(marketing.sourcePage)}</p>` : ""}
-      <p><strong>Project Details:</strong></p>
-      <p>${escapeHtml(message).replaceAll("\n", "<br />")}</p>
-    `;
+    const businessLabel = business || website || name;
+    const serviceLabel = service || (isHomepageLeadCapture ? "Homepage lead capture" : "");
+    const timelineLabel = timeline || (isHomepageLeadCapture ? "Not specified" : "");
+    const emailEyebrow =
+      isPackageInquiry
+        ? "Leadcraft package inquiry"
+        : isHomepageLeadCapture
+          ? "Leadcraft homepage lead capture"
+        : "Leadcraft audit intake";
+    const emailTitle = businessLabel || packageInterest || name;
+    const nextActionText =
+      isPackageInquiry
+        ? "Review package fit and reply with scope guidance, payment-path clarity, or a strategy-call path within one business day."
+        : isHomepageLeadCapture
+          ? "Review the website and send the strongest next step within one business day. Move the lead into the full audit intake, strategy call, or written scope path."
+        : "Review fit, send the strongest site-direction notes first, and reply with the right build lane or strategy-call path within one business day.";
 
-    const text = [
-      "New Leadcraft inquiry",
-      `Name: ${name}`,
-      `Email: ${email}`,
-      phone ? `Phone: ${phone}` : "",
-      business ? `Business: ${business}` : "",
-      service ? `Need: ${service}` : "",
-      packageInterest ? `Package Interest: ${packageInterest}` : "",
-      timeline ? `Timeline: ${timeline}` : "",
-      website ? `Website: ${website}` : "",
-      marketing.sourcePage ? `Source Page: ${marketing.sourcePage}` : "",
-      marketing.utmSource ? `UTM Source: ${marketing.utmSource}` : "",
-      marketing.utmMedium ? `UTM Medium: ${marketing.utmMedium}` : "",
-      marketing.utmCampaign ? `UTM Campaign: ${marketing.utmCampaign}` : "",
-      "",
-      "Project details:",
-      message,
-    ]
-      .filter(Boolean)
-      .join("\n");
+    const html = formatIntakeEmailHtml({
+      eyebrow: emailEyebrow,
+      title: emailTitle,
+      summary: [
+        { label: "Workflow", value: resolvedWorkflowLabel },
+        { label: "Company", value: businessLabel },
+        { label: "Need", value: serviceLabel },
+        { label: "Market", value: serviceArea },
+        { label: "Issue", value: currentSiteIssue },
+        { label: "Goal", value: primaryGoal },
+        { label: "Package interest", value: packageInterest },
+        { label: "Timeline", value: timelineLabel },
+      ],
+      actions: [
+        {
+          label: "Next action",
+          value: nextActionText,
+        },
+      ],
+      links: website ? [{ label: "Business website", href: website }] : [],
+      sections: [
+        {
+          title: "Contact",
+          fields: [
+            { label: "Name", value: name },
+            { label: "Email", value: email },
+            { label: "Phone", value: phone },
+          ],
+        },
+        {
+          title: "Company snapshot",
+          fields: [
+            { label: "Business", value: businessLabel },
+            { label: "Website", value: website },
+            { label: "Service area", value: serviceArea },
+            { label: "Team size", value: teamSize },
+            { label: "Biggest issue", value: currentSiteIssue },
+            { label: "Primary goal", value: primaryGoal },
+            { label: "Timeline", value: timelineLabel },
+          ],
+        },
+        {
+          title: "Brief",
+          blocks: [{ label: "Project details", value: message }],
+        },
+        {
+          title: "Tracking",
+          fields: [
+            { label: "Source page", value: marketing.sourcePage },
+            { label: "Referer", value: marketing.referer },
+            { label: "UTM source", value: marketing.utmSource },
+            { label: "UTM medium", value: marketing.utmMedium },
+            { label: "UTM campaign", value: marketing.utmCampaign },
+            { label: "UTM term", value: marketing.utmTerm },
+            { label: "UTM content", value: marketing.utmContent },
+          ],
+        },
+      ],
+    });
+
+    const text = formatIntakeEmailText({
+      eyebrow: emailEyebrow,
+      title: emailTitle,
+      summary: [
+        { label: "Workflow", value: resolvedWorkflowLabel },
+        { label: "Company", value: businessLabel },
+        { label: "Need", value: serviceLabel },
+        { label: "Market", value: serviceArea },
+        { label: "Issue", value: currentSiteIssue },
+        { label: "Goal", value: primaryGoal },
+        { label: "Package interest", value: packageInterest },
+        { label: "Timeline", value: timelineLabel },
+      ],
+      actions: [
+        {
+          label: "Next action",
+          value: nextActionText,
+        },
+      ],
+      links: website ? [{ label: "Business website", href: website }] : [],
+      sections: [
+        {
+          title: "Contact",
+          fields: [
+            { label: "Name", value: name },
+            { label: "Email", value: email },
+            { label: "Phone", value: phone },
+          ],
+        },
+        {
+          title: "Company snapshot",
+          fields: [
+            { label: "Business", value: businessLabel },
+            { label: "Website", value: website },
+            { label: "Service area", value: serviceArea },
+            { label: "Team size", value: teamSize },
+            { label: "Biggest issue", value: currentSiteIssue },
+            { label: "Primary goal", value: primaryGoal },
+            { label: "Timeline", value: timelineLabel },
+          ],
+        },
+        {
+          title: "Brief",
+          blocks: [{ label: "Project details", value: message }],
+        },
+        {
+          title: "Tracking",
+          fields: [
+            { label: "Source page", value: marketing.sourcePage },
+            { label: "Referer", value: marketing.referer },
+            { label: "UTM source", value: marketing.utmSource },
+            { label: "UTM medium", value: marketing.utmMedium },
+            { label: "UTM campaign", value: marketing.utmCampaign },
+            { label: "UTM term", value: marketing.utmTerm },
+            { label: "UTM content", value: marketing.utmContent },
+          ],
+        },
+      ],
+    });
 
     const eventId = randomUUID();
     const automationPayload = buildContactIntakeEvent({
@@ -225,16 +359,25 @@ export async function POST(request: Request) {
       name,
       email,
       phone,
-      business,
-      service,
-      timeline,
+      business: businessLabel,
+      service: serviceLabel,
+      serviceArea,
+      teamSize,
+      primaryGoal,
+      currentSiteIssue,
+      timeline: timelineLabel,
       website,
       message,
       submissionKind,
       workflowLabel: resolvedWorkflowLabel,
       packageInterest,
     });
-    const subject = `${resolvedWorkflowLabel} | ${name}${business ? ` | ${business}` : ""}`;
+    const subject =
+      isPackageInquiry
+        ? `Package Inquiry | ${businessLabel || name}${packageInterest ? ` | ${packageInterest}` : ""}`
+        : isHomepageLeadCapture
+          ? `Homepage Lead | ${businessLabel || name}${website ? ` | ${website}` : ""}`
+          : `Audit Intake | ${businessLabel || name}${currentSiteIssue ? ` | ${currentSiteIssue}` : ""}${primaryGoal ? ` -> ${primaryGoal}` : ""}`;
     const delivery = await deliverSubmission(
       {
         webhookUrl: config.webhookUrl,
@@ -252,19 +395,48 @@ export async function POST(request: Request) {
       },
       automationPayload
     );
+    const backup = await persistSubmissionBackup({
+      submissionId: eventId,
+      route: "/api/contact",
+      source: "leadcraft-site-contact-form",
+      submissionKind,
+      workflowLabel: resolvedWorkflowLabel,
+      name,
+      email,
+      phone,
+      business: businessLabel,
+      website,
+      message,
+      marketing,
+      payload: automationPayload,
+      delivery,
+    });
 
     console.info("Contact submission delivery", {
       eventId,
       mode: delivery.mode,
+      webhookReason: delivery.webhook.reason,
+      webhookProcessingStatus: delivery.webhook.processingStatus,
+      webhookExceptionCode: delivery.webhook.exceptionCode,
       webhookDelivered: delivery.webhook.delivered,
       emailDelivered: delivery.email.delivered,
+      backupPersisted: backup.persisted,
+      backupReason: backup.reason,
     });
+
+    if (backup.attempted && !backup.persisted) {
+      console.warn("Contact submission backup failed", {
+        eventId,
+        reason: backup.reason,
+        error: backup.error,
+      });
+    }
 
     if (!delivery.ok) {
       return jsonNoStore(
         {
           error:
-            "Lead routing could not be completed right now. Please try again shortly or contact Leadcraft directly.",
+            "Lead routing into the CRM could not be completed right now. Please try again shortly or contact Leadcraft directly.",
         },
         { status: 502 }
       );
@@ -275,7 +447,11 @@ export async function POST(request: Request) {
       mode: "accepted",
       deliveryMode: delivery.mode,
       message:
-        "Request received. If the project looks like a fit, the next reply moves into audit notes, scope, timeline, and the right build direction.",
+        isPackageInquiry
+          ? "Package question received. If the fit looks right, the next reply should land within one business day with package guidance, scope direction, and the best next step."
+          : isHomepageLeadCapture
+            ? "Request received. If the project looks like a fit, the next reply should land within one business day with the cleanest next step."
+          : "Audit intake received. If the project looks like a fit, the next reply should land within one business day with site-direction notes, scope guidance, and the right build direction.",
     });
   } catch (error) {
     console.error("Contact form error:", error);

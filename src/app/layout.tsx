@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Cormorant_Garamond } from "next/font/google";
+import Script from "next/script";
 
+import AnalyticsRoot from "@/components/AnalyticsRoot";
+import { analyticsConfig } from "@/lib/analytics";
 import { siteConfig } from "@/lib/site";
 
 import "./globals.css";
@@ -20,11 +23,11 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.siteUrl),
   title: {
-    default: "Leadcraft Agency | Premium Websites for Home-Service Companies",
+    default: "Leadcraft Agency | Editorial Websites For Home-Service Companies",
     template: "%s | Leadcraft Agency",
   },
   description:
-    "Leadcraft Agency designs conversion-focused websites for HVAC, plumbing, roofing, landscaping, electrical, painting, and other home-service companies.",
+    "Leadcraft Agency designs editorial, conversion-focused websites for HVAC, plumbing, roofing, landscaping, electrical, painting, and other home-service companies.",
   keywords: [
     "home service website design",
     "home service website",
@@ -55,7 +58,7 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     title: "Leadcraft Agency | Websites That Generate Leads",
     description:
-      "Custom-coded websites for home-service companies, built around mobile trust and booked calls.",
+      "Editorial-grade websites for home-service companies, built around trust, booked calls, and stronger market position.",
     images: [
       {
         url: "/og-image.svg",
@@ -69,7 +72,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Leadcraft Agency | Websites That Generate Leads",
     description:
-      "Conversion-focused websites for home-service companies, built for booked calls.",
+      "Editorial-grade websites for home-service companies, built for trust, booked calls, and cleaner scope review.",
     images: ["/og-image.svg"],
   },
   alternates: {
@@ -95,11 +98,12 @@ const jsonLd = {
       telephone: "+15138151826",
       email: siteConfig.email,
       description:
-        "Leadcraft Agency designs conversion-focused websites for home-service companies.",
+        "Leadcraft Agency designs editorial, conversion-focused websites for home-service companies.",
       areaServed: { "@type": "Country", name: "United States" },
       serviceType: [
         "Website Design",
         "Landing Page Design",
+        "Website Audit",
         "Search-Ready Website Structure",
         "Website Maintenance",
       ],
@@ -112,6 +116,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const analyticsEnabled = Boolean(
+    analyticsConfig.gtmId ||
+      analyticsConfig.ga4MeasurementId ||
+      analyticsConfig.fbPixelId ||
+      analyticsConfig.hotjarId
+  );
+
   return (
     <html lang="en" className="scroll-smooth">
       <head>
@@ -120,10 +131,52 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        {analyticsConfig.gtmId ? (
+          <Script id="gtm-loader" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              window.dataLayer.push({ "gtm.start": Date.now(), event: "gtm.js" });
+              (function(w,d,s,l,i){w[l]=w[l]||[];var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+              })(window,document,'script','dataLayer','${analyticsConfig.gtmId}');
+            `}
+          </Script>
+        ) : null}
+        {!analyticsConfig.gtmId && analyticsConfig.ga4MeasurementId ? (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${analyticsConfig.ga4MeasurementId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-loader" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                window.gtag = gtag;
+                gtag('js', new Date());
+                gtag('config', '${analyticsConfig.ga4MeasurementId}', {
+                  send_page_view: false
+                });
+              `}
+            </Script>
+          </>
+        ) : null}
       </head>
       <body
         className={`${bricolage.variable} ${cormorant.variable} bg-[#0b0c0f] font-sans text-stone-100 antialiased`}
       >
+        {analyticsConfig.gtmId ? (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${analyticsConfig.gtmId}`}
+              height="0"
+              width="0"
+              style={{ display: "none", visibility: "hidden" }}
+            />
+          </noscript>
+        ) : null}
+        {analyticsEnabled ? <AnalyticsRoot /> : null}
         {children}
       </body>
     </html>

@@ -13,13 +13,27 @@ export type AutomationWebhookResult = {
   attempts: number;
   status: number | null;
   target: string;
+  crmOk: boolean | null;
+  processingStatus: string;
+  exceptionCode: string;
   reason:
     | "delivered"
     | "missing_webhook_url"
     | "missing_signing_secret"
+    | "crm_rejected"
+    | "invalid_response_body"
     | "response_not_ok"
     | "network_error";
   error?: string;
+};
+
+type AutomationWebhookResponseBody = {
+  ok?: boolean;
+  error?: string;
+  result?: {
+    processingStatus?: string;
+    exceptionCode?: string;
+  };
 };
 
 function cleanWebhookUrl(value: string | undefined) {
@@ -73,6 +87,21 @@ function buildSignedEnvelope(payload: Record<string, unknown>, secret: string) {
   });
 }
 
+async function readWebhookResponse(
+  response: Response
+): Promise<AutomationWebhookResponseBody | null> {
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text) as AutomationWebhookResponseBody;
+  } catch {
+    return null;
+  }
+}
+
 export async function postAutomationWebhook(
   webhookUrl: string | undefined,
   payload: Record<string, unknown>
@@ -87,6 +116,9 @@ export async function postAutomationWebhook(
       attempts: 0,
       status: null,
       target: "",
+      crmOk: null,
+      processingStatus: "",
+      exceptionCode: "",
       reason: "missing_webhook_url",
     };
   }
@@ -101,6 +133,9 @@ export async function postAutomationWebhook(
       attempts: 0,
       status: null,
       target,
+      crmOk: null,
+      processingStatus: "",
+      exceptionCode: "",
       reason: "missing_signing_secret",
     };
   }
@@ -119,27 +154,67 @@ export async function postAutomationWebhook(
         signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
       });
 
-      if (response.ok) {
+      const responseBody = await readWebhookResponse(response);
+      const crmOk = responseBody?.ok === true;
+      const processingStatus =
+        typeof responseBody?.result?.processingStatus === "string"
+          ? responseBody.result.processingStatus
+          : "";
+      const exceptionCode =
+        typeof responseBody?.result?.exceptionCode === "string"
+          ? responseBody.result.exceptionCode
+          : "";
+      const responseError =
+        typeof responseBody?.error === "string" ? responseBody.error : "";
+
+      if (response.ok && crmOk) {
         return {
           attempted: true,
           delivered: true,
           attempts: attempt,
           status: response.status,
           target,
+          crmOk: true,
+          processingStatus,
+          exceptionCode,
           reason: "delivered",
         };
       }
 
       if (attempt === WEBHOOK_MAX_ATTEMPTS) {
-        console.warn("Automation webhook failed:", response.status, target);
+        console.warn(
+          "Automation webhook failed:",
+          JSON.stringify({
+            status: response.status,
+            target,
+            crmOk,
+            processingStatus,
+            exceptionCode,
+            responseError,
+            hasResponseBody: Boolean(responseBody),
+          })
+        );
         return {
           attempted: true,
           delivered: false,
           attempts: attempt,
           status: response.status,
           target,
-          reason: "response_not_ok",
-          error: `Received HTTP ${response.status}.`,
+          crmOk,
+          processingStatus,
+          exceptionCode,
+          reason: !response.ok
+            ? "response_not_ok"
+            : responseBody
+              ? "crm_rejected"
+              : "invalid_response_body",
+          error:
+            responseError ||
+            (!response.ok
+              ? `Received HTTP ${response.status}.`
+              : responseBody
+                ? "CRM webhook rejected the event."
+                : "CRM webhook returned an invalid response body."),
         };
       }
     } catch (error) {
@@ -151,6 +226,9 @@ export async function postAutomationWebhook(
           attempts: attempt,
           status: null,
           target,
+          crmOk: null,
+          processingStatus: "",
+          exceptionCode: "",
           reason: "network_error",
           error:
             error instanceof Error ? error.message : "Unknown network error.",
@@ -167,6 +245,9 @@ export async function postAutomationWebhook(
     attempts: WEBHOOK_MAX_ATTEMPTS,
     status: null,
     target,
+    crmOk: null,
+    processingStatus: "",
+    exceptionCode: "",
     reason: "network_error",
     error: "Webhook delivery exhausted all attempts.",
   };

@@ -1,16 +1,18 @@
 import { randomUUID } from "node:crypto";
 
-import { buildCheckoutIntakeEvent } from "@/lib/intake-events";
+import { buildCheckoutIntakeEvent } from "@/lib/intake/intake-events";
 import {
   buildCheckoutMetadata,
+  describeCheckoutBillingSelection,
   formatCheckoutIntakeHtml,
   formatCheckoutIntakeText,
+  getCheckoutBillingProfile,
   getCheckoutSelectionLabel,
   getCheckoutWorkflowLabel,
   normalizeCheckoutOfferIds,
   sanitizeCheckoutIntake,
   type CheckoutOfferId,
-} from "@/lib/checkout-intake";
+} from "@/lib/intake/checkout-intake";
 import {
   getCheckoutRouteConfig,
   getRouteDeliveryReadiness,
@@ -35,7 +37,7 @@ import {
 } from "@/lib/security";
 import { siteConfig } from "@/lib/site";
 import { createStripeClient } from "@/lib/stripe-server";
-import { deliverSubmission } from "@/lib/submission-routing";
+import { deliverSubmission } from "@/lib/intake/submission-routing";
 
 type CheckoutBody = {
   itemId?: CheckoutOfferId;
@@ -129,11 +131,11 @@ function getManualReviewReason(options: {
   hasScopeOnlyOffer: boolean;
 }) {
   if (!options.checkoutWindowOpen) {
-    return "Checkout is blocked until April 27, 2026 and requires manual scope review.";
+    return "Checkout is blocked until April 27, 2026 and requires manual scope, signer, and billing review.";
   }
 
   if (!options.checkoutEnabled) {
-    return "Checkout is disabled, so the request stays in manual scope review.";
+    return "Checkout is disabled, so the request stays in manual scope and billing review.";
   }
 
   if (options.requireProposalApproval) {
@@ -152,7 +154,7 @@ function getManualReviewReason(options: {
     return "The selected offer requires written scope review before any payment step.";
   }
 
-  return "Manual scope review is required before any payment step.";
+  return "Manual scope, signer, and billing review is required before any payment step.";
 }
 
 export async function POST(request: Request) {
@@ -234,7 +236,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const sanitized = sanitizeCheckoutIntake(body.intake || {});
+    const sanitized = sanitizeCheckoutIntake(offerIds, body.intake || {});
     if (!sanitized.data) {
       return jsonNoStore(
         { error: sanitized.error || "Please complete the intake." },
@@ -243,6 +245,9 @@ export async function POST(request: Request) {
     }
 
     const intake = sanitized.data;
+    const billing = getCheckoutBillingProfile(offerIds);
+    const billingSelection = describeCheckoutBillingSelection(offerIds, intake);
+
     const emailRate = takeRateLimitHit(
       "stripe-checkout-email",
       intake.email,
@@ -260,12 +265,14 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!deliveryReadiness.hasWebhook && !deliveryReadiness.hasEmail) {
-      console.error("Checkout intake delivery unavailable: no webhook or email route.");
+    if (!deliveryReadiness.hasWebhook) {
+      console.error(
+        "Checkout intake delivery unavailable: canonical CRM webhook path is not configured."
+      );
       return jsonNoStore(
         {
           error:
-            "Project brief routing is unavailable on this deployment. Please call or email directly until the intake path is configured.",
+            "Project brief routing is unavailable on this deployment until the CRM webhook path is configured. Please call or email directly until intake is restored.",
         },
         { status: 503 }
       );
@@ -297,9 +304,25 @@ export async function POST(request: Request) {
 
     const packageWorkflowLabel = getCheckoutWorkflowLabel(offerIds);
     const packageLabel = getCheckoutSelectionLabel(offerIds);
-    const htmlBody = formatCheckoutIntakeHtml(offerIds, intake);
-    const textBody = formatCheckoutIntakeText(offerIds, intake);
-    const manualSubject = `${packageWorkflowLabel} | ${intake.companyName} | ${packageLabel}`;
+    const htmlBody = formatCheckoutIntakeHtml(offerIds, intake, {
+      sourcePage: marketing.sourcePage,
+      referer: marketing.referer,
+      utmSource: marketing.utmSource,
+      utmMedium: marketing.utmMedium,
+      utmCampaign: marketing.utmCampaign,
+      utmTerm: marketing.utmTerm,
+      utmContent: marketing.utmContent,
+    });
+    const textBody = formatCheckoutIntakeText(offerIds, intake, {
+      sourcePage: marketing.sourcePage,
+      referer: marketing.referer,
+      utmSource: marketing.utmSource,
+      utmMedium: marketing.utmMedium,
+      utmCampaign: marketing.utmCampaign,
+      utmTerm: marketing.utmTerm,
+      utmContent: marketing.utmContent,
+    });
+    const manualSubject = `Package Intake | ${intake.companyName} | ${packageLabel}`;
     const intakeEventId = randomUUID();
     const automationPayload = buildCheckoutIntakeEvent({
       eventId: intakeEventId,
@@ -337,6 +360,9 @@ export async function POST(request: Request) {
       eventId: intakeEventId,
       mode: delivery.mode,
       manualReviewRequired,
+      webhookReason: delivery.webhook.reason,
+      webhookProcessingStatus: delivery.webhook.processingStatus,
+      webhookExceptionCode: delivery.webhook.exceptionCode,
       webhookDelivered: delivery.webhook.delivered,
       emailDelivered: delivery.email.delivered,
     });
@@ -345,7 +371,7 @@ export async function POST(request: Request) {
       return jsonNoStore(
         {
           error:
-            "Project brief routing could not be completed right now. Please try again shortly or contact Leadcraft directly.",
+            "Project brief routing into the CRM could not be completed right now. Please try again shortly or contact Leadcraft directly.",
         },
         { status: 502 }
       );
@@ -357,10 +383,10 @@ export async function POST(request: Request) {
         mode: "manual_review",
         deliveryMode: delivery.mode,
         message: !checkoutWindowOpen
-          ? "Company brief captured. Before April 27, 2026, the next step is manual scope review, signer confirmation, and kickoff planning."
+          ? `Project details received. Before April 27, 2026, the next step is manual scope review, signer confirmation, and kickoff planning. ${billing.summary} If the project is a fit, Leadcraft should reply within one business day.`
           : config.requireProposalApproval
-            ? "Company brief captured. The next step is written scope review. If the scope is approved, Leadcraft sends a Stripe payment link or invoice manually."
-            : "Company brief captured. The next step is manual scope review before any payment step.",
+            ? `Project details received. The next step is written scope review. If the scope is approved, Leadcraft sends the right payment instructions manually. ${billing.summary} Selected billing: ${billingSelection}. If the project is a fit, Leadcraft should reply within one business day.`
+            : `Project details received. The next step is manual scope review before any deposit or payment step. ${billing.summary} Selected billing: ${billingSelection}. If the project is a fit, Leadcraft should reply within one business day.`,
       });
     }
 

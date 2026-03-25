@@ -1,23 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" fill="none">
   <defs>
-    <linearGradient id="leadcraftStroke" x1="12" y1="9" x2="60" y2="63">
-      <stop offset="0%" stop-color="#F7D7A4" />
+    <linearGradient id="leadcraftFrame" x1="12" y1="8.5" x2="60" y2="63.5">
+      <stop offset="0%" stop-color="#F8E6C0" />
       <stop offset="52%" stop-color="#D8AA73" />
       <stop offset="100%" stop-color="#7DB7B0" />
     </linearGradient>
-    <radialGradient id="leadcraftFill" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(18 15) rotate(45) scale(72 72)">
-      <stop offset="0%" stop-color="#1A1C22" />
-      <stop offset="100%" stop-color="#090A0D" />
+    <radialGradient id="leadcraftFill" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(18 13) rotate(41) scale(75 72)">
+      <stop offset="0%" stop-color="#222833" />
+      <stop offset="56%" stop-color="#0E1118" />
+      <stop offset="100%" stop-color="#06070A" />
     </radialGradient>
-    <radialGradient id="leadcraftGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(18 13) rotate(33) scale(48 38)">
-      <stop offset="0%" stop-color="#D8AA73" stop-opacity=".18" />
+    <radialGradient id="leadcraftAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(21 16) rotate(30) scale(36 30)">
+      <stop offset="0%" stop-color="#D8AA73" stop-opacity=".3" />
+      <stop offset="58%" stop-color="#D8AA73" stop-opacity=".08" />
       <stop offset="100%" stop-color="#D8AA73" stop-opacity="0" />
     </radialGradient>
+    <radialGradient id="leadcraftCoolAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(53 54) rotate(12) scale(16 14)">
+      <stop offset="0%" stop-color="#7DB7B0" stop-opacity=".16" />
+      <stop offset="100%" stop-color="#7DB7B0" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="leadcraftSheen" x1="20" y1="10" x2="42" y2="28">
+      <stop offset="0%" stop-color="#FFF8EA" stop-opacity=".62" />
+      <stop offset="100%" stop-color="#FFF8EA" stop-opacity="0" />
+    </linearGradient>
+    <filter id="leadcraftShadow" x="-18%" y="-18%" width="136%" height="136%">
+      <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#000000" flood-opacity=".26" />
+    </filter>
   </defs>
-  <rect x="6" y="6" width="60" height="60" rx="22" fill="url(#leadcraftGlow)" />
-  <rect x="4" y="4" width="64" height="64" rx="24" fill="url(#leadcraftFill)" stroke="url(#leadcraftStroke)" stroke-width="1.5" />
-  <path d="M52 20.5C47.2 16.6 41.2 14.5 34.9 14.5C21.8 14.5 13.5 23.3 13.5 36C13.5 48.7 21.8 57.5 35 57.5C40.8 57.5 46.1 55.9 50.5 52.8" stroke="url(#leadcraftStroke)" stroke-width="4.4" stroke-linecap="round" />
-  <path d="M26.5 20.5V46H43.5" stroke="#F7EEE1" stroke-width="4.3" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M35.5 35L49.5 21" stroke="url(#leadcraftStroke)" stroke-width="4.1" stroke-linecap="round" />
-  <path d="M42 21H49.5V28.5" stroke="url(#leadcraftStroke)" stroke-width="4.1" stroke-linecap="round" stroke-linejoin="round" />
+  <ellipse cx="24.5" cy="18.5" rx="20.5" ry="16.5" fill="url(#leadcraftAura)" />
+  <ellipse cx="53.5" cy="54.5" rx="13.5" ry="11" fill="url(#leadcraftCoolAura)" />
+  <g filter="url(#leadcraftShadow)">
+    <rect x="5" y="5" width="62" height="62" rx="23" fill="url(#leadcraftFill)" stroke="url(#leadcraftFrame)" stroke-width="1.8" />
+    <rect x="8.5" y="8.5" width="55" height="55" rx="19.5" stroke="#FFFFFF" stroke-opacity=".08" />
+    <path d="M15 12.5C20.2 9.4 27.9 8.2 38.4 9.1C31 13.2 24.6 19 19.3 26.6C17.4 22.8 16 18.1 15 12.5Z" fill="url(#leadcraftSheen)" opacity=".58" />
+  </g>
+  <path d="M52.4 20.1C47.5 16.2 41.3 14.2 34.8 14.2C21.6 14.2 13.6 23.2 13.6 36.1C13.6 49 21.8 57.8 35.1 57.8C40.8 57.8 46.3 56.1 50.7 53.1" stroke="url(#leadcraftFrame)" stroke-width="4.4" stroke-linecap="round" />
+  <path d="M26.6 20.1V46.1H43.9" stroke="#F8F0E3" stroke-width="4.25" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M35.8 35.2L50.2 20.8" stroke="url(#leadcraftFrame)" stroke-width="4.15" stroke-linecap="round" />
+  <path d="M42.5 20.8H50.2V28.5" stroke="url(#leadcraftFrame)" stroke-width="4.15" stroke-linecap="round" stroke-linejoin="round" />
 </svg>

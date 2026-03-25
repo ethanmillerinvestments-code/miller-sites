@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Leadcraft Agency Site
 
-## Getting Started
+Public-facing site for Leadcraft Agency.
 
-First, run the development server:
+Stack:
+- Next.js 15
+- React 18
+- TypeScript
+- Tailwind CSS
+- Framer Motion
+- Resend
+- Stripe
+
+## Core Commands
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run lint
+npm run build
+npm run security:check
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Use `npm run security:check` before any production deploy that is meant to receive real contact or package-intake traffic.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Production Readiness
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The site is not considered outreach-ready until contact and checkout-intake delivery have a real live path.
 
-## Learn More
+Required docs:
+- [PRODUCTION_INTAKE_GO_LIVE_CHECKLIST.md](/Users/ethanmiller/business/miller sites/PRODUCTION_INTAKE_GO_LIVE_CHECKLIST.md)
+- [PRODUCTION_SETUP_SNIPPETS.md](/Users/ethanmiller/business/miller sites/PRODUCTION_SETUP_SNIPPETS.md)
+- [INBOUND_AUTOMATION_SETUP.md](/Users/ethanmiller/business/leadcraft/docs/04-inbound-and-ops/INBOUND_AUTOMATION_SETUP.md)
 
-To learn more about Next.js, take a look at the following resources:
+## How This Repo Works
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Customer flow:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Visitor lands on the site
+2. Visitor chooses contact, package finder, or checkout-intake
+3. Route validates and normalizes the request
+4. Signed webhook delivery attempts the CRM first
+5. Resend provides inbox backup when configured
+6. Operator reviews scope, signer, and payment readiness
+7. Verified Stripe webhooks confirm payment events when checkout is active
 
-## Deploy on Vercel
+Source-of-truth files:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- pricing and offer ladder:
+  [src/lib/offers.ts](/Users/ethanmiller/business/miller sites/src/lib/offers.ts)
+- env contract:
+  [src/lib/env.ts](/Users/ethanmiller/business/miller sites/src/lib/env.ts)
+- contact intake:
+  [src/app/api/contact/route.ts](/Users/ethanmiller/business/miller sites/src/app/api/contact/route.ts)
+- checkout-intake:
+  [src/app/api/stripe/checkout/route.ts](/Users/ethanmiller/business/miller sites/src/app/api/stripe/checkout/route.ts)
+- payment confirmation:
+  [src/app/api/stripe/webhook/route.ts](/Users/ethanmiller/business/miller sites/src/app/api/stripe/webhook/route.ts)
+- intake layer overview:
+  [src/lib/intake/README.md](/Users/ethanmiller/business/miller sites/src/lib/intake/README.md)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Minimum Env Expectations
+
+At least one delivery path must exist for both contact and checkout intake:
+
+1. Preferred:
+   signed webhook delivery into the CRM
+2. Backup:
+   Resend inbox delivery
+
+Recommended launch setup:
+- signed webhook delivery enabled
+- Resend backup enabled
+- checkout still manual-review only
+- proposal approval guard still enabled
+
+See [.env.example](/Users/ethanmiller/business/miller sites/.env.example) for the full env surface.

@@ -1,14 +1,27 @@
+function readPublicEnv(value: string | undefined, fallback: string) {
+  return (value || fallback).trim();
+}
+
 export const siteConfig = {
   name: "Leadcraft Agency",
-  tagline: "Websites That Generate Leads For Home-Service Companies",
-  siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://miller-sites.vercel.app",
+  tagline: "Editorial Websites That Generate Leads For Home-Service Companies",
+  siteUrl: readPublicEnv(
+    process.env.NEXT_PUBLIC_SITE_URL,
+    "https://miller-sites.vercel.app"
+  ),
   phoneDisplay: "(513) 815-1826",
   phoneHref: "tel:5138151826",
-  email: "ethanmillerinvestments@gmail.com",
-  emailHref: "mailto:ethanmillerinvestments@gmail.com",
-  calendlyUrl:
-    process.env.NEXT_PUBLIC_CALENDLY_URL ||
-    "https://calendly.com/ethanmillerinvestments",
+  email: "leadcraftscale@gmail.com",
+  emailHref: "mailto:leadcraftscale@gmail.com",
+  calendlyUrl: readPublicEnv(
+    process.env.NEXT_PUBLIC_CALENDLY_URL,
+    "https://calendly.com/ethanmillerinvestments"
+  ),
+  founderName: "Ethan Miller",
+  locationDisplay: "Cincinnati, Ohio",
+  operatingModel: "Direct operator studio",
+  responseStandard: "Initial fit review within 1 business day",
+  scopeStandard: "Written scope before any payment request",
 } as const;
 
 export const guidePages = [
@@ -38,7 +51,7 @@ export const guidePages = [
     label: "Working Together",
     title: "What partnering with Leadcraft actually looks like",
     description:
-      "Communication, launch support, monthly options, and client ownership.",
+      "Written scope, deposit, hosting posture, launch support, and client ownership.",
   },
   {
     href: "/client-products",
@@ -46,5 +59,26 @@ export const guidePages = [
     title: "Fictional proof of work for Leadcraft's portfolio",
     description:
       "Category-specific concept builds showing how Leadcraft structures premium local-service sites.",
+  },
+] as const;
+
+export const blogPages = [
+  {
+    href: "/blog",
+    label: "Blog",
+    title: "Notes on building sites that generate calls",
+    description:
+      "Insights on website structure, trust signals, and conversion for local service companies.",
+  },
+] as const;
+
+export const legalPages = [
+  {
+    href: "/privacy",
+    label: "Privacy",
+  },
+  {
+    href: "/terms",
+    label: "Terms",
   },
 ] as const;

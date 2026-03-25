@@ -32,7 +32,7 @@ const growthCards = [
   {
     title: "What happens before kickoff",
     body:
-      "A company brief and scope review happen before kickoff so price, deliverables, timeline, and ownership stay clear before any payment step.",
+      "A company brief and scope review happen before kickoff so price, deliverables, deposit, timeline, and ownership stay clear before any build step.",
     icon: Headphones,
   },
 ] as const;

@@ -6,21 +6,35 @@
       <stop offset="100%" stop-color="#090A0D" />
     </linearGradient>
     <linearGradient id="accentStroke" x1="116" y1="102" x2="1086" y2="528">
-      <stop offset="0%" stop-color="#F7D7A4" />
+      <stop offset="0%" stop-color="#F8E6C0" />
       <stop offset="52%" stop-color="#D8AA73" />
       <stop offset="100%" stop-color="#7DB7B0" />
     </linearGradient>
     <radialGradient id="warmGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(220 132) rotate(33) scale(620 380)">
-      <stop offset="0%" stop-color="#D8AA73" stop-opacity=".18" />
+      <stop offset="0%" stop-color="#D8AA73" stop-opacity=".22" />
       <stop offset="100%" stop-color="#D8AA73" stop-opacity="0" />
     </radialGradient>
     <radialGradient id="coolGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(980 438) rotate(12) scale(340 250)">
       <stop offset="0%" stop-color="#7DB7B0" stop-opacity=".14" />
       <stop offset="100%" stop-color="#7DB7B0" stop-opacity="0" />
     </radialGradient>
-    <radialGradient id="markFill" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(172 152) rotate(45) scale(154 154)">
-      <stop offset="0%" stop-color="#1A1C22" />
-      <stop offset="100%" stop-color="#090A0D" />
+    <radialGradient id="markFill" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(176 148) rotate(41) scale(162 154)">
+      <stop offset="0%" stop-color="#222833" />
+      <stop offset="56%" stop-color="#0E1118" />
+      <stop offset="100%" stop-color="#06070A" />
+    </radialGradient>
+    <radialGradient id="markWarmAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(162 144) rotate(28) scale(112 92)">
+      <stop offset="0%" stop-color="#D8AA73" stop-opacity=".28" />
+      <stop offset="60%" stop-color="#D8AA73" stop-opacity=".08" />
+      <stop offset="100%" stop-color="#D8AA73" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="markCoolAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(210 204) rotate(12) scale(48 44)">
+      <stop offset="0%" stop-color="#7DB7B0" stop-opacity=".16" />
+      <stop offset="100%" stop-color="#7DB7B0" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="markSheen" x1="136" y1="114" x2="188" y2="162">
+      <stop offset="0%" stop-color="#FFF8EA" stop-opacity=".58" />
+      <stop offset="100%" stop-color="#FFF8EA" stop-opacity="0" />
     </radialGradient>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)" />
@@ -29,28 +43,32 @@
   <ellipse cx="970" cy="442" rx="260" ry="176" fill="url(#coolGlow)" />
   <path d="M96 418H642" stroke="url(#accentStroke)" stroke-width="1.35" stroke-opacity=".38" />
 
-  <rect x="94" y="118" width="126" height="126" rx="42" fill="url(#markFill)" stroke="url(#accentStroke)" stroke-width="2" />
-  <path d="M189 151C179.6 143.1 167.9 139 155.6 139C130.5 139 114.5 155.8 114.5 181.5C114.5 207.2 130.5 224 155.8 224C166.8 224 177.1 221 185.5 215.1" stroke="url(#accentStroke)" stroke-width="7.8" stroke-linecap="round" />
-  <path d="M140 151V202H173" stroke="#F7EEE1" stroke-width="7.4" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M157 183L185 155" stroke="url(#accentStroke)" stroke-width="7" stroke-linecap="round" />
-  <path d="M169.5 155H185V170.5" stroke="url(#accentStroke)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+  <ellipse cx="162" cy="144" rx="74" ry="62" fill="url(#markWarmAura)" />
+  <ellipse cx="210" cy="204" rx="44" ry="38" fill="url(#markCoolAura)" />
+  <rect x="94" y="118" width="126" height="126" rx="46" fill="url(#markFill)" stroke="url(#accentStroke)" stroke-width="2.6" />
+  <rect x="101.5" y="125.5" width="111" height="111" rx="39.5" stroke="rgba(255,255,255,0.08)" />
+  <path d="M114 133C124 126.8 139 124.6 159.4 126.2C145 134.5 132.7 145.6 122.5 160.5C119 152.9 116.1 143.7 114 133Z" fill="url(#markSheen)" opacity=".54" />
+  <path d="M189.8 150.2C180 142.5 167.6 138.4 154.8 138.4C128.4 138.4 112.4 156.4 112.4 181.8C112.4 207.2 128.7 224.8 155.2 224.8C166.5 224.8 177.4 221.4 186.2 215.3" stroke="url(#accentStroke)" stroke-width="7.9" stroke-linecap="round" />
+  <path d="M139.9 150.2V202.2H174" stroke="#F8F0E3" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M156.6 183L184.8 154.8" stroke="url(#accentStroke)" stroke-width="7.2" stroke-linecap="round" />
+  <path d="M169.8 154.8H184.8V169.8" stroke="url(#accentStroke)" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round" />
 
-  <text x="252" y="174" fill="#F6EEE2" font-family="Georgia, 'Times New Roman', serif" font-size="58" font-weight="700" letter-spacing="-1.8">
+  <text x="252" y="174" fill="#F6EEE2" font-family="Georgia, 'Times New Roman', serif" font-size="60" font-weight="700" letter-spacing="-2.1">
     Leadcraft Agency
   </text>
-  <text x="252" y="220" fill="#B4A697" font-family="'Trebuchet MS', sans-serif" font-size="20" letter-spacing="6">
+  <text x="252" y="220" fill="#D8AA73" font-family="'Trebuchet MS', sans-serif" font-size="20" letter-spacing="6.6">
     WEBSITES THAT GENERATE LEADS
   </text>
 
-  <text x="94" y="326" fill="#F7EEE1" font-family="Georgia, 'Times New Roman', serif" font-size="78" font-weight="700" letter-spacing="-2.8">
-    Premium websites that turn local
+  <text x="94" y="326" fill="#F7EEE1" font-family="Georgia, 'Times New Roman', serif" font-size="76" font-weight="700" letter-spacing="-2.6">
+    Editorial websites that make
   </text>
-  <text x="94" y="402" fill="#F7EEE1" font-family="Georgia, 'Times New Roman', serif" font-size="78" font-weight="700" letter-spacing="-2.8">
-    searches into booked calls.
+  <text x="94" y="402" fill="#F7EEE1" font-family="Georgia, 'Times New Roman', serif" font-size="76" font-weight="700" letter-spacing="-2.6">
+    local service companies look established.
   </text>
 
   <text x="94" y="474" fill="#B4A697" font-family="'Trebuchet MS', sans-serif" font-size="27">
-    Conversion-focused design, stronger lead routing, and a sharper market position for service businesses.
+    Audit-first direction, stronger lead routing, and sharper positioning for service businesses.
   </text>
   <text x="94" y="528" fill="#D8AA73" font-family="'Trebuchet MS', sans-serif" font-size="22" font-weight="700" letter-spacing="1.2">
     LEADCRAFT AGENCY

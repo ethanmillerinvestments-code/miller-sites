@@ -5,7 +5,7 @@ import { Resend } from "resend";
 import {
   postAutomationWebhook,
   type AutomationWebhookResult,
-} from "@/lib/automation";
+} from "@/lib/intake/automation";
 
 type EmailDeliveryInput = {
   fromEmail: string;
@@ -53,6 +53,9 @@ function getUnavailableWebhookResult(): AutomationWebhookResult {
     attempts: 0,
     status: null,
     target: "",
+    crmOk: null,
+    processingStatus: "",
+    exceptionCode: "",
     reason: "missing_webhook_url",
   };
 }
@@ -101,6 +104,7 @@ export async function deliverSubmission(
   config: DeliveryConfig,
   payload: Record<string, unknown>
 ): Promise<SubmissionDeliveryResult> {
+  const webhookRequired = Boolean(config.webhookUrl);
   const webhookPromise = config.webhookUrl
     ? postAutomationWebhook(config.webhookUrl, payload)
     : Promise.resolve(getUnavailableWebhookResult());
@@ -119,7 +123,7 @@ export async function deliverSubmission(
       : "unavailable";
 
   return {
-    ok: mode !== "unavailable",
+    ok: webhookRequired ? webhookDelivered : mode !== "unavailable",
     mode,
     webhook,
     email,

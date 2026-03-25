@@ -8,19 +8,26 @@ import { useCart } from "@/store/cart";
 type CartButtonProps = {
   className?: string;
   compact?: boolean;
+  onBeforeOpen?: () => void;
 };
 
 export default function CartButton({
   className,
   compact = false,
+  onBeforeOpen,
 }: CartButtonProps) {
   const { items, openCart } = useCart();
   const count = items.length;
 
+  function handleClick() {
+    onBeforeOpen?.();
+    openCart();
+  }
+
   return (
     <button
       type="button"
-      onClick={openCart}
+      onClick={handleClick}
       className={cn(
         "focus-lux relative inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] text-stone-100 transition-colors duration-200 hover:border-[rgba(216,170,115,0.28)] hover:text-[color:var(--accent-strong)]",
         compact ? "h-11 w-11" : "min-h-11 px-4 py-2.5 text-sm font-semibold",
