@@ -119,6 +119,14 @@ export interface HousingMoneySummary {
 
 const VERIFIED_AT = "2026-04-20";
 
+export const miamiOxfordCampusAnchor = {
+  label: "Armstrong / Uptown campus anchor",
+  name: "Armstrong Student Center",
+  address: "550 E Spring St, Oxford, OH 45056",
+  latitude: 39.50741,
+  longitude: -84.73311,
+} as const;
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }

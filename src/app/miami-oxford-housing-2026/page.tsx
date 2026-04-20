@@ -4,7 +4,9 @@ import MiamiOxfordHousingPage from "@/components/pages/MiamiOxfordHousingPage";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Miami Oxford Housing Atlas 2026",
+  title: {
+    absolute: "Miami Oxford Housing Atlas 2026",
+  },
   description:
     "Private August 2026 housing atlas for exemption-case off-campus planning near Miami University Oxford, focused on studios, efficiencies, and true 1BRs.",
   alternates: {
@@ -22,18 +24,18 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Miami Oxford Housing Atlas 2026 | Leadcraft Agency",
+    title: "Miami Oxford Housing Atlas 2026",
     description:
-      "Prepared for August 2026 move-in and exemption-case off-campus planning. Private family-share atlas with walkability, cost clarity, and verified contact paths.",
+      "Prepared for August 2026 move-in and exemption-case off-campus planning. Private family-share atlas with campus-anchored walkability, cost clarity, and verified contact paths.",
     url: `${siteConfig.siteUrl}/miami-oxford-housing-2026`,
-    siteName: siteConfig.name,
+    siteName: "Miami Oxford Housing Atlas",
     type: "article",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Miami Oxford Housing Atlas 2026 | Leadcraft Agency",
+    title: "Miami Oxford Housing Atlas 2026",
     description:
-      "Prepared for August 2026 move-in and exemption-case off-campus planning. Private atlas with walkability, pricing clarity, and contact links.",
+      "Prepared for August 2026 move-in and exemption-case off-campus planning. Private atlas with campus-anchored walkability, pricing clarity, and contact links.",
   },
 };
 
