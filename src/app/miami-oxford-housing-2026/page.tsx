@@ -9,6 +9,15 @@ export const metadata: Metadata = {
   },
   description:
     "Private August 2026 housing atlas for exemption-case off-campus planning near Miami University Oxford, focused on studios, efficiencies, and true 1BRs.",
+  keywords: [
+    "Miami University Oxford housing",
+    "Miami Oxford off campus housing",
+    "Miami University exemption housing",
+    "Oxford Ohio 1 bedroom housing",
+    "Oxford Ohio studio housing",
+  ],
+  authors: [{ name: "Miami Oxford Housing Atlas" }],
+  creator: "Miami Oxford Housing Atlas",
   alternates: {
     canonical: `${siteConfig.siteUrl}/miami-oxford-housing-2026`,
   },
