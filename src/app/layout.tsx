@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Cormorant_Garamond } from "next/font/google";
 import Script from "next/script";
+import "leaflet/dist/leaflet.css";
 
 import AnalyticsRoot from "@/components/AnalyticsRoot";
 import { analyticsConfig } from "@/lib/analytics";
