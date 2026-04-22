@@ -3,11 +3,17 @@ import { describe, expect, it } from "vitest";
 import {
   buildMoveInDueSummary,
   buildRecurringAllInSummary,
+  calculateApproximateWalkMinutes,
+  calculateDistanceMiles,
   calculateMonthlyEquivalentFromSchoolYearTotal,
   calculateMoveInDue,
   calculateSchoolYearTotalFromMonthly,
+  filterHousingOptions,
+  getRecCenterDistance,
   getRankingScore,
+  miamiOxfordCampusAnchor,
   miamiOxfordHousingOptions,
+  miamiOxfordRecCenterAnchor,
   sortHousingOptions,
 } from "./miamiOxfordHousing";
 
@@ -36,6 +42,27 @@ describe("school-year conversion helpers", () => {
   it("converts monthly pricing into a 10-month school-year comparison", () => {
     expect(calculateSchoolYearTotalFromMonthly(595)).toBe(5950);
     expect(calculateSchoolYearTotalFromMonthly(800)).toBe(8000);
+  });
+});
+
+describe("campus anchor distance helpers", () => {
+  it("keeps the official Rec Center anchor available beside Armstrong", () => {
+    expect(miamiOxfordCampusAnchor.name).toBe("Armstrong Student Center");
+    expect(miamiOxfordCampusAnchor.address).toBe("550 E. Spring St., Oxford, OH 45056");
+    expect(miamiOxfordRecCenterAnchor.name).toBe("Recreational Sports Center");
+    expect(miamiOxfordRecCenterAnchor.address).toBe("750 S. Oak St., Oxford, OH 45056");
+  });
+
+  it("returns stable rounded coordinate distances and approximate walk minutes", () => {
+    expect(calculateDistanceMiles(miamiOxfordCampusAnchor, miamiOxfordRecCenterAnchor)).toBe(0.3);
+    expect(calculateApproximateWalkMinutes(0.3)).toBe(6);
+
+    const campusCourts = miamiOxfordHousingOptions.find((option) => option.id === "campus-courts");
+    expect(getRecCenterDistance(campusCourts!)).toEqual({
+      distanceMiles: 0.17,
+      walkMinutes: 3,
+      label: "Approx. 3 min to Rec Center",
+    });
   });
 });
 
@@ -95,5 +122,22 @@ describe("best-fit ranking", () => {
     expect(sycamoreIndex).toBeGreaterThanOrEqual(0);
     expect(elmIndex).toBeLessThan(sycamoreIndex);
     expect(getRankingScore(sorted[0]!)).toBeGreaterThan(getRankingScore(sorted.at(-1)!));
+  });
+});
+
+describe("filtering and sorting", () => {
+  it("filters search results before sorting by lowest monthly equivalent", () => {
+    const filtered = filterHousingOptions(miamiOxfordHousingOptions, {
+      unitTypes: ["one-bedroom"],
+      maxMonthlyEquivalent: 700,
+      searchQuery: "morrison",
+    });
+    const sorted = sortHousingOptions(filtered, "monthly-equivalent-asc");
+
+    expect(sorted.map((option) => option.id)).toEqual([
+      "10-west-sycamore",
+      "717-mcguffey",
+      "718-south-locust",
+    ]);
   });
 });

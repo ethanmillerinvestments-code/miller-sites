@@ -117,15 +117,89 @@ export interface HousingMoneySummary {
   status: HousingClarityStatus;
 }
 
+export interface HousingAnchor {
+  label: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  sourceLabel: string;
+  sourceUrl: string;
+}
+
+export interface HousingDistanceSummary {
+  distanceMiles: number;
+  walkMinutes: number;
+  label: string;
+}
+
 const VERIFIED_AT = "2026-04-20";
 
 export const miamiOxfordCampusAnchor = {
   label: "Armstrong / Uptown campus anchor",
   name: "Armstrong Student Center",
-  address: "550 E Spring St, Oxford, OH 45056",
+  address: "550 E. Spring St., Oxford, OH 45056",
   latitude: 39.50741,
   longitude: -84.73311,
-} as const;
+  sourceLabel: "Miami University Armstrong Student Center directions page",
+  sourceUrl: "https://miamioh.edu/centers-institutes/armstrong-student-center/about/directions.html",
+} as const satisfies HousingAnchor;
+
+export const miamiOxfordRecCenterAnchor = {
+  label: "Rec Center anchor",
+  name: "Recreational Sports Center",
+  address: "750 S. Oak St., Oxford, OH 45056",
+  latitude: 39.50388,
+  longitude: -84.73625,
+  sourceLabel: "Miami University Recreational Sports Center page",
+  sourceUrl:
+    "https://miamioh.edu/athletics-recreation/recreation/facilities/recreational-sports-center.html",
+} as const satisfies HousingAnchor;
+
+const EARTH_RADIUS_MILES = 3958.7613;
+const APPROXIMATE_WALK_MINUTES_PER_MILE = 20;
+
+export function calculateDistanceMiles(
+  from: Pick<HousingAnchor, "latitude" | "longitude">,
+  to: Pick<HousingAnchor, "latitude" | "longitude">,
+) {
+  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+  const latitudeDelta = toRadians(to.latitude - from.latitude);
+  const longitudeDelta = toRadians(to.longitude - from.longitude);
+  const fromLatitude = toRadians(from.latitude);
+  const toLatitude = toRadians(to.latitude);
+
+  const haversine =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(fromLatitude) * Math.cos(toLatitude) * Math.sin(longitudeDelta / 2) ** 2;
+  const distanceMiles =
+    2 * EARTH_RADIUS_MILES * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+
+  return Number(distanceMiles.toFixed(2));
+}
+
+export function calculateApproximateWalkMinutes(distanceMiles: number) {
+  return Math.max(1, Math.round(distanceMiles * APPROXIMATE_WALK_MINUTES_PER_MILE));
+}
+
+export function getArmstrongDistance(option: HousingOption): HousingDistanceSummary {
+  return {
+    distanceMiles: option.distanceMiles,
+    walkMinutes: option.walkMinutes,
+    label: `Approx. ${option.walkMinutes} min to Armstrong`,
+  };
+}
+
+export function getRecCenterDistance(option: HousingOption): HousingDistanceSummary {
+  const distanceMiles = calculateDistanceMiles(option, miamiOxfordRecCenterAnchor);
+  const walkMinutes = calculateApproximateWalkMinutes(distanceMiles);
+
+  return {
+    distanceMiles,
+    walkMinutes,
+    label: `Approx. ${walkMinutes} min to Rec Center`,
+  };
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -612,6 +686,9 @@ export function filterHousingOptions(options: HousingOption[], filters: HousingF
         option.pricingNotes.join(" "),
         option.availabilityNotes.join(" "),
         option.perks.join(" "),
+        option.contactPath.label,
+        option.contactPath.note ?? "",
+        getSourceKindLabel(option.sourceKind),
       ]
         .join(" ")
         .toLowerCase();
