@@ -8,7 +8,9 @@ import {
   useEffect,
   useMemo,
   useState,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
 } from "react";
 
 import {
@@ -41,6 +43,7 @@ import {
   buildSchoolYearSummary,
   filterHousingOptions,
   formatHousingCurrency,
+  formatHousingCurrencyRange,
   formatHousingDate,
   getACStatusLabel,
   getArmstrongDistance,
@@ -50,6 +53,8 @@ import {
   getHousingClarityStatus,
   getLaundryStatusLabel,
   getListTierLabel,
+  getMissingCostWarnings,
+  getQuestionsToAsk,
   getRecCenterDistance,
   getSourceConfidenceLabel,
   getSourceKindLabel,
@@ -61,6 +66,7 @@ import {
   type HousingListTier,
   type HousingOption,
   type HousingSortKey,
+  type HousingSummary,
   type HousingUnitType,
 } from "@/lib/housing/miamiOxfordHousing";
 
@@ -475,6 +481,29 @@ function DetailSection({
   );
 }
 
+function DecisionList({ items }: { items: string[] }) {
+  if (!items.length) {
+    return (
+      <p className="rounded-[9px] bg-[#f8f1e8] px-3 py-2 text-xs leading-5 text-[#756b5d]">
+        No extra flags generated from the current source fields.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="space-y-2">
+      {items.map((item) => (
+        <li
+          key={item}
+          className="rounded-[9px] bg-[#f8f1e8] px-3 py-2 text-xs leading-5 text-[#625b50]"
+        >
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function DetailPanel({
   option,
   onClose,
@@ -490,6 +519,8 @@ function DetailPanel({
   const armstrong = getArmstrongDistance(option);
   const rec = getRecCenterDistance(option);
   const clarity = getHousingClarityStatus(option);
+  const warnings = getMissingCostWarnings(option);
+  const questions = getQuestionsToAsk(option);
 
   return (
     <aside
@@ -646,6 +677,23 @@ function DetailPanel({
           />
         </DetailSection>
 
+        <DetailSection title="Decision Check" defaultOpen={!compact}>
+          <div className="grid gap-3">
+            <div>
+              <p className="mb-2 text-[11px] font-bold uppercase text-[#796f62]">Source snapshot</p>
+              <DecisionList items={option.sourceSnapshotNotes} />
+            </div>
+            <div>
+              <p className="mb-2 text-[11px] font-bold uppercase text-[#796f62]">Caveats</p>
+              <DecisionList items={warnings} />
+            </div>
+            <div>
+              <p className="mb-2 text-[11px] font-bold uppercase text-[#796f62]">Ask before signing</p>
+              <DecisionList items={questions} />
+            </div>
+          </div>
+        </DetailSection>
+
         <DetailSection title="Source/Contact">
           <DetailMetric
             icon={<ShieldCheck className="h-4 w-4" />}
@@ -699,6 +747,55 @@ function DetailPanel({
   );
 }
 
+function ComparisonSummary({
+  summary,
+  activeFilterCount,
+}: {
+  summary: HousingSummary;
+  activeFilterCount: number;
+}) {
+  const priceLabel =
+    summary.monthlyEquivalentMin === null
+      ? "No posted prices"
+      : formatHousingCurrencyRange(
+          summary.monthlyEquivalentMin,
+          summary.monthlyEquivalentMax,
+          "/mo",
+        );
+  const distanceLabel =
+    summary.distanceMilesMin === null || summary.distanceMilesMax === null
+      ? "No distance"
+      : `${summary.distanceMilesMin.toFixed(2)}-${summary.distanceMilesMax.toFixed(2)} mi`;
+
+  return (
+    <div className="sticky top-0 z-10 border-b border-[#ded3c2] bg-[#fffaf2]/96 px-4 py-3 shadow-[0_8px_18px_rgba(67,55,38,0.06)] backdrop-blur">
+      <div className="flex items-center justify-between gap-3 text-sm font-semibold text-[#625b50]">
+        <span>
+          {summary.totalOptions} listing{summary.totalOptions === 1 ? "" : "s"}
+        </span>
+        <span>{activeFilterCount ? `${activeFilterCount} filters` : "unfiltered"}</span>
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="rounded-[9px] border border-[#ded3c2] bg-[#fffdf8] px-2.5 py-2">
+          <p className="text-[10px] font-bold uppercase text-[#7d7366]">Price</p>
+          <p className="mt-1 truncate text-xs font-bold text-[#28251f]">{priceLabel}</p>
+        </div>
+        <div className="rounded-[9px] border border-[#c6d8f6] bg-[#edf4ff] px-2.5 py-2">
+          <p className="text-[10px] font-bold uppercase text-[#55729e]">Class</p>
+          <p className="mt-1 truncate text-xs font-bold text-[#1d4c91]">{distanceLabel}</p>
+        </div>
+        <div className="rounded-[9px] border border-[#e7c08e] bg-[#fff4dd] px-2.5 py-2">
+          <p className="text-[10px] font-bold uppercase text-[#8b551b]">Clarity</p>
+          <p className="mt-1 truncate text-xs font-bold text-[#6f4215]">
+            {summary.clarityCounts.clear}/{summary.clarityCounts.partial}/
+            {summary.clarityCounts["quote-required"]}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EmptyState() {
   return (
     <div className="rounded-[12px] border border-dashed border-[#cfc4b4] bg-[#fffdf8] p-8 text-center text-[#625b50]">
@@ -739,6 +836,7 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
   const [mobileTab, setMobileTab] = useState<MobileTab>("map");
   const deferredQuery = useDeferredValue(searchQuery);
   const isDesktop = useIsDesktop();
+  const reduceMotion = useReducedMotion();
 
   const visibleOptions = useMemo(
     () =>
@@ -780,11 +878,35 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
     }
   }, [hoveredId, visibleOptions]);
 
+  function triggerHaptic() {
+    if (reduceMotion || typeof window === "undefined") return;
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+
+    try {
+      navigator.vibrate?.(10);
+    } catch {
+      // Haptics are an optional enhancement and should never block the UI.
+    }
+  }
+
   function selectListing(id: string, mobileTarget: MobileTab | null = null) {
+    triggerHaptic();
     startTransition(() => setSelectedId(id));
     if (mobileTarget) {
       setMobileTab(mobileTarget);
     }
+  }
+
+  function selectMobileTab(tab: MobileTab) {
+    triggerHaptic();
+    setMobileTab(tab);
+  }
+
+  function updateFilter<T extends string>(setter: Dispatch<SetStateAction<T>>) {
+    return (value: T) => {
+      triggerHaptic();
+      setter(value);
+    };
   }
 
   const activeFilterCount = [
@@ -801,20 +923,20 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
         label="Tier"
         value={tierFilter}
         options={tierOptions}
-        onChange={setTierFilter}
+        onChange={updateFilter(setTierFilter)}
       />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
         <SegmentedControl
           label="Unit"
           value={unitFilter}
           options={unitOptions}
-          onChange={setUnitFilter}
+          onChange={updateFilter(setUnitFilter)}
         />
         <SegmentedControl
           label="Distance"
           value={maxDistance}
           options={distanceOptions}
-          onChange={setMaxDistance}
+          onChange={updateFilter(setMaxDistance)}
         />
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -822,13 +944,13 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
           label="Budget"
           value={maxMonthly}
           options={budgetOptions}
-          onChange={setMaxMonthly}
+          onChange={updateFilter(setMaxMonthly)}
         />
         <SegmentedControl
           label="Sort"
           value={sortMode}
           options={sortOptions}
-          onChange={setSortMode}
+          onChange={updateFilter(setSortMode)}
         />
       </div>
     </div>
@@ -873,7 +995,12 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
         />
       </label>
 
-      <details className="mt-2 rounded-[10px] border border-[#ded3c2] bg-[#f8f1e8]">
+      <details
+        className="mt-2 rounded-[10px] border border-[#ded3c2] bg-[#f8f1e8]"
+        onToggle={(event) => {
+          if (event.currentTarget.open) triggerHaptic();
+        }}
+      >
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-xs font-bold uppercase text-[#625b50]">
           <span className="inline-flex items-center gap-2">
             <SlidersHorizontal className="h-4 w-4" />
@@ -891,16 +1018,7 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
   );
 
   const resultSummary = (
-    <div className="flex items-center justify-between gap-3 border-b border-[#ded3c2] px-4 py-3 text-sm font-semibold text-[#625b50]">
-      <span>
-        {summary.totalOptions} listing{summary.totalOptions === 1 ? "" : "s"}
-      </span>
-      <span>
-        {summary.distanceMilesMin === null || summary.distanceMilesMax === null
-          ? "- mi"
-          : `${summary.distanceMilesMin.toFixed(2)}-${summary.distanceMilesMax.toFixed(2)} mi`}
-      </span>
-    </div>
+    <ComparisonSummary summary={summary} activeFilterCount={activeFilterCount} />
   );
 
   const listingList = (
@@ -965,7 +1083,7 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
               <button
                 key={tab}
                 type="button"
-                onClick={() => setMobileTab(tab)}
+                onClick={() => selectMobileTab(tab)}
                 className={cn(
                   "h-10 rounded-[8px] text-sm font-bold capitalize transition",
                   mobileTab === tab
@@ -983,11 +1101,20 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
           <aside className="flex h-full min-h-0 flex-col border-r border-[#d8cdbc] bg-[#f8f1e8]">
             {filterControls}
             {resultSummary}
-            {selectedOption ? (
-              <div className="max-h-[48vh] shrink-0 border-b border-[#ded3c2] p-3">
-                <DetailPanel option={selectedOption} compact onClose={() => setSelectedId(null)} />
-              </div>
-            ) : null}
+            <AnimatePresence initial={false}>
+              {selectedOption ? (
+                <motion.div
+                  key={selectedOption.id}
+                  initial={reduceMotion ? false : { opacity: 0, y: -10 }}
+                  animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                  exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                  className="max-h-[48vh] shrink-0 border-b border-[#ded3c2] p-3"
+                >
+                  <DetailPanel option={selectedOption} compact onClose={() => setSelectedId(null)} />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
             {listingList}
           </aside>
 
@@ -1024,7 +1151,28 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
                 className="max-h-[42vh] overflow-y-auto border-t border-[#ded3c2] bg-[#fffaf2] p-3"
                 style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
               >
-                {selectedOption ? <DetailPanel option={selectedOption} compact /> : <EmptyState />}
+                <AnimatePresence mode="wait" initial={false}>
+                  {selectedOption ? (
+                    <motion.div
+                      key={selectedOption.id}
+                      initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+                      animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                      exit={reduceMotion ? undefined : { opacity: 0, y: 14 }}
+                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <DetailPanel option={selectedOption} compact />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="empty"
+                      initial={reduceMotion ? false : { opacity: 0 }}
+                      animate={reduceMotion ? undefined : { opacity: 1 }}
+                      exit={reduceMotion ? undefined : { opacity: 0 }}
+                    >
+                      <EmptyState />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </section>
           ) : (

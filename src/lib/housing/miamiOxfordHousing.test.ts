@@ -59,6 +59,50 @@ describe("miamiOxfordHousing dataset", () => {
       ),
     ).toBe(true);
   });
+
+  it("keeps every row tied to a fresh source snapshot note", () => {
+    expect(
+      miamiOxfordHousingOptions.every(
+        (option) =>
+          option.lastVerifiedAt === "2026-04-23" &&
+          option.sourceSnapshotNotes.length >= 2 &&
+          option.sourceSnapshotNotes.every((note) => note.trim().length > 20),
+      ),
+    ).toBe(true);
+  });
+
+  it("removes stale 308 S. Campus 2026 pricing after the April 23 source pass", () => {
+    const scq308 = miamiOxfordHousingOptions.find((option) => option.id === "308-s-campus");
+
+    expect(scq308?.monthlyEquivalent).toBe(850);
+    expect(scq308?.availabilityConfidence).toBe("comp-only");
+    expect(scq308?.availabilityLabel).toContain("2026-2027 1BR leased");
+    expect(scq308?.sourceSnapshotNotes.join(" ")).toContain("2027-2028");
+  });
+
+  it("keeps strict true-1BR pricing from pulling in office/study floor-plan ranges", () => {
+    const commons = miamiOxfordHousingOptions.find((option) => option.id === "the-commons-a1");
+
+    expect(commons?.optionName).toBe("A1 1BR");
+    expect(commons?.monthlyEquivalent).toBe(1035);
+    expect(commons?.monthlyEquivalentUpper).toBeNull();
+    expect(commons?.squareFeet).toBe(413);
+  });
+
+  it("refreshes exposed unit details from current source pages", () => {
+    const southLocust = miamiOxfordHousingOptions.find(
+      (option) => option.id === "718-south-locust",
+    );
+    const hawks = miamiOxfordHousingOptions.find((option) => option.id === "hawks-landing-a1");
+    const oxfordWest = miamiOxfordHousingOptions.find((option) => option.id === "oxford-west-a1");
+
+    expect(southLocust?.laundryStatus).toBe("in-unit");
+    expect(hawks?.laundryStatus).toBe("in-unit");
+    expect(hawks?.includedUtilities).toEqual(
+      expect.arrayContaining(["internet", "pest control", "trash removal"]),
+    );
+    expect(oxfordWest?.leaseTermLabel).toContain("12-month");
+  });
 });
 
 describe("school-year conversion helpers", () => {
@@ -120,7 +164,7 @@ describe("move-in due helpers", () => {
     const summary = buildMoveInDueSummary(scq308!);
 
     expect(summary.status).toBe("partial");
-    expect(summary.label).toBe("$800+");
+    expect(summary.label).toBe("$850+");
     expect(summary.note.toLowerCase()).toContain("lower bound");
   });
 });

@@ -888,16 +888,25 @@ body[data-auto-present-running="true"] [aria-label="Back to top"] {
 
 .housing-map-marker-shell {
   position: relative;
-  display: grid;
-  place-items: center;
-  width: 32px;
+  display: inline-flex;
+  align-items: center;
+  min-width: 66px;
   height: 32px;
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.96);
+  box-shadow:
+    0 12px 24px rgba(33, 31, 27, 0.22),
+    0 0 0 1px rgba(255, 253, 248, 0.5);
+  transform: translateZ(0);
+  transition:
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 
 .housing-map-marker-core,
 .housing-map-marker-pulse {
   position: absolute;
-  inset: 0;
   border-radius: 999px;
   transition:
     transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -908,14 +917,36 @@ body[data-auto-present-running="true"] [aria-label="Back to top"] {
 }
 
 .housing-map-marker-core {
-  inset: 4px;
+  top: 7px;
+  left: 8px;
+  width: 18px;
+  height: 18px;
   border: 2px solid rgba(255, 253, 248, 0.98);
+  z-index: 2;
 }
 
 .housing-map-marker-pulse {
-  inset: 0;
+  top: 2px;
+  left: 3px;
+  width: 28px;
+  height: 28px;
   opacity: 0;
   transform: scale(0.8);
+}
+
+.housing-map-marker-price {
+  position: relative;
+  z-index: 1;
+  display: block;
+  max-width: 4.35rem;
+  overflow: hidden;
+  padding: 0 9px 0 31px;
+  color: #25231f;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 32px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .housing-map-marker-shell.confidence-high .housing-map-marker-core {
@@ -952,7 +983,7 @@ body[data-auto-present-running="true"] [aria-label="Back to top"] {
 }
 
 .housing-map-marker-shell.is-hovered .housing-map-marker-core {
-  transform: translateY(-2px) scale(1.18);
+  transform: scale(1.12);
 }
 
 .housing-map-marker-shell.is-hovered .housing-map-marker-pulse {
@@ -961,12 +992,24 @@ body[data-auto-present-running="true"] [aria-label="Back to top"] {
   animation: housing-marker-pulse 1.5s ease-out infinite;
 }
 
+.housing-map-marker-shell.is-hovered {
+  transform: translateY(-2px) scale(1.04);
+}
+
 .housing-map-marker-shell.is-selected .housing-map-marker-core {
-  transform: translateY(-2px) scale(1.24);
+  transform: scale(1.16);
   border-color: #fffdf8;
   box-shadow:
     0 16px 30px rgba(33, 31, 27, 0.28),
     0 0 0 7px rgba(255, 253, 248, 0.28);
+}
+
+.housing-map-marker-shell.is-selected {
+  background: #fffdf8;
+  transform: translateY(-3px) scale(1.08);
+  box-shadow:
+    0 18px 36px rgba(33, 31, 27, 0.3),
+    0 0 0 3px rgba(47, 104, 196, 0.22);
 }
 
 .housing-map-marker-shell.is-selected .housing-map-marker-pulse {

@@ -40,20 +40,24 @@ function createAnchorIcon(kind: "armstrong" | "rec") {
   });
 }
 
-function createListingIcon(
-  confidence: HousingOption["sourceConfidence"],
-  state: "default" | "hovered" | "selected",
-) {
+function markerPriceLabel(option: HousingOption) {
+  if (option.monthlyEquivalent === null) return "Quote";
+  if (option.monthlyEquivalentUpper !== null) return `$${option.monthlyEquivalent}+`;
+  return `$${option.monthlyEquivalent}`;
+}
+
+function createListingIcon(option: HousingOption, state: "default" | "hovered" | "selected") {
   return L.divIcon({
     className: "housing-listing-marker-icon",
     html: [
-      `<span class="housing-map-marker-shell confidence-${confidence} is-${state}">`,
+      `<span class="housing-map-marker-shell confidence-${option.sourceConfidence} is-${state}">`,
       '<span class="housing-map-marker-core"></span>',
       '<span class="housing-map-marker-pulse"></span>',
+      `<span class="housing-map-marker-price">${escapeHtml(markerPriceLabel(option))}</span>`,
       "</span>",
     ].join(""),
-    iconSize: [34, 34],
-    iconAnchor: [17, 17],
+    iconSize: [76, 34],
+    iconAnchor: [38, 17],
     tooltipAnchor: [0, -18],
   });
 }
@@ -261,10 +265,7 @@ export default function MiamiHousingLeafletMap({
       const isSelected = option.id === selectedId;
       const isHovered = option.id === hoveredId;
       const marker = L.marker([option.latitude, option.longitude], {
-        icon: createListingIcon(
-          option.sourceConfidence,
-          isSelected ? "selected" : isHovered ? "hovered" : "default",
-        ),
+        icon: createListingIcon(option, isSelected ? "selected" : isHovered ? "hovered" : "default"),
         zIndexOffset: isSelected ? 900 : isHovered ? 800 : 500,
       })
         .on("click", () => onSelect(option.id))

@@ -85,6 +85,7 @@ export interface HousingOption {
   listTier: HousingListTier;
   availabilityConfidence: HousingAvailabilityConfidence;
   lastVerifiedAt: string;
+  sourceSnapshotNotes: string[];
   contactPath: HousingContactPath;
 }
 
@@ -780,7 +781,7 @@ export function buildHousingSummary(options: HousingOption[]): HousingSummary {
   };
 }
 
-export const miamiOxfordHousingOptions: HousingOption[] = [
+const miamiOxfordHousingOptionBase: Omit<HousingOption, "sourceSnapshotNotes">[] = [
   {
     id: "308-s-campus",
     propertyName: "308 S. Campus Ave.",
@@ -797,11 +798,11 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     pricingCadence: "monthly",
     semesterDueAmount: null,
     semesterDueAmountUpper: null,
-    schoolYearTotal: calculateSchoolYearTotalFromMonthly(800),
+    schoolYearTotal: calculateSchoolYearTotalFromMonthly(850),
     schoolYearTotalUpper: null,
-    monthlyEquivalent: 800,
+    monthlyEquivalent: 850,
     monthlyEquivalentUpper: null,
-    moveInDue: 800,
+    moveInDue: 850,
     moveInDueUpper: null,
     moveInDueHasUnknowns: true,
     securityDepositRefundable: null,
@@ -809,7 +810,7 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     taxesStatus: "none-listed",
     nonUtilityFeesStatus: "unknown",
     leaseTermLabel: "1-year lease",
-    availabilityLabel: "2026-2027 price captured; currently shown as leased",
+    availabilityLabel: "2026-2027 1BR leased; 2027-2028 comp is $850",
     includedUtilities: ["water", "trash", "gas"],
     excludedUtilities: ["electric", "cable/internet"],
     unknownUtilities: [],
@@ -820,12 +821,13 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     appliances: [],
     ACStatus: "window-wall",
     pricingNotes: [
-      "SCQ posts this as monthly rent, which is cleaner for parent budgeting than semester billing.",
+      "SCQ no longer posts the old $800 August 2026 read; the current 2026-2027 row is leased/contact-office only.",
+      "The $850 monthly value is the live 2027-2028 1BR comp, not confirmed August 2026 inventory.",
       "Move-in due is only a lower bound because the live source does not post a deposit or any lease-signing fee.",
     ],
     availabilityNotes: [
-      "The 2026-2027 page shows 1BR pricing at $800 per month and labels the unit type as leased.",
-      "Useful for benchmark pricing, but August 2026 availability needs direct office confirmation.",
+      "The 2026-2027 page labels the 1BR as leased and points prospects to the office for more options.",
+      "The source currently shows 2027-2028 at $850 and available, so this row is a next-cycle comp until SCQ confirms a 2026 path.",
     ],
     perks: [
       "Shortest posted walk in the atlas without the Campus Courts semester pricing jump.",
@@ -837,7 +839,7 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     sourceKind: "primary",
     sourceConfidence: "high",
     listTier: "watchlist",
-    availabilityConfidence: "likely-needs-confirmation",
+    availabilityConfidence: "comp-only",
     lastVerifiedAt: VERIFIED_AT,
     contactPath: {
       label: "Open SCQ leasing page",
@@ -1282,7 +1284,7 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     parkingIncluded: true,
     parkingCost: 0,
     furnishedStatus: "unknown",
-    laundryStatus: "on-site",
+    laundryStatus: "in-unit",
     appliances: ["dishwasher", "garbage disposal"],
     ACStatus: "yes-unspecified",
     pricingNotes: [
@@ -1296,7 +1298,7 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     perks: [
       "Posted monthly range stays relatively low for a true 1BR.",
       "Water, sewer, and trash are included.",
-      "Laundry and off-street parking are both explicitly mentioned.",
+      "The current campus portal amenity table lists washer/dryer in unit plus off-street parking.",
     ],
     sourceUrl:
       "https://www.miamiohoffcampus.com/housing/property/718-south-locust-street/ocp44xjxzk",
@@ -1876,7 +1878,7 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     taxesStatus: "none-listed",
     nonUtilityFeesStatus: "none-listed",
     leaseTermLabel: "2-semester lease (includes J term)",
-    availabilityLabel: "Campus portal shows 26/27 for the building group",
+    availabilityLabel: "Campus portal shows 37 W. High available 8/19/26; 35/39 leased",
     includedUtilities: [],
     excludedUtilities: ["utilities"],
     unknownUtilities: [],
@@ -1888,6 +1890,7 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     ACStatus: "central",
     pricingNotes: [
       "Campus portal text breaks out the 37 W. High 1BR price, total rent, deposit, and signing advance.",
+      "The portal also labels the listing plus-fees, so verify whether anything sits outside the semester and signing amounts.",
       "Above the $1k monthly comparison line, so this belongs in backup status.",
     ],
     availabilityNotes: [
@@ -1960,6 +1963,7 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     ACStatus: "central",
     pricingNotes: [
       "Direct listing posts $850/month and a $10,750 total-rent figure for the longer lease exposure.",
+      "The source also posts a $40 non-refundable application fee for each adult applicant.",
       "The 10-month comparison is shown for planning only; a full 12-month lease changes the real obligation.",
     ],
     availabilityNotes: [
@@ -2011,8 +2015,8 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     adminOrLeaseSigningFees: [],
     taxesStatus: "none-listed",
     nonUtilityFeesStatus: "unknown",
-    leaseTermLabel: "11-month lease shown on portal",
-    availabilityLabel: "Campus portal shows available now",
+    leaseTermLabel: "12-month or flexible lease shown on campus portal",
+    availabilityLabel: "Campus portal shows 1BR available now; updated 1 day ago",
     includedUtilities: [],
     excludedUtilities: [],
     unknownUtilities: ["utilities", "required fees", "deposit"],
@@ -2024,10 +2028,10 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     ACStatus: "yes-unspecified",
     pricingNotes: [
       "Campus portal lists a 588 sq ft 1BR at $990 plus fees.",
-      "Application fee is posted, but deposit and mandatory utility/fee exposure still need confirmation.",
+      "Application fee is posted at $45, but deposit and mandatory utility/fee exposure still need confirmation.",
     ],
     availabilityNotes: [
-      "Portal status is available now, not a reserved August 2026 unit.",
+      "Portal status is available now, not a reserved August 2026 unit; 12-month and flexible/other lease terms are posted.",
       "Direct Oxford West site should be checked before this moves out of watchlist.",
     ],
     perks: [
@@ -2065,12 +2069,12 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     semesterDueAmount: null,
     semesterDueAmountUpper: null,
     schoolYearTotal: calculateSchoolYearTotalFromMonthly(1035),
-    schoolYearTotalUpper: calculateSchoolYearTotalFromMonthly(1218),
+    schoolYearTotalUpper: null,
     monthlyEquivalent: 1035,
-    monthlyEquivalentUpper: 1218,
+    monthlyEquivalentUpper: null,
     moveInDue: calculateMoveInDue({
       firstRequiredInstallment: 1035,
-      firstRequiredInstallmentUpper: 1218,
+      firstRequiredInstallmentUpper: null,
       securityDepositRefundable: null,
       adminOrLeaseSigningFees: [
         {
@@ -2082,7 +2086,7 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     }).amount,
     moveInDueUpper: calculateMoveInDue({
       firstRequiredInstallment: 1035,
-      firstRequiredInstallmentUpper: 1218,
+      firstRequiredInstallmentUpper: null,
       securityDepositRefundable: null,
       adminOrLeaseSigningFees: [
         {
@@ -2104,7 +2108,7 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     taxesStatus: "none-listed",
     nonUtilityFeesStatus: "unknown",
     leaseTermLabel: "12-month student lease",
-    availabilityLabel: "Direct floor plan shows waitlist/current term; confirm 2026",
+    availabilityLabel: "A1 direct floor plan is waitlist/current term; confirm Fall 2026",
     includedUtilities: ["most utilities", "internet", "parking"],
     excludedUtilities: [],
     unknownUtilities: ["exact excluded utilities", "deposit"],
@@ -2115,7 +2119,8 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     appliances: [],
     ACStatus: "yes-unspecified",
     pricingNotes: [
-      "Direct Commons page posts 413 sq ft for the A1 plan; campus portal pricing can differ by term.",
+      "Direct Commons page posts the strict A1 1BR at 413 sq ft and $1,035 for the current displayed term.",
+      "A2/A3/A4 office or larger 1BR variants are intentionally excluded from this A1 comparison row.",
       "Listed as a backup because the low end is just over the $1k planning threshold.",
     ],
     availabilityNotes: [
@@ -2235,15 +2240,15 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     nonUtilityFeesStatus: "unknown",
     leaseTermLabel: "Fall 12-month lease posted",
     availabilityLabel: "Direct page says Fall 2026 sold out / waitlist",
-    includedUtilities: ["internet"],
+    includedUtilities: ["internet", "pest control", "trash removal"],
     excludedUtilities: [],
     unknownUtilities: ["remaining utilities", "required fees", "deposit"],
     parkingIncluded: null,
     parkingCost: null,
     furnishedStatus: "furnished",
-    laundryStatus: "unknown",
+    laundryStatus: "in-unit",
     appliances: [],
-    ACStatus: "yes-unspecified",
+    ACStatus: "central",
     pricingNotes: [
       "Direct Hawks page posts A1 as a 460 sq ft 1BR at $1,219 for the Fall 2026 12-month term.",
       "Because the page says Fall 2026 is sold out, this is a waitlist/watchlist row rather than an active backup.",
@@ -2254,7 +2259,7 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     ],
     perks: [
       "True 1BR floor plan with posted square footage.",
-      "Internet is included on the direct page.",
+      "Internet, pest control, trash removal, and in-unit laundry are posted on the direct page.",
       "Large amenity complex with bus/walk-to-campus positioning.",
     ],
     sourceUrl: "https://www.hawkshousing.com/oxford-oh-apartments/hawks-landing/student/",
@@ -2271,3 +2276,106 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     },
   },
 ];
+
+const sourceSnapshotNotesById: Record<string, string[]> = {
+  "308-s-campus": [
+    "SCQ source on Apr. 23 shows the 2026-2027 1BR as leased/contact-office and no longer posts the old $800 amount.",
+    "The same SCQ page shows the 2027-2028 1BR at $850 and available, so this stays a next-cycle comp until the office confirms August 2026.",
+  ],
+  "26-east-walnut-apt-4": [
+    "Oxford Real Estate source shows the efficiency as 2027-2028 at $4,200 per semester and $8,800 total rent.",
+    "The source lists dishwasher, disposal, onsite laundry, wall A/C, and water, sewer, and trash included.",
+  ],
+  "18-n-elm": [
+    "Oxford Real Estate source shows the 1BR duplex as 2027-2028 at $3,260 per semester and $6,920 total rent.",
+    "The source lists off-street parking and central air, with occupants paying all utilities.",
+  ],
+  "23-e-high-apt-1-up": [
+    "Oxford Real Estate source shows Apt. 1 Up as 2027-2028 at $4,500 per semester and $9,400 total rent.",
+    "The page describes a 1BR/1BA apartment over High Street and posts the $600 lease-signing amount.",
+  ],
+  "10-west-sycamore": [
+    "Miami off-campus portal shows a 1BR at $595-$675 per bedroom, 12-month lease, and 8/1/26 availability.",
+    "The portal lists a $650 refundable security deposit and says water, sewer, and trash are included, with other charges still subject to change.",
+  ],
+  "717-mcguffey": [
+    "Miami off-campus portal shows a 1BR at $595-$650 plus fees and 8/1/26 availability.",
+    "The source lists a $650 refundable security deposit, water/sewer/trash/recycling included, off-street parking, and washer/dryer in unit.",
+  ],
+  "718-south-locust": [
+    "Miami off-campus portal shows a 1BR at $625-$675 per bedroom plus fees and 8/1/26 availability.",
+    "The current amenity table lists washer/dryer in unit, while the description also references laundry facilities; the row uses the more specific laundry field.",
+  ],
+  "campus-courts": [
+    "SCQ source shows the 2026-2027 1BR no-balcony price at $5,800 per tenant/semester/bedroom and leased.",
+    "The source lists in-unit washer/dryer, common-area furnishings, and one free parking spot per unit.",
+  ],
+  "the-vines": [
+    "Oxford Real Estate source still says call for details on price for The Vines.",
+    "The source posts furnished 1BR or 2BR units for the 26/27 and 27/28 school years with water, sewer, and trash included.",
+  ],
+  "28-east-high-apt-a": [
+    "Oxford Real Estate source shows Apt. A as 2027-2028 at $6,100 per semester and $12,600 total rent.",
+    "The source lists electric, water, sewer, and trash included, but internet and 2026 timing still need confirmation.",
+  ],
+  "26-east-walnut-apt-1": [
+    "Oxford Real Estate source shows Apt. 1 as 2027-2028 at $4,200 per semester and $8,800 total rent.",
+    "The source lists dishwasher, disposal, onsite laundry, wall A/C, and water, sewer, and trash included.",
+  ],
+  "216-n-beech": [
+    "Oxford Real Estate source shows the 1BR bungalow as 2027-2028 at $3,360 per semester and $6,920 total rent.",
+    "The source says electric, water, sewer, and trash are included and posts a $300 lease-signing amount.",
+  ],
+  "112-w-high-apt-3": [
+    "Oxford Real Estate source shows Apt. 3 as 2027-2028 at $4,000 per semester and $8,400 total rent.",
+    "The page says gas, water, sewer, and trash are included, while electric and internet are tenant-paid.",
+  ],
+  "28c-east-high": [
+    "Oxford Real Estate source shows Apt. C available 8/17/26 to 5/17/27 at $1,050 per month.",
+    "The source posts a 9-month lease, $10,000 total rent, assigned parking, all utilities tenant-paid, and $1,050 due at lease signing.",
+  ],
+  "37-w-high": [
+    "Miami off-campus portal shows 37 W. High in the 35/37/39 group as available for 26/27, with 35 and 39 marked leased.",
+    "The source text gives the 37 row at $6,100 per semester, $13,000 total rent, all utilities tenant-paid, central air, and one assigned parking space.",
+  ],
+  "4304-oxford-reily": [
+    "Oxford Real Estate source shows the Southview 1BR available now at $850 per month and $10,750 total rent.",
+    "The source lists central air, washer/dryer, bonus storage, off-street parking, all utilities tenant-paid, and a $40 application fee.",
+  ],
+  "oxford-west-a1": [
+    "Miami off-campus portal shows Oxford West 1BR at $990 per bedroom plus fees, 588 sq ft, and available now.",
+    "The portal was updated 1 day ago and lists 12-month/flexible terms plus a $45 application fee, but not a held August 2026 unit.",
+  ],
+  "the-commons-a1": [
+    "The Commons direct floor-plan page shows A1 as a 413 sq ft 1BR at $1,035 for the displayed current term and waitlist only.",
+    "The direct page includes most utilities, high-speed internet, free parking, and a furniture package, but it does not show a confirmed Fall 2026 A1 slot.",
+  ],
+  "annex-a1": [
+    "Miami off-campus portal shows Annex 1BR at $1,215 per bedroom, 608 sq ft, and available now.",
+    "The direct Annex site shows only broad starting-rate and promo language, so the campus portal remains the better 1BR price source.",
+  ],
+  "hawks-landing-a1": [
+    "Hawks direct floor-plan page says Fall 2026 is sold out and points users to waitlist options.",
+    "The A1 row shows 1BR/1BA, 460 sq ft, $1,219, Fall 12 Month 08/21/2026-07/27/2027, high-speed internet, in-unit laundry, and furnished status.",
+  ],
+};
+
+function attachSourceSnapshotNotes(
+  options: Omit<HousingOption, "sourceSnapshotNotes">[],
+): HousingOption[] {
+  return options.map((option) => {
+    const sourceSnapshotNotes = sourceSnapshotNotesById[option.id];
+
+    if (!sourceSnapshotNotes) {
+      throw new Error(`Missing source snapshot notes for ${option.id}`);
+    }
+
+    return {
+      ...option,
+      sourceSnapshotNotes,
+    };
+  });
+}
+
+export const miamiOxfordHousingOptions: HousingOption[] =
+  attachSourceSnapshotNotes(miamiOxfordHousingOptionBase);
