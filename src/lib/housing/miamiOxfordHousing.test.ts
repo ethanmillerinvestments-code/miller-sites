@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import {
+  buildHousingSummary,
   buildMoveInDueSummary,
   buildRecurringAllInSummary,
   calculateApproximateWalkMinutes,
@@ -19,7 +22,7 @@ import {
 
 describe("miamiOxfordHousing dataset", () => {
   it("contains only studios, efficiencies, and true 1BRs", () => {
-    expect(miamiOxfordHousingOptions).toHaveLength(10);
+    expect(miamiOxfordHousingOptions).toHaveLength(20);
     expect(
       miamiOxfordHousingOptions.every((option) =>
         ["studio", "efficiency", "one-bedroom"].includes(option.unitType),
@@ -30,6 +33,31 @@ describe("miamiOxfordHousing dataset", () => {
         `${option.propertyName} ${option.optionName}`.toLowerCase().includes("study"),
       ),
     ).toBe(false);
+  });
+
+  it("labels main, backup, and watchlist options explicitly", () => {
+    const summary = buildHousingSummary(miamiOxfordHousingOptions);
+
+    expect(summary.mainUnder1kOptions).toBe(3);
+    expect(summary.backupOptions).toBe(5);
+    expect(summary.watchlistOptions).toBe(12);
+    expect(summary.mainUnder1kOptions + summary.backupOptions + summary.watchlistOptions).toBe(20);
+  });
+
+  it("keeps the main list under the $1k comparison threshold", () => {
+    const main = filterHousingOptions(miamiOxfordHousingOptions, {
+      listTiers: ["main-under-1k"],
+    });
+
+    expect(main).toHaveLength(3);
+    expect(
+      main.every(
+        (option) =>
+          option.monthlyEquivalent !== null &&
+          option.monthlyEquivalent <= 1000 &&
+          option.availabilityConfidence === "confirmed-2026",
+      ),
+    ).toBe(true);
   });
 });
 
@@ -61,7 +89,7 @@ describe("campus anchor distance helpers", () => {
     expect(getRecCenterDistance(campusCourts!)).toEqual({
       distanceMiles: 0.17,
       walkMinutes: 3,
-      label: "Approx. 3 min to Rec Center",
+      label: "0.17 mi to Rec Center",
     });
   });
 });
@@ -139,5 +167,23 @@ describe("filtering and sorting", () => {
       "717-mcguffey",
       "718-south-locust",
     ]);
+  });
+});
+
+describe("housing visible distance policy", () => {
+  it("keeps UI labels on miles and routes instead of walk-minute claims", () => {
+    const explorerSource = readFileSync(
+      join(process.cwd(), "src/components/housing/MiamiHousingExplorer.tsx"),
+      "utf8",
+    );
+    const mapSource = readFileSync(
+      join(process.cwd(), "src/components/housing/MiamiHousingLeafletMap.tsx"),
+      "utf8",
+    );
+
+    expect(explorerSource).not.toContain("min walk");
+    expect(explorerSource).not.toContain("label=\"Walk\"");
+    expect(mapSource).not.toContain(" min</p>");
+    expect(mapSource).not.toContain("} min");
   });
 });

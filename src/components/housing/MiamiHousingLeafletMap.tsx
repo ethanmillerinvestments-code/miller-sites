@@ -70,7 +70,7 @@ function escapeHtml(value: string) {
 function anchorTooltip(title: string, note: string) {
   return [
     '<div class="max-w-[12rem] rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-slate-900 shadow-lg">',
-    `<p class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">${escapeHtml(title)}</p>`,
+    `<p class="text-[10px] font-bold uppercase text-slate-500">${escapeHtml(title)}</p>`,
     `<p class="mt-1 text-xs leading-4 text-slate-700">${escapeHtml(note)}</p>`,
     "</div>",
   ].join("");
@@ -88,20 +88,29 @@ function listingTooltip(option: HousingOption) {
     `<p class="truncate text-sm font-semibold">${escapeHtml(option.propertyName)}</p>`,
     `<p class="mt-1 text-[11px] text-slate-500">${escapeHtml(getUnitTypeLabel(option.unitType))} · ${escapeHtml(recurring.label)}</p>`,
     "</div>",
-    `<span class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600">${escapeHtml(getSourceConfidenceLabel(option.sourceConfidence))}</span>`,
+    `<span class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold uppercase text-slate-600">${escapeHtml(getSourceConfidenceLabel(option.sourceConfidence))}</span>`,
     "</div>",
     '<div class="mt-3 grid grid-cols-2 gap-2 text-[11px]">',
     '<div class="rounded-xl bg-blue-50 px-2.5 py-2 text-blue-900">',
-    `<p class="font-bold">${armstrong.walkMinutes} min</p>`,
-    `<p>${armstrong.distanceMiles.toFixed(2)} mi to class</p>`,
+    `<p class="font-bold">${armstrong.distanceMiles.toFixed(2)} mi</p>`,
+    "<p>to class</p>",
     "</div>",
     '<div class="rounded-xl bg-orange-50 px-2.5 py-2 text-orange-900">',
-    `<p class="font-bold">${rec.walkMinutes} min</p>`,
-    `<p>${rec.distanceMiles.toFixed(2)} mi to Rec</p>`,
+    `<p class="font-bold">${rec.distanceMiles.toFixed(2)} mi</p>`,
+    "<p>to Rec</p>",
     "</div>",
     "</div>",
     "</div>",
   ].join("");
+}
+
+function getListingTooltipPlacement(option: HousingOption) {
+  const northOfCampus = option.latitude > miamiOxfordCampusAnchor.latitude;
+
+  return {
+    direction: northOfCampus ? ("bottom" as const) : ("top" as const),
+    offset: northOfCampus ? ([0, 18] as L.PointExpression) : ([0, -18] as L.PointExpression),
+  };
 }
 
 function addAnchorMarker(
@@ -130,6 +139,7 @@ function addRouteLines(group: L.LayerGroup, option: HousingOption, dashed = fals
     opacity: dashed ? 0.56 : 0.72,
     weight: dashed ? 2.5 : 3.25,
     dashArray: dashed ? "7 8" : undefined,
+    className: dashed ? "housing-route-line is-dashed" : "housing-route-line",
   };
 
   L.polyline(
@@ -172,7 +182,7 @@ export default function MiamiHousingLeafletMap({
   const hoveredOption = hoveredId
     ? options.find((option) => option.id === hoveredId) ?? null
     : null;
-  const previewOption = selectedOption ?? hoveredOption;
+  const previewOption = hoveredOption ?? selectedOption;
   const optionsKey = useMemo(() => options.map((option) => option.id).join("|"), [options]);
 
   useEffect(() => {
@@ -242,10 +252,9 @@ export default function MiamiHousingLeafletMap({
       "Recreational Sports Center",
     );
 
-    if (selectedOption) {
-      addRouteLines(group, selectedOption);
-    } else if (hoveredOption) {
-      addRouteLines(group, hoveredOption, true);
+    const routeOption = hoveredOption ?? selectedOption;
+    if (routeOption) {
+      addRouteLines(group, routeOption, Boolean(hoveredOption && hoveredOption.id !== selectedId));
     }
 
     options.forEach((option) => {
@@ -264,10 +273,12 @@ export default function MiamiHousingLeafletMap({
         .addTo(group);
 
       if ((isSelected || isHovered) && !compactTooltips) {
+        const tooltipPlacement = getListingTooltipPlacement(option);
+
         marker.bindTooltip(listingTooltip(option), {
           permanent: true,
-          direction: "top",
-          offset: [0, -18],
+          direction: tooltipPlacement.direction,
+          offset: tooltipPlacement.offset,
           className: "housing-map-tooltip",
           opacity: 1,
         });
@@ -281,7 +292,11 @@ export default function MiamiHousingLeafletMap({
 
     const isDesktop =
       typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
-    const paddingTopLeft: [number, number] = isDesktop ? [52, 52] : [26, 86];
+    const selectedNorthOfCampus =
+      selectedOption && selectedOption.latitude > miamiOxfordCampusAnchor.latitude;
+    const paddingTopLeft: [number, number] = isDesktop
+      ? [52, selectedNorthOfCampus ? 140 : 52]
+      : [26, 86];
     const paddingBottomRight: [number, number] = isDesktop
       ? [sidebarOpen ? 72 : 52, 52]
       : [34, 42];
@@ -313,17 +328,15 @@ export default function MiamiHousingLeafletMap({
   return (
     <div className="housing-atlas-map relative h-full min-h-[26rem] overflow-hidden bg-slate-200">
       <div className="pointer-events-none absolute left-3 top-3 z-[500] hidden max-w-[18rem] rounded-2xl border border-white/60 bg-white/90 p-3 text-slate-800 shadow-xl backdrop-blur lg:block">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
-          Map Context
+        <p className="text-[10px] font-bold uppercase text-slate-500">
+          Campus anchors
         </p>
         <div className="mt-2 grid gap-1.5 text-xs leading-5">
           <p>
-            <span className="font-semibold text-blue-700">Blue</span> routes point to Armstrong,
-            used here as the class anchor.
+            <span className="font-semibold text-blue-700">Class</span>: Armstrong Student Center
           </p>
           <p>
-            <span className="font-semibold text-orange-700">Orange</span> routes point to the Rec
-            Center.
+            <span className="font-semibold text-orange-700">Rec</span>: Recreational Sports Center
           </p>
         </div>
       </div>
@@ -331,12 +344,49 @@ export default function MiamiHousingLeafletMap({
       <div ref={containerRef} className="h-full min-h-[26rem] w-full" />
 
       {previewOption ? (
-        <div className="pointer-events-none absolute bottom-3 left-3 right-3 z-[500] rounded-2xl border border-white/60 bg-white/92 p-3 text-xs text-slate-700 shadow-xl backdrop-blur sm:left-auto sm:w-[20rem]">
-          <p className="font-semibold text-slate-950">{previewOption.propertyName}</p>
-          <p className="mt-1">
-            {getArmstrongDistance(previewOption).walkMinutes} min to class ·{" "}
-            {getRecCenterDistance(previewOption).walkMinutes} min to Rec, approximate
-          </p>
+        <div className="pointer-events-auto absolute bottom-3 left-3 right-3 z-[500] rounded-[12px] border border-white/65 bg-[#fffdf8]/95 p-3 text-xs text-[#625b50] shadow-[0_20px_48px_rgba(29,27,23,0.24)] backdrop-blur sm:left-auto sm:w-[22rem]">
+          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-[#28251f]">{previewOption.propertyName}</p>
+              <p className="mt-1 line-clamp-2 leading-4">{previewOption.address}</p>
+            </div>
+            <p className="text-sm font-bold leading-tight text-[#28251f] sm:shrink-0 sm:text-right">
+              {buildRecurringAllInSummary(previewOption).label.replace(" equivalent", "")}
+            </p>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="rounded-[9px] border border-[#c6d8f6] bg-[#edf4ff] px-2.5 py-2 text-[#1d4c91]">
+              <p className="font-bold">
+                {getArmstrongDistance(previewOption).distanceMiles.toFixed(2)} mi
+              </p>
+              <p>to class</p>
+            </div>
+            <div className="rounded-[9px] border border-[#f0d0ad] bg-[#fff2e4] px-2.5 py-2 text-[#9a4a12]">
+              <p className="font-bold">
+                {getRecCenterDistance(previewOption).distanceMiles.toFixed(2)} mi
+              </p>
+              <p>to Rec</p>
+            </div>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => onSelect(previewOption.id)}
+              className="inline-flex h-9 flex-1 items-center justify-center rounded-[9px] bg-[#25231f] px-3 text-xs font-bold text-[#fffaf2] transition hover:bg-[#1d4c91]"
+            >
+              Details
+            </button>
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+                previewOption.address,
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-9 flex-1 items-center justify-center rounded-[9px] border border-[#d9cfbf] px-3 text-xs font-bold text-[#4e493f] transition hover:bg-[#f8f1e8]"
+            >
+              Directions
+            </a>
+          </div>
         </div>
       ) : null}
     </div>

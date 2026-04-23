@@ -10,6 +10,11 @@ export type HousingSourceKind = "primary" | "campus-affiliated" | "aggregator";
 export type HousingSourceConfidence = "high" | "medium" | "low";
 export type HousingDisclosureState = "none-listed" | "included" | "excluded" | "unknown";
 export type HousingClarityStatus = "clear" | "partial" | "quote-required";
+export type HousingListTier = "main-under-1k" | "backup-over-1k" | "watchlist";
+export type HousingAvailabilityConfidence =
+  | "confirmed-2026"
+  | "likely-needs-confirmation"
+  | "comp-only";
 export type HousingFurnishedStatus =
   | "furnished"
   | "common-area-only"
@@ -77,6 +82,8 @@ export interface HousingOption {
   sourceUrl: string;
   sourceKind: HousingSourceKind;
   sourceConfidence: HousingSourceConfidence;
+  listTier: HousingListTier;
+  availabilityConfidence: HousingAvailabilityConfidence;
   lastVerifiedAt: string;
   contactPath: HousingContactPath;
 }
@@ -90,6 +97,8 @@ export type HousingSortKey =
 
 export interface HousingFilters {
   unitTypes?: HousingUnitType[];
+  listTiers?: HousingListTier[];
+  maxDistanceMiles?: number;
   maxWalkMinutes?: number;
   maxMonthlyEquivalent?: number;
   postedPriceOnly?: boolean;
@@ -104,8 +113,13 @@ export interface HousingSummary {
   postedPriceOptions: number;
   furnishedOptions: number;
   primarySourceOptions: number;
+  mainUnder1kOptions: number;
+  backupOptions: number;
+  watchlistOptions: number;
   monthlyEquivalentMin: number | null;
   monthlyEquivalentMax: number | null;
+  distanceMilesMin: number | null;
+  distanceMilesMax: number | null;
   walkMinutesMin: number | null;
   walkMinutesMax: number | null;
   clarityCounts: Record<HousingClarityStatus, number>;
@@ -133,7 +147,7 @@ export interface HousingDistanceSummary {
   label: string;
 }
 
-const VERIFIED_AT = "2026-04-20";
+const VERIFIED_AT = "2026-04-23";
 
 export const miamiOxfordCampusAnchor = {
   label: "Armstrong / Uptown campus anchor",
@@ -186,7 +200,7 @@ export function getArmstrongDistance(option: HousingOption): HousingDistanceSumm
   return {
     distanceMiles: option.distanceMiles,
     walkMinutes: option.walkMinutes,
-    label: `Approx. ${option.walkMinutes} min to Armstrong`,
+    label: `${option.distanceMiles.toFixed(2)} mi to Armstrong`,
   };
 }
 
@@ -197,7 +211,7 @@ export function getRecCenterDistance(option: HousingOption): HousingDistanceSumm
   return {
     distanceMiles,
     walkMinutes,
-    label: `Approx. ${walkMinutes} min to Rec Center`,
+    label: `${distanceMiles.toFixed(2)} mi to Rec Center`,
   };
 }
 
@@ -317,6 +331,18 @@ export function getSourceConfidenceLabel(confidence: HousingSourceConfidence) {
   if (confidence === "high") return "High confidence";
   if (confidence === "medium") return "Medium confidence";
   return "Lower confidence";
+}
+
+export function getListTierLabel(tier: HousingListTier) {
+  if (tier === "main-under-1k") return "Main under $1k";
+  if (tier === "backup-over-1k") return "Backup over $1k";
+  return "Watchlist";
+}
+
+export function getAvailabilityConfidenceLabel(confidence: HousingAvailabilityConfidence) {
+  if (confidence === "confirmed-2026") return "2026 timing posted";
+  if (confidence === "likely-needs-confirmation") return "Needs confirmation";
+  return "Comparison only";
 }
 
 export function getDisclosureLabel(disclosure: HousingDisclosureState) {
@@ -651,6 +677,17 @@ export function filterHousingOptions(options: HousingOption[], filters: HousingF
       return false;
     }
 
+    if (filters.listTiers?.length && !filters.listTiers.includes(option.listTier)) {
+      return false;
+    }
+
+    if (
+      filters.maxDistanceMiles !== undefined &&
+      option.distanceMiles > filters.maxDistanceMiles
+    ) {
+      return false;
+    }
+
     if (filters.maxWalkMinutes !== undefined && option.walkMinutes > filters.maxWalkMinutes) {
       return false;
     }
@@ -689,6 +726,8 @@ export function filterHousingOptions(options: HousingOption[], filters: HousingF
         option.contactPath.label,
         option.contactPath.note ?? "",
         getSourceKindLabel(option.sourceKind),
+        getListTierLabel(option.listTier),
+        getAvailabilityConfidenceLabel(option.availabilityConfidence),
       ]
         .join(" ")
         .toLowerCase();
@@ -708,6 +747,7 @@ export function buildHousingSummary(options: HousingOption[]): HousingSummary {
       ? [option.monthlyEquivalent, option.monthlyEquivalentUpper]
       : [option.monthlyEquivalent],
   ).filter((value): value is number => value !== null);
+  const distanceValues = options.map((option) => option.distanceMiles);
   const walkValues = options.map((option) => option.walkMinutes);
 
   const clarityCounts = options.reduce<Record<HousingClarityStatus, number>>(
@@ -727,8 +767,13 @@ export function buildHousingSummary(options: HousingOption[]): HousingSummary {
     postedPriceOptions: options.filter((option) => option.monthlyEquivalent !== null).length,
     furnishedOptions: options.filter((option) => option.furnishedStatus === "furnished").length,
     primarySourceOptions: options.filter((option) => option.sourceKind === "primary").length,
+    mainUnder1kOptions: options.filter((option) => option.listTier === "main-under-1k").length,
+    backupOptions: options.filter((option) => option.listTier === "backup-over-1k").length,
+    watchlistOptions: options.filter((option) => option.listTier === "watchlist").length,
     monthlyEquivalentMin: monthlyValues.length ? Math.min(...monthlyValues) : null,
     monthlyEquivalentMax: monthlyValues.length ? Math.max(...monthlyValues) : null,
+    distanceMilesMin: distanceValues.length ? Math.min(...distanceValues) : null,
+    distanceMilesMax: distanceValues.length ? Math.max(...distanceValues) : null,
     walkMinutesMin: walkValues.length ? Math.min(...walkValues) : null,
     walkMinutesMax: walkValues.length ? Math.max(...walkValues) : null,
     clarityCounts,
@@ -791,6 +836,8 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
       "https://southcampusquarter.com/miami-university-apartments-oxford-ohio-properties/308-south-campus-avenue-1-bedroom-apartments",
     sourceKind: "primary",
     sourceConfidence: "high",
+    listTier: "watchlist",
+    availabilityConfidence: "likely-needs-confirmation",
     lastVerifiedAt: VERIFIED_AT,
     contactPath: {
       label: "Open SCQ leasing page",
@@ -870,6 +917,8 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     sourceUrl: "https://www.oxre.com/rentals/26-east-walnut-street-apt-4",
     sourceKind: "primary",
     sourceConfidence: "medium",
+    listTier: "watchlist",
+    availabilityConfidence: "comp-only",
     lastVerifiedAt: VERIFIED_AT,
     contactPath: {
       label: "Open Oxford Real Estate listing",
@@ -948,6 +997,8 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     sourceUrl: "https://oxre.com/rentals/18-n-elm",
     sourceKind: "primary",
     sourceConfidence: "medium",
+    listTier: "watchlist",
+    availabilityConfidence: "comp-only",
     lastVerifiedAt: VERIFIED_AT,
     contactPath: {
       label: "Open Oxford Real Estate listing",
@@ -1026,6 +1077,8 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     sourceUrl: "https://oxre.com/rentals/23-e-high-apt-1-up",
     sourceKind: "primary",
     sourceConfidence: "medium",
+    listTier: "watchlist",
+    availabilityConfidence: "comp-only",
     lastVerifiedAt: VERIFIED_AT,
     contactPath: {
       label: "Open Oxford Real Estate listing",
@@ -1099,6 +1152,8 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
       "https://www.miamiohoffcampus.com/housing/property/10-west-sycamore-1-bedroom-apts-morrison-rentals/ocp8y3ezd0",
     sourceKind: "campus-affiliated",
     sourceConfidence: "low",
+    listTier: "main-under-1k",
+    availabilityConfidence: "confirmed-2026",
     lastVerifiedAt: VERIFIED_AT,
     contactPath: {
       label: "Call Morrison Rentals",
@@ -1172,6 +1227,8 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
       "https://www.miamiohoffcampus.com/housing/property/717-mcguffey-1-bedroom-apts-morrison-rentals/ocpqv63csy",
     sourceKind: "campus-affiliated",
     sourceConfidence: "low",
+    listTier: "main-under-1k",
+    availabilityConfidence: "confirmed-2026",
     lastVerifiedAt: VERIFIED_AT,
     contactPath: {
       label: "Call Morrison Rentals",
@@ -1245,6 +1302,8 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
       "https://www.miamiohoffcampus.com/housing/property/718-south-locust-street/ocp44xjxzk",
     sourceKind: "campus-affiliated",
     sourceConfidence: "low",
+    listTier: "main-under-1k",
+    availabilityConfidence: "confirmed-2026",
     lastVerifiedAt: VERIFIED_AT,
     contactPath: {
       label: "Call Morrison Rentals",
@@ -1308,6 +1367,8 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
       "https://southcampusquarter.com/miami-university-apartments-oxford-ohio-properties/campus-courts-1-2-bedroom-apartments",
     sourceKind: "primary",
     sourceConfidence: "high",
+    listTier: "backup-over-1k",
+    availabilityConfidence: "likely-needs-confirmation",
     lastVerifiedAt: VERIFIED_AT,
     contactPath: {
       label: "Open SCQ leasing page",
@@ -1371,6 +1432,8 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     sourceUrl: "https://www.oxre.com/rentals/the-vines-205-east-vine-street",
     sourceKind: "primary",
     sourceConfidence: "medium",
+    listTier: "watchlist",
+    availabilityConfidence: "confirmed-2026",
     lastVerifiedAt: VERIFIED_AT,
     contactPath: {
       label: "Call Oxford Real Estate",
@@ -1449,12 +1512,762 @@ export const miamiOxfordHousingOptions: HousingOption[] = [
     sourceUrl: "https://www.oxre.com/rentals/28-e-high-apt-a",
     sourceKind: "primary",
     sourceConfidence: "medium",
+    listTier: "watchlist",
+    availabilityConfidence: "comp-only",
     lastVerifiedAt: VERIFIED_AT,
     contactPath: {
       label: "Open Oxford Real Estate listing",
       href: "https://www.oxre.com/rentals/28-e-high-apt-a",
       kind: "listing",
       note: "Direct listing is the right place to verify whether this efficiency still has a 2026 move-in path.",
+    },
+  },
+  {
+    id: "26-east-walnut-apt-1",
+    propertyName: "26 East Walnut Street",
+    optionName: "Apt 1 Efficiency",
+    unitType: "efficiency",
+    address: "26 East Walnut Street Apt 1, Oxford, OH 45056",
+    latitude: 39.5095131,
+    longitude: -84.7414275,
+    distanceMiles: 0.46,
+    walkMinutes: 9,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: null,
+    pricingCadence: "per-semester",
+    semesterDueAmount: 4200,
+    semesterDueAmountUpper: null,
+    schoolYearTotal: 8800,
+    schoolYearTotalUpper: null,
+    monthlyEquivalent: calculateMonthlyEquivalentFromSchoolYearTotal(8800),
+    monthlyEquivalentUpper: null,
+    moveInDue: calculateMoveInDue({
+      firstRequiredInstallment: 4200,
+      securityDepositRefundable: 200,
+      adminOrLeaseSigningFees: [
+        {
+          label: "Lease-signing rent advance",
+          amount: 400,
+          timing: "lease-signing",
+        },
+      ],
+    }).amount,
+    moveInDueUpper: null,
+    moveInDueHasUnknowns: false,
+    securityDepositRefundable: 200,
+    adminOrLeaseSigningFees: [
+      {
+        label: "Lease-signing rent advance",
+        amount: 400,
+        timing: "lease-signing",
+      },
+    ],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "none-listed",
+    leaseTermLabel: "2-semester lease (includes J term)",
+    availabilityLabel: "Direct page currently shows 2027-2028",
+    includedUtilities: ["water", "sewer", "trash"],
+    excludedUtilities: [],
+    unknownUtilities: ["electric", "internet"],
+    parkingIncluded: null,
+    parkingCost: null,
+    furnishedStatus: "unknown",
+    laundryStatus: "on-site",
+    appliances: ["dishwasher", "garbage disposal"],
+    ACStatus: "window-wall",
+    pricingNotes: [
+      "Direct Oxford Real Estate page posts the semester amount, total rent, deposit, and lease-signing rent advance.",
+      "Keep it as a comparison/waitlist row because the live page now points to the 2027-2028 year.",
+    ],
+    availabilityNotes: [
+      "Not a confirmed August 2026 opening on the direct page.",
+      "Use the row to understand the Walnut efficiency price band before calling Oxford Real Estate.",
+    ],
+    perks: [
+      "Efficiency layout keeps the 10-month comparison below $900.",
+      "Water, sewer, and trash are included in the posted rent.",
+      "Same building cluster as the existing Apt 4 benchmark.",
+    ],
+    sourceUrl: "https://oxre.com/rentals/26-east-walnut-street-apt-1-390",
+    sourceKind: "primary",
+    sourceConfidence: "medium",
+    listTier: "watchlist",
+    availabilityConfidence: "comp-only",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Open Oxford Real Estate listing",
+      href: "https://oxre.com/rentals/26-east-walnut-street-apt-1-390",
+      kind: "listing",
+      note: "Use this direct page as a comp and call before treating it as an August 2026 option.",
+    },
+  },
+  {
+    id: "216-n-beech",
+    propertyName: "216 N. Beech Street",
+    optionName: "1 Bedroom Bungalow",
+    unitType: "one-bedroom",
+    address: "216 N Beech Street, Oxford, OH 45056",
+    latitude: 39.5132674,
+    longitude: -84.7440599,
+    distanceMiles: 0.71,
+    walkMinutes: 14,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: null,
+    pricingCadence: "per-semester",
+    semesterDueAmount: 3360,
+    semesterDueAmountUpper: null,
+    schoolYearTotal: 6920,
+    schoolYearTotalUpper: null,
+    monthlyEquivalent: calculateMonthlyEquivalentFromSchoolYearTotal(6920),
+    monthlyEquivalentUpper: null,
+    moveInDue: calculateMoveInDue({
+      firstRequiredInstallment: 3360,
+      securityDepositRefundable: 100,
+      adminOrLeaseSigningFees: [
+        {
+          label: "Lease-signing rent advance",
+          amount: 200,
+          timing: "lease-signing",
+        },
+      ],
+    }).amount,
+    moveInDueUpper: null,
+    moveInDueHasUnknowns: false,
+    securityDepositRefundable: 100,
+    adminOrLeaseSigningFees: [
+      {
+        label: "Lease-signing rent advance",
+        amount: 200,
+        timing: "lease-signing",
+      },
+    ],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "none-listed",
+    leaseTermLabel: "2-semester lease (includes J term)",
+    availabilityLabel: "Direct page currently shows 2027-2028",
+    includedUtilities: ["electric", "water", "sewer", "trash"],
+    excludedUtilities: [],
+    unknownUtilities: ["internet"],
+    parkingIncluded: null,
+    parkingCost: null,
+    furnishedStatus: "unknown",
+    laundryStatus: "unknown",
+    appliances: [],
+    ACStatus: "unknown",
+    pricingNotes: [
+      "The direct source includes core utilities in the rent and posts a low refundable deposit.",
+      "This is a strong affordability comp, but not a live 2026 row.",
+    ],
+    availabilityNotes: [
+      "Live direct page now shows 2027-2028.",
+      "Call Oxford Real Estate only after confirming whether a 2026 rollover or waitlist path exists.",
+    ],
+    perks: [
+      "True 1BR bungalow rather than a shared-bedroom listing.",
+      "Electric, water, sewer, and trash are included.",
+      "Low posted lease-signing cash compared with many semester leases.",
+    ],
+    sourceUrl: "https://www.oxre.com/rentals/216-n-beech-street",
+    sourceKind: "primary",
+    sourceConfidence: "medium",
+    listTier: "watchlist",
+    availabilityConfidence: "comp-only",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Open Oxford Real Estate listing",
+      href: "https://www.oxre.com/rentals/216-n-beech-street",
+      kind: "listing",
+      note: "Direct page is useful for pricing structure, but timing needs a phone confirmation.",
+    },
+  },
+  {
+    id: "112-w-high-apt-3",
+    propertyName: "112 W. High Street",
+    optionName: "Apt 3 1BR",
+    unitType: "one-bedroom",
+    address: "112 W High St Apt 3, Oxford, OH 45056",
+    latitude: 39.5104267,
+    longitude: -84.7446,
+    distanceMiles: 0.65,
+    walkMinutes: 13,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: null,
+    pricingCadence: "per-semester",
+    semesterDueAmount: 4000,
+    semesterDueAmountUpper: null,
+    schoolYearTotal: 8400,
+    schoolYearTotalUpper: null,
+    monthlyEquivalent: calculateMonthlyEquivalentFromSchoolYearTotal(8400),
+    monthlyEquivalentUpper: null,
+    moveInDue: calculateMoveInDue({
+      firstRequiredInstallment: 4000,
+      securityDepositRefundable: 200,
+      adminOrLeaseSigningFees: [
+        {
+          label: "Lease-signing rent advance",
+          amount: 400,
+          timing: "lease-signing",
+        },
+      ],
+    }).amount,
+    moveInDueUpper: null,
+    moveInDueHasUnknowns: false,
+    securityDepositRefundable: 200,
+    adminOrLeaseSigningFees: [
+      {
+        label: "Lease-signing rent advance",
+        amount: 400,
+        timing: "lease-signing",
+      },
+    ],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "none-listed",
+    leaseTermLabel: "2-semester lease (includes J term)",
+    availabilityLabel: "Direct page currently shows 2027-2028",
+    includedUtilities: ["gas", "water", "sewer", "trash"],
+    excludedUtilities: ["electric", "internet"],
+    unknownUtilities: [],
+    parkingIncluded: null,
+    parkingCost: null,
+    furnishedStatus: "unknown",
+    laundryStatus: "unknown",
+    appliances: [],
+    ACStatus: "unknown",
+    pricingNotes: [
+      "Direct listing keeps the High Street 1BR rent below the $1k comparison line.",
+      "Gas, water, sewer, and trash are included, but electric and internet remain tenant-paid.",
+    ],
+    availabilityNotes: [
+      "Direct page shows 2027-2028, while campus-portal summaries can lag or blend multiple units.",
+      "Treat as a waitlist/comparison row until Oxford Real Estate confirms 2026 timing.",
+    ],
+    perks: [
+      "True 1BR over High Street, not a bedroom in a shared multi-bedroom unit.",
+      "Several utility buckets are included.",
+      "Strong downtown location if availability changes.",
+    ],
+    sourceUrl: "https://www.oxre.com/rentals/112-w-high-st-up-apt-3",
+    sourceKind: "primary",
+    sourceConfidence: "medium",
+    listTier: "watchlist",
+    availabilityConfidence: "comp-only",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Open Oxford Real Estate listing",
+      href: "https://www.oxre.com/rentals/112-w-high-st-up-apt-3",
+      kind: "listing",
+      note: "Use direct listing before relying on mixed campus-portal High Street summaries.",
+    },
+  },
+  {
+    id: "28c-east-high",
+    propertyName: "28 East High",
+    optionName: "Apt C Efficiency",
+    unitType: "efficiency",
+    address: "28 E High St Apt C, Oxford, OH 45056",
+    latitude: 39.5105557,
+    longitude: -84.7414217,
+    distanceMiles: 0.49,
+    walkMinutes: 10,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: null,
+    pricingCadence: "monthly",
+    semesterDueAmount: null,
+    semesterDueAmountUpper: null,
+    schoolYearTotal: 10000,
+    schoolYearTotalUpper: null,
+    monthlyEquivalent: 1050,
+    monthlyEquivalentUpper: null,
+    moveInDue: 1050,
+    moveInDueUpper: null,
+    moveInDueHasUnknowns: false,
+    securityDepositRefundable: 500,
+    adminOrLeaseSigningFees: [
+      {
+        label: "Lease-signing rent advance",
+        amount: 550,
+        timing: "lease-signing",
+      },
+    ],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "none-listed",
+    leaseTermLabel: "9-month lease",
+    availabilityLabel: "Direct page shows 8/17/26 to 5/17/27",
+    includedUtilities: [],
+    excludedUtilities: ["utilities"],
+    unknownUtilities: [],
+    parkingIncluded: true,
+    parkingCost: 0,
+    furnishedStatus: "unknown",
+    laundryStatus: "unknown",
+    appliances: [],
+    ACStatus: "unknown",
+    pricingNotes: [
+      "Direct listing posts $1,050 due monthly, with a $10,000 total-rent figure for the 9-month lease.",
+      "This is a backup because the monthly line sits just over the $1k threshold.",
+    ],
+    availabilityNotes: [
+      "Direct page specifically lists an 8/17/26 start and 5/17/27 end.",
+      "Confirm whether the assigned parking space and utility setup are still unchanged before signing.",
+    ],
+    perks: [
+      "True efficiency, not a bedroom lease.",
+      "Assigned parking is posted.",
+      "Short downtown/uproute location for class and Uptown access.",
+    ],
+    sourceUrl: "https://www.oxre.com/rentals/28c-e-high-st",
+    sourceKind: "primary",
+    sourceConfidence: "high",
+    listTier: "backup-over-1k",
+    availabilityConfidence: "confirmed-2026",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Open Oxford Real Estate listing",
+      href: "https://www.oxre.com/rentals/28c-e-high-st",
+      kind: "listing",
+      note: "Direct page has the most complete 2026 timing for this backup efficiency.",
+    },
+  },
+  {
+    id: "37-w-high",
+    propertyName: "37 W. High Street",
+    optionName: "1BR Apartment",
+    unitType: "one-bedroom",
+    address: "37 W High St, Oxford, OH 45056",
+    latitude: 39.5104267,
+    longitude: -84.743385,
+    distanceMiles: 0.59,
+    walkMinutes: 12,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: null,
+    pricingCadence: "per-semester",
+    semesterDueAmount: 6100,
+    semesterDueAmountUpper: null,
+    schoolYearTotal: 13000,
+    schoolYearTotalUpper: null,
+    monthlyEquivalent: calculateMonthlyEquivalentFromSchoolYearTotal(13000),
+    monthlyEquivalentUpper: null,
+    moveInDue: calculateMoveInDue({
+      firstRequiredInstallment: 6100,
+      securityDepositRefundable: 400,
+      adminOrLeaseSigningFees: [
+        {
+          label: "Lease-signing rent advance",
+          amount: 800,
+          timing: "lease-signing",
+        },
+      ],
+    }).amount,
+    moveInDueUpper: null,
+    moveInDueHasUnknowns: false,
+    securityDepositRefundable: 400,
+    adminOrLeaseSigningFees: [
+      {
+        label: "Lease-signing rent advance",
+        amount: 800,
+        timing: "lease-signing",
+      },
+    ],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "none-listed",
+    leaseTermLabel: "2-semester lease (includes J term)",
+    availabilityLabel: "Campus portal shows 26/27 for the building group",
+    includedUtilities: [],
+    excludedUtilities: ["utilities"],
+    unknownUtilities: [],
+    parkingIncluded: true,
+    parkingCost: 0,
+    furnishedStatus: "unknown",
+    laundryStatus: "unknown",
+    appliances: [],
+    ACStatus: "central",
+    pricingNotes: [
+      "Campus portal text breaks out the 37 W. High 1BR price, total rent, deposit, and signing advance.",
+      "Above the $1k monthly comparison line, so this belongs in backup status.",
+    ],
+    availabilityNotes: [
+      "Campus portal marks the 35/37/39 W. High group as available for 26/27 and says 35 and 39 are leased.",
+      "Use Oxford Real Estate as the final confirmation point because the source is portal-mediated.",
+    ],
+    perks: [
+      "True 1BR over High Street.",
+      "Central air and one assigned parking space are posted.",
+      "Useful backup if proximity matters more than the under-$1k target.",
+    ],
+    sourceUrl:
+      "https://www.miamiohoffcampus.com/housing/property/37-west-high-street/ocpf5cwvzr",
+    sourceKind: "campus-affiliated",
+    sourceConfidence: "medium",
+    listTier: "backup-over-1k",
+    availabilityConfidence: "confirmed-2026",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Open campus portal listing",
+      href:
+        "https://www.miamiohoffcampus.com/housing/property/37-west-high-street/ocpf5cwvzr",
+      kind: "listing",
+      note: "Portal listing points back to Oxford Real Estate for the final live lease status.",
+    },
+  },
+  {
+    id: "4304-oxford-reily",
+    propertyName: "4304 Oxford Reily Road",
+    optionName: "1 Bedroom Apartment",
+    unitType: "one-bedroom",
+    address: "4304 Oxford Reily Road, Oxford, OH 45056",
+    latitude: 39.4967396,
+    longitude: -84.7590341,
+    distanceMiles: 1.57,
+    walkMinutes: 31,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: null,
+    pricingCadence: "monthly",
+    semesterDueAmount: null,
+    semesterDueAmountUpper: null,
+    schoolYearTotal: calculateSchoolYearTotalFromMonthly(850),
+    schoolYearTotalUpper: null,
+    monthlyEquivalent: 850,
+    monthlyEquivalentUpper: null,
+    moveInDue: 850,
+    moveInDueUpper: null,
+    moveInDueHasUnknowns: false,
+    securityDepositRefundable: 300,
+    adminOrLeaseSigningFees: [
+      {
+        label: "Lease-signing rent advance",
+        amount: 550,
+        timing: "lease-signing",
+      },
+    ],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "none-listed",
+    leaseTermLabel: "12-month lease",
+    availabilityLabel: "Direct page says available now",
+    includedUtilities: [],
+    excludedUtilities: ["utilities"],
+    unknownUtilities: [],
+    parkingIncluded: true,
+    parkingCost: 0,
+    furnishedStatus: "unknown",
+    laundryStatus: "in-unit",
+    appliances: [],
+    ACStatus: "central",
+    pricingNotes: [
+      "Direct listing posts $850/month and a $10,750 total-rent figure for the longer lease exposure.",
+      "The 10-month comparison is shown for planning only; a full 12-month lease changes the real obligation.",
+    ],
+    availabilityNotes: [
+      "Available-now status does not equal held August 2026 inventory.",
+      "Keep as an affordability watchlist row unless the office confirms an August 2026 path.",
+    ],
+    perks: [
+      "Newly renovated 1BR with central air.",
+      "Washer/dryer and off-street parking are posted.",
+      "Rent is below the $1k target, but the location and timing need scrutiny.",
+    ],
+    sourceUrl: "https://www.oxre.com/rentals/4304-oxford-reily-road",
+    sourceKind: "primary",
+    sourceConfidence: "medium",
+    listTier: "watchlist",
+    availabilityConfidence: "likely-needs-confirmation",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Open Oxford Real Estate listing",
+      href: "https://www.oxre.com/rentals/4304-oxford-reily-road",
+      kind: "listing",
+      note: "Direct page is current, but August 2026 timing is not posted.",
+    },
+  },
+  {
+    id: "oxford-west-a1",
+    propertyName: "Oxford West",
+    optionName: "1BR 588 sq ft",
+    unitType: "one-bedroom",
+    address: "615 Ogden Ct, Oxford, OH 45056",
+    latitude: 39.503606,
+    longitude: -84.750972,
+    distanceMiles: 0.99,
+    walkMinutes: 20,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 588,
+    pricingCadence: "monthly",
+    semesterDueAmount: null,
+    semesterDueAmountUpper: null,
+    schoolYearTotal: calculateSchoolYearTotalFromMonthly(990),
+    schoolYearTotalUpper: null,
+    monthlyEquivalent: 990,
+    monthlyEquivalentUpper: null,
+    moveInDue: null,
+    moveInDueUpper: null,
+    moveInDueHasUnknowns: true,
+    securityDepositRefundable: null,
+    adminOrLeaseSigningFees: [],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "unknown",
+    leaseTermLabel: "11-month lease shown on portal",
+    availabilityLabel: "Campus portal shows available now",
+    includedUtilities: [],
+    excludedUtilities: [],
+    unknownUtilities: ["utilities", "required fees", "deposit"],
+    parkingIncluded: null,
+    parkingCost: null,
+    furnishedStatus: "unknown",
+    laundryStatus: "in-unit",
+    appliances: [],
+    ACStatus: "yes-unspecified",
+    pricingNotes: [
+      "Campus portal lists a 588 sq ft 1BR at $990 plus fees.",
+      "Application fee is posted, but deposit and mandatory utility/fee exposure still need confirmation.",
+    ],
+    availabilityNotes: [
+      "Portal status is available now, not a reserved August 2026 unit.",
+      "Direct Oxford West site should be checked before this moves out of watchlist.",
+    ],
+    perks: [
+      "Sq footage is posted, which helps compare against tiny downtown 1BRs.",
+      "Washer/dryer in all apartments is posted on the portal.",
+      "Base rent is under the $1k target before unknown fees.",
+    ],
+    sourceUrl: "https://www.miamiohoffcampus.com/housing/property/oxford-west/m421l5k",
+    sourceKind: "campus-affiliated",
+    sourceConfidence: "medium",
+    listTier: "watchlist",
+    availabilityConfidence: "likely-needs-confirmation",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Open Oxford West site",
+      href: "https://www.oxfordwestapts.com/pricing",
+      kind: "listing",
+      note: "Use the direct site or office for the live August 2026 price and fee schedule.",
+    },
+  },
+  {
+    id: "the-commons-a1",
+    propertyName: "The Commons",
+    optionName: "A1 1BR",
+    unitType: "one-bedroom",
+    address: "610 Oxford Commons, Oxford, OH 45056",
+    latitude: 39.5045079,
+    longitude: -84.753274,
+    distanceMiles: 1.09,
+    walkMinutes: 22,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 413,
+    pricingCadence: "monthly-range",
+    semesterDueAmount: null,
+    semesterDueAmountUpper: null,
+    schoolYearTotal: calculateSchoolYearTotalFromMonthly(1035),
+    schoolYearTotalUpper: calculateSchoolYearTotalFromMonthly(1218),
+    monthlyEquivalent: 1035,
+    monthlyEquivalentUpper: 1218,
+    moveInDue: calculateMoveInDue({
+      firstRequiredInstallment: 1035,
+      firstRequiredInstallmentUpper: 1218,
+      securityDepositRefundable: null,
+      adminOrLeaseSigningFees: [
+        {
+          label: "Administrative fee",
+          amount: 100,
+          timing: "move-in",
+        },
+      ],
+    }).amount,
+    moveInDueUpper: calculateMoveInDue({
+      firstRequiredInstallment: 1035,
+      firstRequiredInstallmentUpper: 1218,
+      securityDepositRefundable: null,
+      adminOrLeaseSigningFees: [
+        {
+          label: "Administrative fee",
+          amount: 100,
+          timing: "move-in",
+        },
+      ],
+    }).amountUpper,
+    moveInDueHasUnknowns: true,
+    securityDepositRefundable: null,
+    adminOrLeaseSigningFees: [
+      {
+        label: "Administrative fee",
+        amount: 100,
+        timing: "move-in",
+      },
+    ],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "unknown",
+    leaseTermLabel: "12-month student lease",
+    availabilityLabel: "Direct floor plan shows waitlist/current term; confirm 2026",
+    includedUtilities: ["most utilities", "internet", "parking"],
+    excludedUtilities: [],
+    unknownUtilities: ["exact excluded utilities", "deposit"],
+    parkingIncluded: true,
+    parkingCost: 0,
+    furnishedStatus: "furnished",
+    laundryStatus: "unknown",
+    appliances: [],
+    ACStatus: "yes-unspecified",
+    pricingNotes: [
+      "Direct Commons page posts 413 sq ft for the A1 plan; campus portal pricing can differ by term.",
+      "Listed as a backup because the low end is just over the $1k planning threshold.",
+    ],
+    availabilityNotes: [
+      "Direct page has waitlist/current-term language, so August 2026 needs a direct office confirmation.",
+      "Use as a backup complex option, not as a locked available unit.",
+    ],
+    perks: [
+      "One of the few larger-community 1BR floor plans with posted square footage.",
+      "Direct site says rent includes most utilities, internet, free parking, and a furniture package.",
+      "Professional management and online leasing path are visible.",
+    ],
+    sourceUrl:
+      "https://www.oxfordcommons.com/oxford-oh-apartments/the-commons/1-bedroom-apartments/",
+    sourceKind: "primary",
+    sourceConfidence: "medium",
+    listTier: "backup-over-1k",
+    availabilityConfidence: "likely-needs-confirmation",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Open The Commons floor plan",
+      href:
+        "https://www.oxfordcommons.com/oxford-oh-apartments/the-commons/1-bedroom-apartments/",
+      kind: "listing",
+      note: "Confirm the exact Fall 2026 term and whether A1 has space before ranking it.",
+    },
+  },
+  {
+    id: "annex-a1",
+    propertyName: "Annex",
+    optionName: "1BR 608 sq ft",
+    unitType: "one-bedroom",
+    address: "1562 Magnolia Dr, Oxford, OH 45056",
+    latitude: 39.4903472,
+    longitude: -84.7197368,
+    distanceMiles: 1.38,
+    walkMinutes: 28,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 608,
+    pricingCadence: "monthly",
+    semesterDueAmount: null,
+    semesterDueAmountUpper: null,
+    schoolYearTotal: calculateSchoolYearTotalFromMonthly(1215),
+    schoolYearTotalUpper: null,
+    monthlyEquivalent: 1215,
+    monthlyEquivalentUpper: null,
+    moveInDue: null,
+    moveInDueUpper: null,
+    moveInDueHasUnknowns: true,
+    securityDepositRefundable: null,
+    adminOrLeaseSigningFees: [],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "unknown",
+    leaseTermLabel: "Flexible student lease terms posted",
+    availabilityLabel: "Campus portal shows available now",
+    includedUtilities: [],
+    excludedUtilities: [],
+    unknownUtilities: ["utilities", "required fees", "deposit"],
+    parkingIncluded: true,
+    parkingCost: 0,
+    furnishedStatus: "furnished",
+    laundryStatus: "in-unit",
+    appliances: ["dishwasher", "microwave"],
+    ACStatus: "yes-unspecified",
+    pricingNotes: [
+      "Campus portal lists the 608 sq ft 1BR at $1,215 plus fees.",
+      "Direct Annex site advertises broader starting rates, but the 1BR line needs the portal or office detail.",
+    ],
+    availabilityNotes: [
+      "Available-now portal status does not guarantee an August 2026 hold.",
+      "Use as an over-$1k backup if private shuttle and amenities matter.",
+    ],
+    perks: [
+      "Largest posted square footage among the added complex 1BR backups.",
+      "Furnished and in-unit laundry are posted on the portal.",
+      "Free parking and private shuttle are visible source claims.",
+    ],
+    sourceUrl: "https://www.miamiohoffcampus.com/housing/property/annex/3v75pdf",
+    sourceKind: "campus-affiliated",
+    sourceConfidence: "medium",
+    listTier: "backup-over-1k",
+    availabilityConfidence: "likely-needs-confirmation",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Open Annex site",
+      href: "https://live-annex.com/",
+      kind: "listing",
+      note: "Use direct site for leasing contact, then ask for the exact Fall 2026 1BR fee table.",
+    },
+  },
+  {
+    id: "hawks-landing-a1",
+    propertyName: "Hawks Landing",
+    optionName: "A1 1BR",
+    unitType: "one-bedroom",
+    address: "5262 Brown Rd, Oxford, OH 45056",
+    latitude: 39.5180377,
+    longitude: -84.7457618,
+    distanceMiles: 1,
+    walkMinutes: 20,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 460,
+    pricingCadence: "monthly",
+    semesterDueAmount: null,
+    semesterDueAmountUpper: null,
+    schoolYearTotal: calculateSchoolYearTotalFromMonthly(1219),
+    schoolYearTotalUpper: null,
+    monthlyEquivalent: 1219,
+    monthlyEquivalentUpper: null,
+    moveInDue: null,
+    moveInDueUpper: null,
+    moveInDueHasUnknowns: true,
+    securityDepositRefundable: null,
+    adminOrLeaseSigningFees: [],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "unknown",
+    leaseTermLabel: "Fall 12-month lease posted",
+    availabilityLabel: "Direct page says Fall 2026 sold out / waitlist",
+    includedUtilities: ["internet"],
+    excludedUtilities: [],
+    unknownUtilities: ["remaining utilities", "required fees", "deposit"],
+    parkingIncluded: null,
+    parkingCost: null,
+    furnishedStatus: "furnished",
+    laundryStatus: "unknown",
+    appliances: [],
+    ACStatus: "yes-unspecified",
+    pricingNotes: [
+      "Direct Hawks page posts A1 as a 460 sq ft 1BR at $1,219 for the Fall 2026 12-month term.",
+      "Because the page says Fall 2026 is sold out, this is a waitlist/watchlist row rather than an active backup.",
+    ],
+    availabilityNotes: [
+      "Use the waitlist only if the main under-$1k rows do not work.",
+      "Call before assuming a sold-out floor plan can be recovered for August 2026.",
+    ],
+    perks: [
+      "True 1BR floor plan with posted square footage.",
+      "Internet is included on the direct page.",
+      "Large amenity complex with bus/walk-to-campus positioning.",
+    ],
+    sourceUrl: "https://www.hawkshousing.com/oxford-oh-apartments/hawks-landing/student/",
+    sourceKind: "primary",
+    sourceConfidence: "high",
+    listTier: "watchlist",
+    availabilityConfidence: "likely-needs-confirmation",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Open Hawks Landing floor plan",
+      href: "https://www.hawkshousing.com/oxford-oh-apartments/hawks-landing/student/",
+      kind: "listing",
+      note: "Use the direct waitlist page only after confirming the sold-out status with the office.",
     },
   },
 ];

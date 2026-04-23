@@ -1,9 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { AnimatePresence, motion } from "framer-motion";
-import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import {
+  startTransition,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 import {
   ArrowUpRight,
@@ -13,14 +19,16 @@ import {
   CalendarClock,
   Car,
   CheckCircle2,
+  DollarSign,
   Dumbbell,
   ExternalLink,
   Home,
   Info,
-  Map,
   MapPin,
+  Route,
   Search,
   ShieldCheck,
+  SlidersHorizontal,
   Snowflake,
   Waves,
   X,
@@ -30,15 +38,18 @@ import {
   buildHousingSummary,
   buildMoveInDueSummary,
   buildRecurringAllInSummary,
+  buildSchoolYearSummary,
   filterHousingOptions,
   formatHousingCurrency,
   formatHousingDate,
   getACStatusLabel,
   getArmstrongDistance,
+  getAvailabilityConfidenceLabel,
   getDisclosureLabel,
   getFurnishedStatusLabel,
   getHousingClarityStatus,
   getLaundryStatusLabel,
+  getListTierLabel,
   getRecCenterDistance,
   getSourceConfidenceLabel,
   getSourceKindLabel,
@@ -47,6 +58,7 @@ import {
   miamiOxfordRecCenterAnchor,
   sortHousingOptions,
   type HousingClarityStatus,
+  type HousingListTier,
   type HousingOption,
   type HousingSortKey,
   type HousingUnitType,
@@ -57,7 +69,7 @@ const MiamiHousingLeafletMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full min-h-[26rem] items-center justify-center bg-slate-200 text-sm text-slate-500">
+      <div className="flex h-full min-h-[26rem] items-center justify-center bg-[#d7d0c1] text-sm font-semibold text-[#615b50]">
         Loading map
       </div>
     ),
@@ -65,14 +77,64 @@ const MiamiHousingLeafletMap = dynamic(
 );
 
 type UnitFilter = "all" | HousingUnitType;
-type WalkFilter = "all" | "10" | "15" | "20" | "25";
+type DistanceFilter = "all" | "0.5" | "0.75" | "1" | "1.5" | "2";
 type BudgetFilter = "all" | "700" | "850" | "1000" | "1250";
+type TierFilter = "all" | HousingListTier;
+type MobileTab = "map" | "list";
+
+type FilterOption<T extends string> = {
+  value: T;
+  label: string;
+};
+
+const unitOptions: FilterOption<UnitFilter>[] = [
+  { value: "all", label: "All" },
+  { value: "studio", label: "Studio" },
+  { value: "efficiency", label: "Efficiency" },
+  { value: "one-bedroom", label: "1BR" },
+];
+
+const distanceOptions: FilterOption<DistanceFilter>[] = [
+  { value: "all", label: "Any" },
+  { value: "0.5", label: "0.5 mi" },
+  { value: "0.75", label: "0.75 mi" },
+  { value: "1", label: "1 mi" },
+  { value: "1.5", label: "1.5 mi" },
+  { value: "2", label: "2 mi" },
+];
+
+const budgetOptions: FilterOption<BudgetFilter>[] = [
+  { value: "all", label: "Any" },
+  { value: "700", label: "$700" },
+  { value: "850", label: "$850" },
+  { value: "1000", label: "$1k" },
+  { value: "1250", label: "$1.25k" },
+];
+
+const sortOptions: FilterOption<HousingSortKey>[] = [
+  { value: "best-fit", label: "Best" },
+  { value: "walk-asc", label: "Distance" },
+  { value: "monthly-equivalent-asc", label: "Price" },
+  { value: "move-in-asc", label: "Move-in" },
+  { value: "name-asc", label: "A-Z" },
+];
+
+const tierOptions: FilterOption<TierFilter>[] = [
+  { value: "all", label: "All" },
+  { value: "main-under-1k", label: "Main" },
+  { value: "backup-over-1k", label: "Backup" },
+  { value: "watchlist", label: "Watchlist" },
+];
 
 const clarityBadgeClasses: Record<HousingClarityStatus, string> = {
-  clear: "bg-emerald-50 text-emerald-800 ring-emerald-200",
-  partial: "bg-amber-50 text-amber-800 ring-amber-200",
-  "quote-required": "bg-rose-50 text-rose-800 ring-rose-200",
+  clear: "bg-[#edf7ed] text-[#25522f] ring-[#bed9bd]",
+  partial: "bg-[#fff4dd] text-[#8b551b] ring-[#e9c98d]",
+  "quote-required": "bg-[#fff0ed] text-[#8b3324] ring-[#ebb8ad]",
 };
+
+function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
 
 function directionsLink(address: string) {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
@@ -80,6 +142,15 @@ function directionsLink(address: string) {
 
 function isExternalHref(href: string) {
   return href.startsWith("http");
+}
+
+function latestVerifiedDate(options: HousingOption[]) {
+  const latest = options.reduce<string | null>((current, option) => {
+    if (!current || option.lastVerifiedAt > current) return option.lastVerifiedAt;
+    return current;
+  }, null);
+
+  return latest ? formatHousingDate(latest) : "Not verified";
 }
 
 function formatCompactPrice(option: HousingOption) {
@@ -91,7 +162,7 @@ function formatCompactPrice(option: HousingOption) {
 function formatBedBath(option: HousingOption) {
   const bedLabel = option.bedrooms === 1 ? "1 bed" : `${option.bedrooms} beds`;
   const bathLabel = option.bathrooms === 1 ? "1 bath" : `${option.bathrooms} baths`;
-  return `${bedLabel} · ${bathLabel} · ${getUnitTypeLabel(option.unitType)}`;
+  return `${bedLabel} / ${bathLabel}`;
 }
 
 function formatOptionalNumber(amount: number | null) {
@@ -125,56 +196,91 @@ function parkingSummary(option: HousingOption) {
   return "Not posted";
 }
 
-function SelectControl({
+function pillLabel(status: HousingClarityStatus) {
+  if (status === "clear") return "Clear costs";
+  if (status === "partial") return "Some unknowns";
+  return "Quote";
+}
+
+function SegmentedControl<T extends string>({
   label,
   value,
+  options,
   onChange,
-  children,
 }: {
   label: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: ReactNode;
+  value: T;
+  options: FilterOption<T>[];
+  onChange: (value: T) => void;
 }) {
   return (
-    <label className="min-w-0">
-      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-        {label}
-      </span>
-      <select
-        value={value}
-        onChange={(event) => startTransition(() => onChange(event.target.value))}
-        className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-      >
-        {children}
-      </select>
-    </label>
+    <div className="min-w-0">
+      <p className="mb-2 text-[11px] font-semibold uppercase text-[#70695d]">{label}</p>
+      <div className="flex max-w-full gap-1 overflow-x-auto rounded-[10px] border border-[#ddd3c3] bg-[#f3eadc] p-1">
+        {options.map((option) => {
+          const active = option.value === value;
+
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => startTransition(() => onChange(option.value))}
+              className={cn(
+                "h-9 shrink-0 rounded-[8px] px-3 text-xs font-semibold text-[#5f584c] transition active:scale-[0.98]",
+                active
+                  ? "bg-[#27251f] text-[#fffaf2] shadow-sm"
+                  : "hover:bg-white/70 hover:text-[#25231f]",
+              )}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
 function DistanceBadge({
   icon,
   label,
-  minutes,
   miles,
   tone,
+  large = false,
 }: {
   icon: ReactNode;
   label: string;
-  minutes: number;
   miles: number;
   tone: "blue" | "orange";
+  large?: boolean;
 }) {
   const toneClass =
     tone === "blue"
-      ? "border-blue-100 bg-blue-50 text-blue-900"
-      : "border-orange-100 bg-orange-50 text-orange-900";
+      ? "border-[#c6d8f6] bg-[#edf4ff] text-[#1d4c91]"
+      : "border-[#f0d0ad] bg-[#fff2e4] text-[#9a4a12]";
 
   return (
-    <span className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs ${toneClass}`}>
+    <span
+      className={cn(
+        "inline-flex min-w-0 items-center gap-2 rounded-[10px] border font-semibold",
+        large ? "px-3 py-2 text-sm" : "px-2.5 py-1.5 text-xs",
+        toneClass,
+      )}
+    >
       {icon}
-      <span className="font-semibold">{minutes} min</span>
-      <span className="text-current/70">{miles.toFixed(2)} mi {label}</span>
+      <span className="shrink-0">{miles.toFixed(2)} mi</span>
+      <span className="truncate font-medium opacity-75">
+        {label}
+      </span>
+    </span>
+  );
+}
+
+function FactChip({ icon, value }: { icon: ReactNode; value: string }) {
+  return (
+    <span className="inline-flex min-w-0 items-center gap-1.5 rounded-[8px] bg-[#f2eadf] px-2.5 py-1.5 text-xs font-medium text-[#5c5549]">
+      <span className="shrink-0 text-[#8d8373]">{icon}</span>
+      <span className="truncate">{value}</span>
     </span>
   );
 }
@@ -192,129 +298,180 @@ function ListingCard({
   onHoverChange: (id: string | null) => void;
   onOpenMap: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
   const armstrong = getArmstrongDistance(option);
   const rec = getRecCenterDistance(option);
   const clarity = getHousingClarityStatus(option);
 
   return (
-    <article
+    <motion.article
+      layout
+      initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+      animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+      exit={reduceMotion ? undefined : { opacity: 0, y: 8 }}
+      whileHover={reduceMotion ? undefined : { y: -2 }}
       onMouseEnter={() => onHoverChange(option.id)}
       onMouseLeave={() => onHoverChange(null)}
-      className={`rounded-xl border bg-white shadow-sm transition ${
+      className={cn(
+        "group overflow-hidden rounded-[12px] border bg-[#fffdf8] shadow-[0_10px_24px_rgba(60,48,34,0.06)] transition",
         selected
-          ? "border-blue-400 shadow-[0_0_0_3px_rgba(37,99,235,0.12)]"
-          : "border-slate-200 hover:border-slate-300 hover:shadow-md"
-      }`}
+          ? "border-[#2f68c4] shadow-[0_0_0_3px_rgba(47,104,196,0.14),0_16px_36px_rgba(42,48,54,0.12)]"
+          : "border-[#dfd5c5] hover:border-[#c9bdab] hover:shadow-[0_16px_34px_rgba(60,48,34,0.1)]",
+      )}
     >
       <button type="button" onClick={onSelect} className="block w-full p-4 text-left">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[1.35rem] font-semibold leading-none text-slate-950">
+            <p className="text-[1.42rem] font-bold leading-none text-[#24231f]">
               {formatCompactPrice(option)}
             </p>
-            <h2 className="mt-2 truncate text-base font-semibold text-slate-950">
+            <h2 className="mt-2 truncate text-base font-bold text-[#28251f]">
               {option.propertyName}
             </h2>
-            <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">{option.address}</p>
+            <p className="mt-1 line-clamp-2 text-sm leading-5 text-[#625b50]">{option.address}</p>
           </div>
 
           <span
-            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ring-1 ${clarityBadgeClasses[clarity]}`}
+            className={cn(
+              "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ring-1",
+              clarityBadgeClasses[clarity],
+            )}
           >
-            {clarity === "quote-required" ? "Quote" : clarity}
+            {pillLabel(clarity)}
           </span>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-slate-700">
-          <span className="inline-flex items-center gap-1.5">
-            <BedDouble className="h-4 w-4 text-slate-400" />
-            {formatBedBath(option)}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Bath className="h-4 w-4 text-slate-400" />
-            {option.squareFeet === null ? "Sq ft not posted" : `${option.squareFeet} sq ft`}
-          </span>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <FactChip
+            icon={<Home className="h-3.5 w-3.5" />}
+            value={getUnitTypeLabel(option.unitType)}
+          />
+          <FactChip icon={<BedDouble className="h-3.5 w-3.5" />} value={formatBedBath(option)} />
+          <FactChip
+            icon={<Bath className="h-3.5 w-3.5" />}
+            value={option.squareFeet === null ? "Sq ft not posted" : `${option.squareFeet} sq ft`}
+          />
+          <FactChip icon={<CalendarClock className="h-3.5 w-3.5" />} value={option.leaseTermLabel} />
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-col gap-2">
           <DistanceBadge
             icon={<Building2 className="h-3.5 w-3.5" />}
             label="to class"
-            minutes={armstrong.walkMinutes}
             miles={armstrong.distanceMiles}
             tone="blue"
           />
           <DistanceBadge
             icon={<Dumbbell className="h-3.5 w-3.5" />}
             label="to Rec"
-            minutes={rec.walkMinutes}
             miles={rec.distanceMiles}
             tone="orange"
           />
         </div>
 
-        <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
-          <CalendarClock className="h-4 w-4 shrink-0 text-slate-400" />
+        <div className="mt-3 flex items-center gap-2 text-sm text-[#655d52]">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-[#63865a]" />
           <span className="line-clamp-1">{option.availabilityLabel}</span>
+        </div>
+
+        <div className="mt-3 rounded-[9px] bg-[#f8f1e8] px-3 py-2 text-xs leading-5 text-[#625b50]">
+          <span className="font-bold text-[#28251f]">Utilities:</span> {utilitiesSummary(option)}
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <span className="rounded-full bg-[#f2eadf] px-2.5 py-1 text-[10px] font-bold uppercase text-[#625b50]">
+            {getListTierLabel(option.listTier)}
+          </span>
+          <span className="rounded-full bg-[#f2eadf] px-2.5 py-1 text-[10px] font-bold uppercase text-[#625b50]">
+            {getSourceConfidenceLabel(option.sourceConfidence)}
+          </span>
         </div>
       </button>
 
-      <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-4 py-3">
+      <div className="flex items-center justify-between gap-2 border-t border-[#eee5d8] px-3 py-3">
         <button
           type="button"
           onClick={onOpenMap}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+          title={`Show ${option.propertyName} on map`}
+          className="inline-flex h-10 items-center gap-2 rounded-[9px] border border-[#d9cfbf] bg-[#f8f1e8] px-3 text-xs font-bold text-[#4e493f] transition hover:border-[#2f68c4] hover:bg-[#edf4ff] hover:text-[#1d4c91] active:scale-[0.98]"
           aria-label={`Show ${option.propertyName} on map`}
         >
           <MapPin className="h-4 w-4" />
+          Map
         </button>
 
-        <div className="flex min-w-0 flex-1 justify-end gap-2">
+        <div className="flex min-w-0 justify-end gap-2">
           <a
             href={option.sourceUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-10 items-center gap-1.5 rounded-full border border-slate-200 px-3 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            title={`Open source for ${option.propertyName}`}
+            className="inline-flex h-10 items-center gap-2 rounded-[9px] border border-[#d9cfbf] px-3 text-xs font-bold text-[#4e493f] transition hover:bg-[#f8f1e8] active:scale-[0.98]"
           >
+            <ExternalLink className="h-4 w-4" />
             Source
-            <ExternalLink className="h-3.5 w-3.5" />
           </a>
           <a
             href={option.contactPath.href}
             target={isExternalHref(option.contactPath.href) ? "_blank" : undefined}
             rel={isExternalHref(option.contactPath.href) ? "noreferrer" : undefined}
-            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-slate-950 px-3 text-xs font-semibold text-white transition hover:bg-blue-700"
+            title={`${option.contactPath.label} for ${option.propertyName}`}
+            className="inline-flex h-10 items-center gap-2 rounded-[9px] bg-[#25231f] px-3 text-xs font-bold text-[#fffaf2] transition hover:bg-[#1d4c91] active:scale-[0.98]"
           >
+            <ArrowUpRight className="h-4 w-4" />
             Contact
-            <ArrowUpRight className="h-3.5 w-3.5" />
           </a>
         </div>
       </div>
-    </article>
+    </motion.article>
   );
 }
 
-function DetailRow({
+function DetailMetric({
   icon,
   label,
   value,
+  note,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
+  note?: string;
 }) {
   return (
-    <div className="flex gap-3 border-b border-slate-100 py-3 last:border-b-0">
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+    <div className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3 border-b border-[#eee5d8] py-3 last:border-b-0">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#f2eadf] text-[#6b6357]">
         {icon}
       </span>
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-          {label}
-        </p>
-        <p className="mt-1 break-words text-sm font-medium leading-5 text-slate-900">{value}</p>
+        <p className="text-[11px] font-bold uppercase text-[#796f62]">{label}</p>
+        <p className="mt-1 break-words text-sm font-bold leading-5 text-[#28251f]">{value}</p>
+        {note ? <p className="mt-1 text-xs leading-5 text-[#756b5d]">{note}</p> : null}
       </div>
     </div>
+  );
+}
+
+function DetailSection({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  return (
+    <details
+      open={defaultOpen}
+      className="group border-b border-[#eee5d8] py-2 last:border-b-0"
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-[9px] px-1 py-2 text-sm font-bold text-[#28251f] outline-none transition hover:bg-[#f8f1e8]">
+        {title}
+        <span className="text-lg leading-none text-[#8d8373] transition group-open:rotate-45">+</span>
+      </summary>
+      <div className="pb-2">{children}</div>
+    </details>
   );
 }
 
@@ -329,28 +486,34 @@ function DetailPanel({
 }) {
   const recurring = buildRecurringAllInSummary(option);
   const moveIn = buildMoveInDueSummary(option);
+  const schoolYear = buildSchoolYearSummary(option);
   const armstrong = getArmstrongDistance(option);
   const rec = getRecCenterDistance(option);
   const clarity = getHousingClarityStatus(option);
 
   return (
-    <aside className={`bg-white ${compact ? "" : "rounded-xl border border-slate-200 shadow-sm"}`}>
-      <div className="border-b border-slate-100 p-4">
+    <aside
+      className={cn(
+        "flex min-h-0 flex-col bg-[#fffdf8] text-[#28251f]",
+        compact
+          ? "max-h-[48vh]"
+          : "h-full rounded-[12px] border border-white/70 shadow-[0_24px_70px_rgba(33,31,27,0.24)] backdrop-blur",
+      )}
+    >
+      <div className="shrink-0 border-b border-[#eee5d8] p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[1.45rem] font-semibold leading-none text-slate-950">
-              {recurring.label}
-            </p>
-            <h2 className="mt-2 text-lg font-semibold leading-tight text-slate-950">
+            <p className="text-2xl font-bold leading-none text-[#24231f]">{recurring.label}</p>
+            <h2 className="mt-2 text-lg font-bold leading-tight text-[#28251f]">
               {option.propertyName}
             </h2>
-            <p className="mt-1 text-sm leading-5 text-slate-600">{option.address}</p>
+            <p className="mt-1 text-sm leading-5 text-[#625b50]">{option.address}</p>
           </div>
           {onClose ? (
             <button
               type="button"
               onClick={onClose}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-50"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[#d9cfbf] bg-[#fffaf2] text-[#625b50] transition hover:bg-[#f3eadc]"
               aria-label="Close listing details"
             >
               <X className="h-4 w-4" />
@@ -358,76 +521,166 @@ function DetailPanel({
           ) : null}
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <DistanceBadge
-            icon={<Building2 className="h-3.5 w-3.5" />}
+            icon={<Building2 className="h-4 w-4" />}
             label="to class"
-            minutes={armstrong.walkMinutes}
             miles={armstrong.distanceMiles}
             tone="blue"
+            large
           />
           <DistanceBadge
-            icon={<Dumbbell className="h-3.5 w-3.5" />}
+            icon={<Dumbbell className="h-4 w-4" />}
             label="to Rec"
-            minutes={rec.walkMinutes}
             miles={rec.distanceMiles}
             tone="orange"
+            large
           />
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
           <span
-            className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ring-1 ${clarityBadgeClasses[clarity]}`}
+            className={cn(
+              "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ring-1",
+              clarityBadgeClasses[clarity],
+            )}
           >
-            {clarity === "clear" ? "Clear costs" : clarity === "partial" ? "Some unknowns" : "Quote required"}
+            {pillLabel(clarity)}
           </span>
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+          <span className="rounded-full bg-[#f2eadf] px-2.5 py-1 text-[10px] font-bold uppercase text-[#625b50]">
             {getSourceConfidenceLabel(option.sourceConfidence)}
           </span>
         </div>
       </div>
 
-      <div className="max-h-[17rem] overflow-y-auto px-4 lg:max-h-[18.5rem]">
-        <DetailRow
-          icon={<Home className="h-4 w-4" />}
-          label="Layout"
-          value={`${formatBedBath(option)} · ${option.squareFeet === null ? "sq ft not posted" : `${option.squareFeet} sq ft`}`}
-        />
-        <DetailRow icon={<CalendarClock className="h-4 w-4" />} label="Lease" value={option.leaseTermLabel} />
-        <DetailRow icon={<CheckCircle2 className="h-4 w-4" />} label="Availability" value={option.availabilityLabel} />
-        <DetailRow icon={<Info className="h-4 w-4" />} label="Move-In Due" value={moveIn.label} />
-        <DetailRow icon={<Waves className="h-4 w-4" />} label="Utilities" value={utilitiesSummary(option)} />
-        <DetailRow icon={<Car className="h-4 w-4" />} label="Parking" value={parkingSummary(option)} />
-        <DetailRow icon={<BedDouble className="h-4 w-4" />} label="Furnished" value={getFurnishedStatusLabel(option.furnishedStatus)} />
-        <DetailRow icon={<Bath className="h-4 w-4" />} label="Laundry" value={getLaundryStatusLabel(option.laundryStatus)} />
-        <DetailRow icon={<Snowflake className="h-4 w-4" />} label="A/C" value={getACStatusLabel(option.ACStatus)} />
-        <DetailRow
-          icon={<ShieldCheck className="h-4 w-4" />}
-          label="Source"
-          value={`${getSourceKindLabel(option.sourceKind)} · ${getSourceConfidenceLabel(option.sourceConfidence)} · Verified ${formatHousingDate(option.lastVerifiedAt)}`}
-        />
-        <DetailRow
-          icon={<Info className="h-4 w-4" />}
-          label="Cost Gaps"
-          value={`Taxes: ${getDisclosureLabel(option.taxesStatus)} · Required fees: ${getDisclosureLabel(option.nonUtilityFeesStatus)} · Deposit: ${formatOptionalNumber(option.securityDepositRefundable)}`}
-        />
+      <div className="min-h-0 flex-1 overflow-y-auto px-4">
+        <DetailSection title="Overview" defaultOpen>
+          <DetailMetric
+            icon={<Home className="h-4 w-4" />}
+            label="Unit"
+            value={`${getUnitTypeLabel(option.unitType)} / ${formatBedBath(option)} / ${
+              option.squareFeet === null ? "sq ft not posted" : `${option.squareFeet} sq ft`
+            }`}
+          />
+          <DetailMetric
+            icon={<Building2 className="h-4 w-4" />}
+            label="Class distance"
+            value={`${armstrong.distanceMiles.toFixed(2)} mi to ${miamiOxfordCampusAnchor.name}`}
+          />
+          <DetailMetric
+            icon={<Dumbbell className="h-4 w-4" />}
+            label="Rec distance"
+            value={`${rec.distanceMiles.toFixed(2)} mi to ${miamiOxfordRecCenterAnchor.name}`}
+          />
+        </DetailSection>
+
+        <DetailSection title="Costs" defaultOpen={!compact}>
+          <DetailMetric
+            icon={<DollarSign className="h-4 w-4" />}
+            label="Recurring estimate"
+            value={recurring.label}
+            note={recurring.note}
+          />
+          <DetailMetric
+            icon={<Info className="h-4 w-4" />}
+            label="Move-in"
+            value={moveIn.label}
+            note={moveIn.note}
+          />
+          <DetailMetric
+            icon={<DollarSign className="h-4 w-4" />}
+            label="School-year comparison"
+            value={schoolYear.label}
+            note={schoolYear.note}
+          />
+          <DetailMetric
+            icon={<ShieldCheck className="h-4 w-4" />}
+            label="Taxes / fees / deposit"
+            value={`Taxes: ${getDisclosureLabel(option.taxesStatus)} / Fees: ${getDisclosureLabel(
+              option.nonUtilityFeesStatus,
+            )}`}
+            note={`Deposit: ${formatOptionalNumber(option.securityDepositRefundable)}`}
+          />
+        </DetailSection>
+
+        <DetailSection title="Lease/Availability">
+          <DetailMetric
+            icon={<CalendarClock className="h-4 w-4" />}
+            label="Lease"
+            value={option.leaseTermLabel}
+            note={option.availabilityLabel}
+          />
+          <DetailMetric
+            icon={<CheckCircle2 className="h-4 w-4" />}
+            label="Availability confidence"
+            value={getAvailabilityConfidenceLabel(option.availabilityConfidence)}
+            note={option.availabilityNotes.slice(0, 2).join(" ")}
+          />
+        </DetailSection>
+
+        <DetailSection title="Utilities/Parking">
+          <DetailMetric
+            icon={<Waves className="h-4 w-4" />}
+            label="Utilities"
+            value={utilitiesSummary(option)}
+          />
+          <DetailMetric
+            icon={<Car className="h-4 w-4" />}
+            label="Parking"
+            value={parkingSummary(option)}
+          />
+          <DetailMetric
+            icon={<BedDouble className="h-4 w-4" />}
+            label="Furnished"
+            value={getFurnishedStatusLabel(option.furnishedStatus)}
+          />
+          <DetailMetric
+            icon={<Bath className="h-4 w-4" />}
+            label="Laundry"
+            value={getLaundryStatusLabel(option.laundryStatus)}
+          />
+          <DetailMetric
+            icon={<Snowflake className="h-4 w-4" />}
+            label="A/C"
+            value={getACStatusLabel(option.ACStatus)}
+          />
+        </DetailSection>
+
+        <DetailSection title="Source/Contact">
+          <DetailMetric
+            icon={<ShieldCheck className="h-4 w-4" />}
+            label="Source"
+            value={`${getSourceKindLabel(option.sourceKind)} / ${getSourceConfidenceLabel(
+              option.sourceConfidence,
+            )}`}
+            note={`Verified ${formatHousingDate(option.lastVerifiedAt)} / ${getListTierLabel(
+              option.listTier,
+            )}`}
+          />
+          <DetailMetric
+            icon={<ExternalLink className="h-4 w-4" />}
+            label="Contact path"
+            value={option.contactPath.label}
+            note={option.contactPath.note}
+          />
+        </DetailSection>
       </div>
 
-      <div className="grid gap-2 border-t border-slate-100 p-4 sm:grid-cols-3">
+      <div className="sticky bottom-0 grid shrink-0 grid-cols-3 gap-2 border-t border-[#eee5d8] bg-[#fffdf8]/96 p-4 backdrop-blur">
         <a
           href={option.contactPath.href}
           target={isExternalHref(option.contactPath.href) ? "_blank" : undefined}
           rel={isExternalHref(option.contactPath.href) ? "noreferrer" : undefined}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-[9px] bg-[#25231f] px-3 text-sm font-bold text-[#fffaf2] transition hover:bg-[#1d4c91] active:scale-[0.98]"
         >
-          {option.contactPath.kind === "call" ? "Call" : "Contact"}
+          Contact
           <ArrowUpRight className="h-4 w-4" />
         </a>
         <a
           href={option.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-[9px] border border-[#d9cfbf] px-3 text-sm font-bold text-[#4e493f] transition hover:bg-[#f8f1e8] active:scale-[0.98]"
         >
           Source
           <ExternalLink className="h-4 w-4" />
@@ -436,10 +689,10 @@ function DetailPanel({
           href={directionsLink(option.address)}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-[9px] border border-[#d9cfbf] px-3 text-sm font-bold text-[#4e493f] transition hover:bg-[#f8f1e8] active:scale-[0.98]"
         >
           Route
-          <MapPin className="h-4 w-4" />
+          <Route className="h-4 w-4" />
         </a>
       </div>
     </aside>
@@ -448,11 +701,11 @@ function DetailPanel({
 
 function EmptyState() {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
-      <Search className="mx-auto h-8 w-8 text-slate-400" />
-      <h2 className="mt-4 text-lg font-semibold text-slate-950">No listings match.</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-600">
-        Widen the walk range, increase the budget cap, or clear the search.
+    <div className="rounded-[12px] border border-dashed border-[#cfc4b4] bg-[#fffdf8] p-8 text-center text-[#625b50]">
+      <Search className="mx-auto h-8 w-8 text-[#918777]" />
+      <h2 className="mt-4 text-lg font-bold text-[#28251f]">No listings match.</h2>
+      <p className="mt-2 text-sm leading-6">
+        Widen the distance range, raise the budget cap, or clear the search.
       </p>
     </div>
   );
@@ -476,13 +729,14 @@ function useIsDesktop() {
 
 export default function MiamiHousingExplorer({ options }: { options: HousingOption[] }) {
   const [unitFilter, setUnitFilter] = useState<UnitFilter>("all");
-  const [maxWalk, setMaxWalk] = useState<WalkFilter>("all");
+  const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const [maxDistance, setMaxDistance] = useState<DistanceFilter>("all");
   const [maxMonthly, setMaxMonthly] = useState<BudgetFilter>("all");
   const [sortMode, setSortMode] = useState<HousingSortKey>("best-fit");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(options[0]?.id ?? null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [isMobileMapOpen, setIsMobileMapOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<MobileTab>("map");
   const deferredQuery = useDeferredValue(searchQuery);
   const isDesktop = useIsDesktop();
 
@@ -491,13 +745,14 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
       sortHousingOptions(
         filterHousingOptions(options, {
           unitTypes: unitFilter === "all" ? undefined : [unitFilter],
-          maxWalkMinutes: maxWalk === "all" ? undefined : Number(maxWalk),
+          listTiers: tierFilter === "all" ? undefined : [tierFilter],
+          maxDistanceMiles: maxDistance === "all" ? undefined : Number(maxDistance),
           maxMonthlyEquivalent: maxMonthly === "all" ? undefined : Number(maxMonthly),
           searchQuery: deferredQuery,
         }),
         sortMode,
       ),
-    [deferredQuery, maxMonthly, maxWalk, options, sortMode, unitFilter],
+    [deferredQuery, maxDistance, maxMonthly, options, sortMode, tierFilter, unitFilter],
   );
 
   const summary = buildHousingSummary(visibleOptions);
@@ -505,7 +760,7 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
   const selectedOption = selectedId
     ? visibleOptions.find((option) => option.id === selectedId) ?? null
     : null;
-  const activeOption = selectedOption ?? visibleOptions[0] ?? null;
+  const verifiedDate = useMemo(() => latestVerifiedDate(options), [options]);
 
   useEffect(() => {
     if (!visibleOptions.length) {
@@ -514,8 +769,8 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
       return;
     }
 
-    if (!selectedId || !visibleOptions.some((option) => option.id === selectedId)) {
-      setSelectedId(visibleOptions[0]!.id);
+    if (selectedId && !visibleOptions.some((option) => option.id === selectedId)) {
+      setSelectedId(null);
     }
   }, [selectedId, visibleOptions]);
 
@@ -525,220 +780,267 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
     }
   }, [hoveredId, visibleOptions]);
 
-  useEffect(() => {
-    if (!isMobileMapOpen) return undefined;
-
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, [isMobileMapOpen]);
-
-  function selectListing(id: string, openMobileMap = false) {
-    setSelectedId(id);
-    if (openMobileMap) {
-      setIsMobileMapOpen(true);
+  function selectListing(id: string, mobileTarget: MobileTab | null = null) {
+    startTransition(() => setSelectedId(id));
+    if (mobileTarget) {
+      setMobileTab(mobileTarget);
     }
   }
 
+  const activeFilterCount = [
+    tierFilter !== "all",
+    unitFilter !== "all",
+    maxDistance !== "all",
+    maxMonthly !== "all",
+    sortMode !== "best-fit",
+  ].filter(Boolean).length;
+
+  const renderFilterGroups = () => (
+    <div className="grid gap-3">
+      <SegmentedControl
+        label="Tier"
+        value={tierFilter}
+        options={tierOptions}
+        onChange={setTierFilter}
+      />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+        <SegmentedControl
+          label="Unit"
+          value={unitFilter}
+          options={unitOptions}
+          onChange={setUnitFilter}
+        />
+        <SegmentedControl
+          label="Distance"
+          value={maxDistance}
+          options={distanceOptions}
+          onChange={setMaxDistance}
+        />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+        <SegmentedControl
+          label="Budget"
+          value={maxMonthly}
+          options={budgetOptions}
+          onChange={setMaxMonthly}
+        />
+        <SegmentedControl
+          label="Sort"
+          value={sortMode}
+          options={sortOptions}
+          onChange={setSortMode}
+        />
+      </div>
+    </div>
+  );
+
+  const searchControl = (
+    <label className="relative block">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8d8373]" />
+      <input
+        type="search"
+        value={searchQuery}
+        onChange={(event) => startTransition(() => setSearchQuery(event.target.value))}
+        placeholder="Search building, street, utility, feature"
+        className="h-12 w-full rounded-[10px] border border-[#d8cdbc] bg-[#fffdf8] pl-10 pr-3 text-sm font-medium text-[#28251f] outline-none transition placeholder:text-[#9b9284] focus:border-[#2f68c4] focus:ring-2 focus:ring-[#c7d9f8]"
+      />
+    </label>
+  );
+
+  const filterControls = (
+    <div className="border-b border-[#ded3c2] bg-[#fffaf2] p-4">
+      {searchControl}
+
+      <div className="mt-3 flex items-center gap-2 text-xs font-bold uppercase text-[#756b5d]">
+        <SlidersHorizontal className="h-4 w-4" />
+        Filters
+      </div>
+
+      <div className="mt-3">{renderFilterGroups()}</div>
+    </div>
+  );
+
+  const mobileFilterControls = (
+    <div className="border-b border-[#ded3c2] bg-[#fffaf2] p-3">
+      <label className="relative block">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8d8373]" />
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => startTransition(() => setSearchQuery(event.target.value))}
+          placeholder="Search listings"
+          className="h-11 w-full rounded-[10px] border border-[#d8cdbc] bg-[#fffdf8] pl-10 pr-3 text-sm font-medium text-[#28251f] outline-none transition placeholder:text-[#9b9284] focus:border-[#2f68c4] focus:ring-2 focus:ring-[#c7d9f8]"
+        />
+      </label>
+
+      <details className="mt-2 rounded-[10px] border border-[#ded3c2] bg-[#f8f1e8]">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-xs font-bold uppercase text-[#625b50]">
+          <span className="inline-flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4" />
+            Filters
+          </span>
+          <span className="rounded-full bg-[#fffaf2] px-2 py-1 text-[10px]">
+            {activeFilterCount ? `${activeFilterCount} active` : "tap to refine"}
+          </span>
+        </summary>
+        <div className="border-t border-[#ded3c2] p-3">
+          {renderFilterGroups()}
+        </div>
+      </details>
+    </div>
+  );
+
+  const resultSummary = (
+    <div className="flex items-center justify-between gap-3 border-b border-[#ded3c2] px-4 py-3 text-sm font-semibold text-[#625b50]">
+      <span>
+        {summary.totalOptions} listing{summary.totalOptions === 1 ? "" : "s"}
+      </span>
+      <span>
+        {summary.distanceMilesMin === null || summary.distanceMilesMax === null
+          ? "- mi"
+          : `${summary.distanceMilesMin.toFixed(2)}-${summary.distanceMilesMax.toFixed(2)} mi`}
+      </span>
+    </div>
+  );
+
+  const listingList = (
+    <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 sm:p-4">
+      <AnimatePresence initial={false} mode="popLayout">
+        {visibleOptions.length ? (
+          visibleOptions.map((option) => (
+            <ListingCard
+              key={option.id}
+              option={option}
+              selected={selectedOption?.id === option.id}
+              onHoverChange={setHoveredId}
+              onSelect={() => selectListing(option.id)}
+              onOpenMap={() => selectListing(option.id, "map")}
+            />
+          ))
+        ) : (
+          <EmptyState />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
   return (
-    <section className="mx-auto w-full max-w-[1800px] px-3 pb-16 pt-20 text-slate-950 sm:px-5 lg:h-screen lg:px-6 lg:pb-6 lg:pt-20">
-      <div className="grid gap-4 lg:h-full lg:grid-cols-[minmax(22rem,29rem)_minmax(0,1fr)]">
-        <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
-          <div className="border-b border-slate-200 bg-white p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  Private · Noindex · August 2026
-                </p>
-                <h1 className="mt-1 text-2xl font-semibold tracking-[-0.01em] text-slate-950">
+    <section className="min-h-screen w-full bg-[#f4efe6] text-[#28251f] lg:h-screen lg:overflow-hidden">
+      <div className="flex min-h-screen flex-col lg:h-screen lg:min-h-0">
+        <header className="shrink-0 border-b border-[#d8cdbc] bg-[#fffaf2]/96 px-4 py-3 shadow-[0_10px_28px_rgba(67,55,38,0.08)] backdrop-blur sm:px-5 lg:px-6">
+          <div className="mx-auto flex max-w-[1800px] items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold uppercase text-[#746b5d]">
+                <span>August 2026</span>
+                <span className="h-1 w-1 rounded-full bg-[#a09584]" aria-hidden />
+                <span>Private planning</span>
+                <span className="h-1 w-1 rounded-full bg-[#a09584]" aria-hidden />
+                <span>Last verified {verifiedDate}</span>
+              </div>
+              <div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1">
+                <h1 className="text-xl font-bold text-[#24231f] sm:text-2xl">
                   Miami Oxford housing
                 </h1>
-                <p className="mt-1 text-sm leading-5 text-slate-600">
-                  {summary.totalOptions} of {allSummary.totalOptions} studio, efficiency, and 1BR options
+                <p className="text-sm font-semibold text-[#61594d]">
+                  {summary.totalOptions} of {allSummary.totalOptions} results
                 </p>
               </div>
+            </div>
+
+            <div className="hidden shrink-0 gap-2 text-xs font-bold lg:flex">
+              <span className="rounded-full bg-[#e9f3e4] px-3 py-2 text-[#355b31]">
+                {allSummary.mainUnder1kOptions} main
+              </span>
+              <span className="rounded-full bg-[#fff2e4] px-3 py-2 text-[#9a4a12]">
+                {allSummary.backupOptions} backups
+              </span>
+              <span className="rounded-full bg-[#f2eadf] px-3 py-2 text-[#625b50]">
+                {allSummary.watchlistOptions} watchlist
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 rounded-[10px] border border-[#d8cdbc] bg-[#f3eadc] p-1 lg:hidden">
+            {(["map", "list"] as const).map((tab) => (
               <button
+                key={tab}
                 type="button"
-                onClick={() => setIsMobileMapOpen(true)}
-                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-950 text-white shadow-lg lg:hidden"
-                aria-label="Open map"
+                onClick={() => setMobileTab(tab)}
+                className={cn(
+                  "h-10 rounded-[8px] text-sm font-bold capitalize transition",
+                  mobileTab === tab
+                    ? "bg-[#25231f] text-[#fffaf2] shadow-sm"
+                    : "text-[#625b50] hover:bg-white/70",
+                )}
               >
-                <Map className="h-5 w-5" />
+                {tab}
               </button>
-            </div>
-
-            <label className="relative mt-4 block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => startTransition(() => setSearchQuery(event.target.value))}
-                placeholder="Search by building, street, utility, or feature"
-                className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
-              />
-            </label>
-
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <SelectControl
-                label="Unit"
-                value={unitFilter}
-                onChange={(value) => setUnitFilter(value as UnitFilter)}
-              >
-                <option value="all">All small units</option>
-                <option value="studio">Studios</option>
-                <option value="efficiency">Efficiencies</option>
-                <option value="one-bedroom">1BRs</option>
-              </SelectControl>
-              <SelectControl
-                label="Walk"
-                value={maxWalk}
-                onChange={(value) => setMaxWalk(value as WalkFilter)}
-              >
-                <option value="all">Any walk</option>
-                <option value="10">10 min or less</option>
-                <option value="15">15 min or less</option>
-                <option value="20">20 min or less</option>
-                <option value="25">25 min or less</option>
-              </SelectControl>
-              <SelectControl
-                label="Budget"
-                value={maxMonthly}
-                onChange={(value) => setMaxMonthly(value as BudgetFilter)}
-              >
-                <option value="all">Any posted price</option>
-                <option value="700">$700/mo or less</option>
-                <option value="850">$850/mo or less</option>
-                <option value="1000">$1,000/mo or less</option>
-                <option value="1250">$1,250/mo or less</option>
-              </SelectControl>
-              <SelectControl
-                label="Sort"
-                value={sortMode}
-                onChange={(value) => setSortMode(value as HousingSortKey)}
-              >
-                <option value="best-fit">Best fit</option>
-                <option value="walk-asc">Shortest walk</option>
-                <option value="monthly-equivalent-asc">Lowest monthly</option>
-                <option value="move-in-asc">Lowest move-in</option>
-                <option value="name-asc">A-Z</option>
-              </SelectControl>
-            </div>
-
-            <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-800">
-                Class: {miamiOxfordCampusAnchor.name}
-              </span>
-              <span className="rounded-full bg-orange-50 px-2.5 py-1 font-medium text-orange-800">
-                Rec: {miamiOxfordRecCenterAnchor.name}
-              </span>
-            </div>
+            ))}
           </div>
+        </header>
 
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-            {visibleOptions.length ? (
-              visibleOptions.map((option) => (
-                <ListingCard
-                  key={option.id}
-                  option={option}
-                  selected={activeOption?.id === option.id}
-                  onHoverChange={setHoveredId}
-                  onSelect={() => selectListing(option.id)}
-                  onOpenMap={() => selectListing(option.id, true)}
-                />
-              ))
-            ) : (
-              <EmptyState />
-            )}
-          </div>
-        </div>
+        <div className="hidden w-full max-w-[1800px] flex-1 lg:mx-auto lg:grid lg:min-h-0 lg:grid-cols-[minmax(23rem,32rem)_minmax(0,1fr)]">
+          <aside className="flex h-full min-h-0 flex-col border-r border-[#d8cdbc] bg-[#f8f1e8]">
+            {filterControls}
+            {resultSummary}
+            {selectedOption ? (
+              <div className="max-h-[48vh] shrink-0 border-b border-[#ded3c2] p-3">
+                <DetailPanel option={selectedOption} compact onClose={() => setSelectedId(null)} />
+              </div>
+            ) : null}
+            {listingList}
+          </aside>
 
-        <div className="hidden min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-3 lg:grid">
-          <div className="min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 shadow-sm">
+          <section className="min-h-0 overflow-hidden bg-[#d7d0c1]">
             {isDesktop ? (
               <MiamiHousingLeafletMap
                 options={visibleOptions}
-                selectedId={activeOption?.id ?? null}
+                selectedId={selectedOption?.id ?? null}
                 hoveredId={hoveredId}
-                sidebarOpen={Boolean(activeOption)}
+                sidebarOpen={false}
                 onSelect={(id) => selectListing(id)}
                 onHoverChange={setHoveredId}
               />
             ) : null}
-          </div>
-
-          {activeOption ? <DetailPanel option={activeOption} /> : <EmptyState />}
+          </section>
         </div>
-      </div>
 
-      <button
-        type="button"
-        onClick={() => setIsMobileMapOpen(true)}
-        className="fixed bottom-4 right-4 z-40 inline-flex h-12 items-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-semibold text-white shadow-2xl lg:hidden"
-      >
-        <Map className="h-4 w-4" />
-        Map
-      </button>
-
-      <AnimatePresence>
-        {isMobileMapOpen ? (
-          <motion.div
-            className="fixed inset-0 z-50 bg-slate-950/55 backdrop-blur-sm lg:hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-x-0 bottom-0 flex max-h-[95vh] flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                    Map
-                  </p>
-                  <p className="text-sm font-semibold text-slate-950">
-                    {activeOption?.propertyName ?? `${visibleOptions.length} listings`}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsMobileMapOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600"
-                  aria-label="Close map"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="h-[42vh] min-h-[20rem] border-b border-slate-200">
+        <div className="flex flex-1 flex-col lg:hidden">
+          {mobileTab === "map" ? (
+            <section className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-[22rem] flex-1 border-b border-[#ded3c2]">
                 {!isDesktop ? (
                   <MiamiHousingLeafletMap
                     options={visibleOptions}
-                    selectedId={activeOption?.id ?? null}
+                    selectedId={selectedOption?.id ?? null}
                     hoveredId={hoveredId}
-                    sidebarOpen={Boolean(activeOption)}
+                    sidebarOpen={false}
                     onSelect={(id) => selectListing(id)}
                     onHoverChange={setHoveredId}
                   />
                 ) : null}
               </div>
-
               <div
-                className="min-h-0 flex-1 overflow-y-auto"
-                style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+                className="max-h-[42vh] overflow-y-auto border-t border-[#ded3c2] bg-[#fffaf2] p-3"
+                style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
               >
-                {activeOption ? <DetailPanel option={activeOption} compact /> : <EmptyState />}
+                {selectedOption ? <DetailPanel option={selectedOption} compact /> : <EmptyState />}
               </div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+            </section>
+          ) : (
+            <aside className="flex min-h-0 flex-1 flex-col bg-[#f8f1e8]">
+              {mobileFilterControls}
+              <div className="grid grid-cols-3 gap-2 border-b border-[#ded3c2] bg-[#fffaf2] px-4 py-3 text-center text-[11px] font-bold uppercase text-[#625b50]">
+                <span>{allSummary.mainUnder1kOptions} main</span>
+                <span>{allSummary.backupOptions} backup</span>
+                <span>{allSummary.watchlistOptions} watch</span>
+              </div>
+              {resultSummary}
+              {listingList}
+            </aside>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
