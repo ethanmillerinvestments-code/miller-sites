@@ -831,7 +831,7 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
   const [maxMonthly, setMaxMonthly] = useState<BudgetFilter>("all");
   const [sortMode, setSortMode] = useState<HousingSortKey>("best-fit");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(options[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<MobileTab>("map");
   const deferredQuery = useDeferredValue(searchQuery);
@@ -1147,33 +1147,21 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
                   />
                 ) : null}
               </div>
-              <div
-                className="max-h-[42vh] overflow-y-auto border-t border-[#ded3c2] bg-[#fffaf2] p-3"
-                style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
-              >
-                <AnimatePresence mode="wait" initial={false}>
-                  {selectedOption ? (
-                    <motion.div
-                      key={selectedOption.id}
-                      initial={reduceMotion ? false : { opacity: 0, y: 18 }}
-                      animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-                      exit={reduceMotion ? undefined : { opacity: 0, y: 14 }}
-                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      <DetailPanel option={selectedOption} compact />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="empty"
-                      initial={reduceMotion ? false : { opacity: 0 }}
-                      animate={reduceMotion ? undefined : { opacity: 1 }}
-                      exit={reduceMotion ? undefined : { opacity: 0 }}
-                    >
-                      <EmptyState />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <AnimatePresence initial={false}>
+                {selectedOption ? (
+                  <motion.div
+                    key={selectedOption.id}
+                    initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+                    animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                    exit={reduceMotion ? undefined : { opacity: 0, y: 14 }}
+                    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                    className="max-h-[42vh] overflow-y-auto border-t border-[#ded3c2] bg-[#fffaf2] p-3"
+                    style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+                  >
+                    <DetailPanel option={selectedOption} compact />
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </section>
           ) : (
             <aside className="flex min-h-0 flex-1 flex-col bg-[#f8f1e8]">

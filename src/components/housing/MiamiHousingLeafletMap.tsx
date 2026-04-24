@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import L from "leaflet";
+import { Maximize2, Minimize2 } from "lucide-react";
 
 import {
   buildRecurringAllInSummary,
@@ -46,18 +47,42 @@ function markerPriceLabel(option: HousingOption) {
   return `$${option.monthlyEquivalent}`;
 }
 
+function getAffordabilityTone(option: HousingOption) {
+  if (option.monthlyEquivalent === null) {
+    return {
+      color: "#6b7280",
+      halo: "rgba(107, 114, 128, 0.2)",
+      shadow: "rgba(39, 45, 55, 0.28)",
+    };
+  }
+
+  const min = 650;
+  const max = 1250;
+  const clamped = Math.max(min, Math.min(max, option.monthlyEquivalent));
+  const ratio = (clamped - min) / (max - min);
+  const hue = Math.round(142 - ratio * 136);
+
+  return {
+    color: `hsl(${hue} 68% 42%)`,
+    halo: `hsl(${hue} 72% 45% / 0.2)`,
+    shadow: `hsl(${hue} 72% 30% / 0.32)`,
+  };
+}
+
 function createListingIcon(option: HousingOption, state: "default" | "hovered" | "selected") {
+  const tone = getAffordabilityTone(option);
+
   return L.divIcon({
     className: "housing-listing-marker-icon",
     html: [
-      `<span class="housing-map-marker-shell confidence-${option.sourceConfidence} is-${state}">`,
+      `<span class="housing-map-marker-shell is-${state}" style="--housing-marker-color: ${tone.color}; --housing-marker-halo: ${tone.halo}; --housing-marker-shadow: ${tone.shadow};">`,
       '<span class="housing-map-marker-core"></span>',
       '<span class="housing-map-marker-pulse"></span>',
       `<span class="housing-map-marker-price">${escapeHtml(markerPriceLabel(option))}</span>`,
       "</span>",
     ].join(""),
-    iconSize: [76, 34],
-    iconAnchor: [38, 17],
+    iconSize: [88, 36],
+    iconAnchor: [44, 18],
     tooltipAnchor: [0, -18],
   });
 }
@@ -177,16 +202,18 @@ export default function MiamiHousingLeafletMap({
   onSelect,
   onHoverChange,
 }: MiamiHousingLeafletMapProps) {
+  const shellRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const selectedOption = selectedId
     ? options.find((option) => option.id === selectedId) ?? null
     : null;
   const hoveredOption = hoveredId
     ? options.find((option) => option.id === hoveredId) ?? null
     : null;
-  const previewOption = hoveredOption ?? selectedOption;
+  const previewOption = selectedOption;
   const optionsKey = useMemo(() => options.map((option) => option.id).join("|"), [options]);
 
   useEffect(() => {
@@ -199,10 +226,12 @@ export default function MiamiHousingLeafletMap({
       center: [miamiOxfordCampusAnchor.latitude, miamiOxfordCampusAnchor.longitude],
       zoom: 15,
       zoomControl: false,
+      attributionControl: false,
       scrollWheelZoom: true,
     });
 
-    L.control.zoom({ position: "bottomright" }).addTo(map);
+    L.control.zoom({ position: "bottomleft" }).addTo(map);
+    L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
       attribution:
         'Powered by <a href="https://www.esri.com/en-us/home" target="_blank" rel="noreferrer">Esri</a> | Imagery + labels',
@@ -288,6 +317,49 @@ export default function MiamiHousingLeafletMap({
   }, [hoveredId, hoveredOption, onHoverChange, onSelect, options, selectedId, selectedOption]);
 
   useEffect(() => {
+    const handleFullscreenChange = () => {
+      const fullscreenElement = document.fullscreenElement;
+      setIsFullscreen(Boolean(shellRef.current && fullscreenElement === shellRef.current));
+      window.setTimeout(() => mapRef.current?.invalidateSize(), 80);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isFullscreen && !document.fullscreenElement) {
+        setIsFullscreen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isFullscreen]);
+
+  async function toggleFullscreen() {
+    const shell = shellRef.current;
+    if (!shell) return;
+
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else if (shell.requestFullscreen) {
+        await shell.requestFullscreen();
+      } else {
+        setIsFullscreen((current) => !current);
+      }
+    } catch {
+      setIsFullscreen((current) => !current);
+    } finally {
+      window.setTimeout(() => mapRef.current?.invalidateSize(), 120);
+    }
+  }
+
+  useEffect(() => {
     const map = mapRef.current;
     if (!map || !options.length) return;
 
@@ -324,10 +396,15 @@ export default function MiamiHousingLeafletMap({
     }, 60);
 
     return () => window.clearTimeout(timer);
-  }, [options, optionsKey, selectedOption, sidebarOpen]);
+  }, [isFullscreen, options, optionsKey, selectedOption, sidebarOpen]);
 
   return (
-    <div className="housing-atlas-map relative h-full min-h-[26rem] overflow-hidden bg-slate-200">
+    <div
+      ref={shellRef}
+      className={`housing-atlas-map relative h-full min-h-[26rem] overflow-hidden bg-slate-200 ${
+        isFullscreen ? "is-map-fullscreen" : ""
+      }`}
+    >
       <div className="pointer-events-none absolute left-3 top-3 z-[500] hidden max-w-[18rem] rounded-2xl border border-white/60 bg-white/90 p-3 text-slate-800 shadow-xl backdrop-blur lg:block">
         <p className="text-[10px] font-bold uppercase text-slate-500">
           Campus anchors
@@ -341,6 +418,19 @@ export default function MiamiHousingLeafletMap({
           </p>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          void toggleFullscreen();
+        }}
+        className="absolute right-3 top-3 z-[650] inline-flex h-10 items-center gap-2 rounded-[10px] border border-white/70 bg-[#fffdf8]/95 px-3 text-xs font-bold text-[#28251f] shadow-[0_14px_30px_rgba(33,31,27,0.18)] backdrop-blur transition hover:bg-white hover:text-[#1d4c91] active:scale-[0.98]"
+        aria-label={isFullscreen ? "Exit fullscreen map" : "Open fullscreen map"}
+      >
+        {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        <span className="hidden sm:inline">{isFullscreen ? "Exit map" : "Full map"}</span>
+      </button>
 
       <div ref={containerRef} className="h-full min-h-[26rem] w-full" />
 
