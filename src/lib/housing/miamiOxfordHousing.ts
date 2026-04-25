@@ -148,7 +148,10 @@ export interface HousingDistanceSummary {
   label: string;
 }
 
-const VERIFIED_AT = "2026-04-23";
+const VERIFIED_AT = "2026-04-24";
+
+export const ETHAN_PARENT_CONTRIBUTION = 500;
+export const STRICT_MONTHLY_RENT_CEILING = 700;
 
 export const miamiOxfordCampusAnchor = {
   label: "Armstrong / Uptown campus anchor",
@@ -312,6 +315,23 @@ export function formatHousingCurrencyRange(
   }
 
   return `${formatHousingCurrency(amount)}${suffix}`;
+}
+
+export function calculateEthanPrice(amount: number | null) {
+  if (amount === null) return null;
+
+  return Math.max(0, amount - ETHAN_PARENT_CONTRIBUTION);
+}
+
+export function calculateEthanPriceRange(option: HousingOption) {
+  const min = calculateEthanPrice(option.monthlyEquivalent);
+  const max = calculateEthanPrice(option.monthlyEquivalentUpper ?? option.monthlyEquivalent);
+
+  return {
+    min,
+    max,
+    label: formatHousingCurrencyRange(min, max),
+  };
 }
 
 export function formatHousingDate(date: string) {
@@ -543,6 +563,111 @@ export function getRankingScore(option: HousingOption) {
   return Number((walkComponent + affordabilityComponent + confidenceComponent).toFixed(2));
 }
 
+function hasPostedAugust2026Availability(option: HousingOption) {
+  const availabilityText = [option.availabilityLabel, ...option.availabilityNotes]
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    availabilityText.includes("8/1/26") ||
+    availabilityText.includes("08/01/26") ||
+    availabilityText.includes("august 2026")
+  );
+}
+
+export function isStrictAffordableNextYearOneBed(option: HousingOption) {
+  const upperRent = option.monthlyEquivalentUpper ?? option.monthlyEquivalent;
+
+  return (
+    option.unitType === "one-bedroom" &&
+    option.bedrooms === 1 &&
+    option.bathrooms === 1 &&
+    option.availabilityConfidence === "confirmed-2026" &&
+    hasPostedAugust2026Availability(option) &&
+    option.monthlyEquivalent !== null &&
+    upperRent !== null &&
+    upperRent <= STRICT_MONTHLY_RENT_CEILING
+  );
+}
+
+function parentAffordabilityScore(option: HousingOption) {
+  if (option.monthlyEquivalent === null) return 0;
+
+  const upper = option.monthlyEquivalentUpper ?? option.monthlyEquivalent;
+  const ceilingRoom = ((STRICT_MONTHLY_RENT_CEILING - upper) / 105) * 100;
+  const floorRoom = ((STRICT_MONTHLY_RENT_CEILING - option.monthlyEquivalent) / 105) * 100;
+
+  return clamp(Math.round(ceilingRoom * 0.65 + floorRoom * 0.35), 0, 100);
+}
+
+function feeClarityScore(option: HousingOption) {
+  let score = 40;
+
+  if (option.securityDepositRefundable !== null) score += 20;
+  if (option.adminOrLeaseSigningFees.every((fee) => fee.amount !== null)) score += 10;
+  if (option.nonUtilityFeesStatus !== "unknown") score += 15;
+  if (!option.moveInDueHasUnknowns) score += 15;
+  else score += 4;
+
+  const sourceCaveats = [...option.sourceSnapshotNotes, ...option.pricingNotes]
+    .join(" ")
+    .toLowerCase();
+
+  if (sourceCaveats.includes("plus fees")) score -= 8;
+  if (sourceCaveats.includes("charges due at move-in")) score -= 4;
+
+  return clamp(score, 0, 100);
+}
+
+function utilityConfidenceScore(option: HousingOption) {
+  const essentials = ["water", "sewer", "trash"];
+  const includedEssentialCount = essentials.filter((utility) =>
+    option.includedUtilities.some((included) => included.toLowerCase().includes(utility)),
+  ).length;
+  const bonusUtilityCount = option.includedUtilities.filter(
+    (utility) =>
+      !essentials.some((essential) => utility.toLowerCase().includes(essential)),
+  ).length;
+
+  let score = (includedEssentialCount / essentials.length) * 70;
+  score += Math.min(bonusUtilityCount, 3) * 5;
+  if (option.parkingIncluded === true) score += 10;
+  if (option.unknownUtilities.length) score -= Math.min(option.unknownUtilities.length, 3) * 8;
+
+  return clamp(Math.round(score), 0, 100);
+}
+
+function parentDistanceScore(option: HousingOption) {
+  const rec = getRecCenterDistance(option);
+
+  return clamp(Math.round(100 - option.distanceMiles * 28 - rec.distanceMiles * 16), 0, 100);
+}
+
+export function getParentConfidenceScore(option: HousingOption) {
+  const strictComponent = (isStrictAffordableNextYearOneBed(option) ? 100 : 0) * 0.18;
+  const sourceComponent = confidenceScore(option.sourceConfidence) * 0.08;
+  const feeComponent = feeClarityScore(option) * 0.16;
+  const utilityComponent = utilityConfidenceScore(option) * 0.14;
+  const distanceComponent = parentDistanceScore(option) * 0.26;
+  const availabilityComponent =
+    (option.availabilityConfidence === "confirmed-2026" && hasPostedAugust2026Availability(option)
+      ? 100
+      : 0) * 0.08;
+  const affordabilityComponent = parentAffordabilityScore(option) * 0.1;
+
+  return Number(
+    (
+      strictComponent +
+      sourceComponent +
+      feeComponent +
+      utilityComponent +
+      distanceComponent +
+      availabilityComponent +
+      affordabilityComponent
+    ).toFixed(2),
+  );
+}
+
 export function getMissingCostWarnings(option: HousingOption) {
   const warnings: string[] = [];
 
@@ -619,6 +744,8 @@ export function getQuestionsToAsk(option: HousingOption) {
 
 export function sortHousingOptions(options: HousingOption[], sortKey: HousingSortKey) {
   const sorted = [...options];
+  const isStrictShortlist =
+    sorted.length > 0 && sorted.every((option) => isStrictAffordableNextYearOneBed(option));
 
   sorted.sort((a, b) => {
     if (sortKey === "name-asc") {
@@ -661,7 +788,9 @@ export function sortHousingOptions(options: HousingOption[], sortKey: HousingSor
       return compareNames(a, b);
     }
 
-    const scoreDelta = getRankingScore(b) - getRankingScore(a);
+    const scoreDelta = isStrictShortlist
+      ? getParentConfidenceScore(b) - getParentConfidenceScore(a)
+      : getRankingScore(b) - getRankingScore(a);
     if (scoreDelta !== 0) {
       return scoreDelta;
     }
@@ -891,7 +1020,7 @@ const miamiOxfordHousingOptionBase: Omit<HousingOption, "sourceSnapshotNotes">[]
       },
     ],
     taxesStatus: "none-listed",
-    nonUtilityFeesStatus: "none-listed",
+    nonUtilityFeesStatus: "unknown",
     leaseTermLabel: "2-semester lease (includes J term)",
     availabilityLabel: "Live page now rolls to 2027-2028",
     includedUtilities: ["water", "sewer", "trash"],
@@ -1890,7 +2019,7 @@ const miamiOxfordHousingOptionBase: Omit<HousingOption, "sourceSnapshotNotes">[]
     ACStatus: "central",
     pricingNotes: [
       "Campus portal text breaks out the 37 W. High 1BR price, total rent, deposit, and signing advance.",
-      "The portal also labels the listing plus-fees, so verify whether anything sits outside the semester and signing amounts.",
+      "The portal headline also shows a plus-fees/base-rent range, so verify whether anything sits outside the semester and signing amounts.",
       "Above the $1k monthly comparison line, so this belongs in backup status.",
     ],
     availabilityNotes: [
@@ -2279,7 +2408,7 @@ const miamiOxfordHousingOptionBase: Omit<HousingOption, "sourceSnapshotNotes">[]
 
 const sourceSnapshotNotesById: Record<string, string[]> = {
   "308-s-campus": [
-    "SCQ source on Apr. 23 shows the 2026-2027 1BR as leased/contact-office and no longer posts the old $800 amount.",
+    "SCQ source rechecked Apr. 24 shows the 2026-2027 1BR as leased/contact-office and no longer posts the old $800 amount.",
     "The same SCQ page shows the 2027-2028 1BR at $850 and available, so this stays a next-cycle comp until the office confirms August 2026.",
   ],
   "26-east-walnut-apt-4": [
@@ -2336,7 +2465,7 @@ const sourceSnapshotNotesById: Record<string, string[]> = {
   ],
   "37-w-high": [
     "Miami off-campus portal shows 37 W. High in the 35/37/39 group as available for 26/27, with 35 and 39 marked leased.",
-    "The source text gives the 37 row at $6,100 per semester, $13,000 total rent, all utilities tenant-paid, central air, and one assigned parking space.",
+    "The source text gives the 37 row at $6,100 per semester and $13,000 total rent, while the portal headline still carries a plus-fees/base-rent caveat.",
   ],
   "4304-oxford-reily": [
     "Oxford Real Estate source shows the Southview 1BR available now at $850 per month and $10,750 total rent.",

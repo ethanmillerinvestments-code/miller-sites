@@ -6,7 +6,8 @@ import L from "leaflet";
 import { Maximize2, Minimize2 } from "lucide-react";
 
 import {
-  buildRecurringAllInSummary,
+  calculateEthanPriceRange,
+  formatHousingCurrencyRange,
   getArmstrongDistance,
   getRecCenterDistance,
   getSourceConfidenceLabel,
@@ -43,8 +44,15 @@ function createAnchorIcon(kind: "armstrong" | "rec") {
 
 function markerPriceLabel(option: HousingOption) {
   if (option.monthlyEquivalent === null) return "Quote";
-  if (option.monthlyEquivalentUpper !== null) return `$${option.monthlyEquivalent}+`;
-  return `$${option.monthlyEquivalent}`;
+  return formatHousingCurrencyRange(option.monthlyEquivalent, option.monthlyEquivalentUpper);
+}
+
+function fullRentLabel(option: HousingOption) {
+  return formatHousingCurrencyRange(option.monthlyEquivalent, option.monthlyEquivalentUpper, "/mo");
+}
+
+function ethanPriceLabel(option: HousingOption) {
+  return `${calculateEthanPriceRange(option).label}/mo`;
 }
 
 function getAffordabilityTone(option: HousingOption) {
@@ -98,7 +106,7 @@ function escapeHtml(value: string) {
 
 function anchorTooltip(title: string, note: string) {
   return [
-    '<div class="max-w-[12rem] rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-slate-900 shadow-lg">',
+    '<div class="max-w-[12rem] rounded-[8px] border border-slate-200 bg-white/95 px-3 py-2 text-slate-900 shadow-lg">',
     `<p class="text-[10px] font-bold uppercase text-slate-500">${escapeHtml(title)}</p>`,
     `<p class="mt-1 text-xs leading-4 text-slate-700">${escapeHtml(note)}</p>`,
     "</div>",
@@ -106,25 +114,25 @@ function anchorTooltip(title: string, note: string) {
 }
 
 function listingTooltip(option: HousingOption) {
-  const recurring = buildRecurringAllInSummary(option);
   const armstrong = getArmstrongDistance(option);
   const rec = getRecCenterDistance(option);
 
   return [
-    '<div class="w-[14rem] rounded-2xl border border-slate-200 bg-white/95 p-3 text-slate-900 shadow-xl">',
+    '<div class="w-[14rem] rounded-[8px] border border-slate-200 bg-white/95 p-3 text-slate-900 shadow-xl">',
     '<div class="flex items-start justify-between gap-2">',
     '<div class="min-w-0">',
     `<p class="truncate text-sm font-semibold">${escapeHtml(option.propertyName)}</p>`,
-    `<p class="mt-1 text-[11px] text-slate-500">${escapeHtml(getUnitTypeLabel(option.unitType))} · ${escapeHtml(recurring.label)}</p>`,
+    `<p class="mt-1 text-[11px] text-slate-500">${escapeHtml(getUnitTypeLabel(option.unitType))} · ${escapeHtml(fullRentLabel(option))}</p>`,
+    `<p class="mt-1 text-[11px] font-semibold text-blue-700">Ethan Price ${escapeHtml(ethanPriceLabel(option))}</p>`,
     "</div>",
     `<span class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold uppercase text-slate-600">${escapeHtml(getSourceConfidenceLabel(option.sourceConfidence))}</span>`,
     "</div>",
     '<div class="mt-3 grid grid-cols-2 gap-2 text-[11px]">',
-    '<div class="rounded-xl bg-blue-50 px-2.5 py-2 text-blue-900">',
+    '<div class="rounded-[8px] bg-blue-50 px-2.5 py-2 text-blue-900">',
     `<p class="font-bold">${armstrong.distanceMiles.toFixed(2)} mi</p>`,
     "<p>to class</p>",
     "</div>",
-    '<div class="rounded-xl bg-orange-50 px-2.5 py-2 text-orange-900">',
+    '<div class="rounded-[8px] bg-orange-50 px-2.5 py-2 text-orange-900">',
     `<p class="font-bold">${rec.distanceMiles.toFixed(2)} mi</p>`,
     "<p>to Rec</p>",
     "</div>",
@@ -213,7 +221,7 @@ export default function MiamiHousingLeafletMap({
   const hoveredOption = hoveredId
     ? options.find((option) => option.id === hoveredId) ?? null
     : null;
-  const previewOption = selectedOption;
+  const previewOption = hoveredOption ?? selectedOption;
   const optionsKey = useMemo(() => options.map((option) => option.id).join("|"), [options]);
 
   useEffect(() => {
@@ -405,7 +413,7 @@ export default function MiamiHousingLeafletMap({
         isFullscreen ? "is-map-fullscreen" : ""
       }`}
     >
-      <div className="pointer-events-none absolute left-3 top-3 z-[500] hidden max-w-[18rem] rounded-2xl border border-white/60 bg-white/90 p-3 text-slate-800 shadow-xl backdrop-blur lg:block">
+      <div className="pointer-events-none absolute left-3 top-3 z-[500] hidden max-w-[18rem] rounded-[8px] border border-white/60 bg-[#fbfcf8]/92 p-3 text-[#17231f] shadow-xl backdrop-blur lg:block">
         <p className="text-[10px] font-bold uppercase text-slate-500">
           Campus anchors
         </p>
@@ -425,7 +433,7 @@ export default function MiamiHousingLeafletMap({
           event.stopPropagation();
           void toggleFullscreen();
         }}
-        className="absolute right-3 top-3 z-[650] inline-flex h-10 items-center gap-2 rounded-[10px] border border-white/70 bg-[#fffdf8]/95 px-3 text-xs font-bold text-[#28251f] shadow-[0_14px_30px_rgba(33,31,27,0.18)] backdrop-blur transition hover:bg-white hover:text-[#1d4c91] active:scale-[0.98]"
+        className="absolute right-3 top-3 z-[650] inline-flex h-10 items-center gap-2 rounded-[8px] border border-white/70 bg-[#fbfcf8]/95 px-3 text-xs font-bold text-[#17231f] shadow-[0_14px_30px_rgba(38,52,45,0.18)] backdrop-blur transition hover:bg-white hover:text-[#1d4c91] active:scale-[0.98]"
         aria-label={isFullscreen ? "Exit fullscreen map" : "Open fullscreen map"}
       >
         {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -435,24 +443,27 @@ export default function MiamiHousingLeafletMap({
       <div ref={containerRef} className="h-full min-h-[26rem] w-full" />
 
       {previewOption ? (
-        <div className="pointer-events-auto absolute bottom-3 left-3 right-3 z-[500] rounded-[12px] border border-white/65 bg-[#fffdf8]/95 p-3 text-xs text-[#625b50] shadow-[0_20px_48px_rgba(29,27,23,0.24)] backdrop-blur sm:left-auto sm:w-[22rem]">
+        <div className="pointer-events-auto absolute bottom-3 left-3 right-3 z-[500] hidden rounded-[8px] border border-white/65 bg-[#fbfcf8]/95 p-3 text-xs text-[#56655e] shadow-[0_20px_48px_rgba(29,42,35,0.24)] backdrop-blur lg:block lg:left-auto lg:w-[22rem]">
           <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
             <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-[#28251f]">{previewOption.propertyName}</p>
+              <p className="text-base font-bold leading-tight text-[#17231f]">
+                {fullRentLabel(previewOption)}
+              </p>
+              <p className="mt-1 text-sm font-bold text-[#1d4c91]">
+                Ethan Price {ethanPriceLabel(previewOption)}
+              </p>
+              <p className="truncate text-sm font-bold text-[#17231f]">{previewOption.propertyName}</p>
               <p className="mt-1 line-clamp-2 leading-4">{previewOption.address}</p>
             </div>
-            <p className="text-sm font-bold leading-tight text-[#28251f] sm:shrink-0 sm:text-right">
-              {buildRecurringAllInSummary(previewOption).label.replace(" equivalent", "")}
-            </p>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="rounded-[9px] border border-[#c6d8f6] bg-[#edf4ff] px-2.5 py-2 text-[#1d4c91]">
+            <div className="rounded-[8px] border border-[#c6d8f6] bg-[#edf4ff] px-2.5 py-2 text-[#1d4c91]">
               <p className="font-bold">
                 {getArmstrongDistance(previewOption).distanceMiles.toFixed(2)} mi
               </p>
               <p>to class</p>
             </div>
-            <div className="rounded-[9px] border border-[#f0d0ad] bg-[#fff2e4] px-2.5 py-2 text-[#9a4a12]">
+            <div className="rounded-[8px] border border-[#e9c9a9] bg-[#fff4e8] px-2.5 py-2 text-[#87420f]">
               <p className="font-bold">
                 {getRecCenterDistance(previewOption).distanceMiles.toFixed(2)} mi
               </p>
@@ -463,7 +474,7 @@ export default function MiamiHousingLeafletMap({
             <button
               type="button"
               onClick={() => onSelect(previewOption.id)}
-              className="inline-flex h-9 flex-1 items-center justify-center rounded-[9px] bg-[#25231f] px-3 text-xs font-bold text-[#fffaf2] transition hover:bg-[#1d4c91]"
+              className="inline-flex h-9 flex-1 items-center justify-center rounded-[7px] bg-[#17231f] px-3 text-xs font-bold text-[#f8fbf8] transition hover:bg-[#1d4c91]"
             >
               Details
             </button>
@@ -473,7 +484,7 @@ export default function MiamiHousingLeafletMap({
               )}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-9 flex-1 items-center justify-center rounded-[9px] border border-[#d9cfbf] px-3 text-xs font-bold text-[#4e493f] transition hover:bg-[#f8f1e8]"
+              className="inline-flex h-9 flex-1 items-center justify-center rounded-[7px] border border-[#d5ddd8] px-3 text-xs font-bold text-[#42524b] transition hover:bg-[#eef3ef]"
             >
               Directions
             </a>

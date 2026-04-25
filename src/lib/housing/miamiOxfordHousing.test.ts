@@ -8,12 +8,15 @@ import {
   buildRecurringAllInSummary,
   calculateApproximateWalkMinutes,
   calculateDistanceMiles,
+  calculateEthanPriceRange,
   calculateMonthlyEquivalentFromSchoolYearTotal,
   calculateMoveInDue,
   calculateSchoolYearTotalFromMonthly,
   filterHousingOptions,
+  getParentConfidenceScore,
   getRecCenterDistance,
   getRankingScore,
+  isStrictAffordableNextYearOneBed,
   miamiOxfordCampusAnchor,
   miamiOxfordHousingOptions,
   miamiOxfordRecCenterAnchor,
@@ -64,7 +67,7 @@ describe("miamiOxfordHousing dataset", () => {
     expect(
       miamiOxfordHousingOptions.every(
         (option) =>
-          option.lastVerifiedAt === "2026-04-23" &&
+          option.lastVerifiedAt === "2026-04-24" &&
           option.sourceSnapshotNotes.length >= 2 &&
           option.sourceSnapshotNotes.every((note) => note.trim().length > 20),
       ),
@@ -211,6 +214,49 @@ describe("filtering and sorting", () => {
       "717-mcguffey",
       "718-south-locust",
     ]);
+  });
+});
+
+describe("strict under-$700 parent shortlist", () => {
+  it("keeps only verified 2026 1BR/1BA listings with posted rent under $700", () => {
+    const strict = miamiOxfordHousingOptions.filter(isStrictAffordableNextYearOneBed);
+
+    expect(strict.map((option) => option.id)).toEqual([
+      "10-west-sycamore",
+      "717-mcguffey",
+      "718-south-locust",
+    ]);
+  });
+
+  it("calculates Ethan Price ranges after the parent contribution", () => {
+    const ranges = Object.fromEntries(
+      miamiOxfordHousingOptions
+        .filter(isStrictAffordableNextYearOneBed)
+        .map((option) => [option.id, calculateEthanPriceRange(option).label]),
+    );
+
+    expect(ranges).toEqual({
+      "10-west-sycamore": "$95-$175",
+      "717-mcguffey": "$95-$150",
+      "718-south-locust": "$125-$175",
+    });
+  });
+
+  it("sorts the strict shortlist by deterministic parent confidence", () => {
+    const strict = miamiOxfordHousingOptions.filter(isStrictAffordableNextYearOneBed);
+    const sorted = sortHousingOptions(strict, "best-fit");
+
+    expect(sorted.map((option) => option.id)).toEqual([
+      "10-west-sycamore",
+      "717-mcguffey",
+      "718-south-locust",
+    ]);
+    expect(getParentConfidenceScore(sorted[0]!)).toBeGreaterThan(
+      getParentConfidenceScore(sorted[1]!),
+    );
+    expect(getParentConfidenceScore(sorted[1]!)).toBeGreaterThan(
+      getParentConfidenceScore(sorted[2]!),
+    );
   });
 });
 

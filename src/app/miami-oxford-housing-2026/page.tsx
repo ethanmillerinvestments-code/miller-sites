@@ -5,19 +5,19 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Miami Oxford Housing Atlas 2026",
+    absolute: "Miami Oxford Under-$700 1BR Shortlist 2026",
   },
   description:
-    "Private August 2026 housing atlas for exemption-case off-campus planning near Miami University Oxford, focused on studios, efficiencies, and true 1BRs.",
+    "Private strict shortlist of verified 2026-2027 Miami University Oxford 1BR/1BA options with posted 8/1/26 availability and rent upper bounds under $700.",
   keywords: [
     "Miami University Oxford housing",
     "Miami Oxford off campus housing",
     "Miami University exemption housing",
     "Oxford Ohio 1 bedroom housing",
-    "Oxford Ohio studio housing",
+    "Oxford Ohio under 700 rent",
   ],
-  authors: [{ name: "Miami Oxford Housing Atlas" }],
-  creator: "Miami Oxford Housing Atlas",
+  authors: [{ name: "Miami Oxford Housing Shortlist" }],
+  creator: "Miami Oxford Housing Shortlist",
   alternates: {
     canonical: `${siteConfig.siteUrl}/miami-oxford-housing-2026`,
   },
@@ -33,18 +33,18 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Miami Oxford Housing Atlas 2026",
+    title: "Miami Oxford Under-$700 1BR Shortlist 2026",
     description:
-      "Prepared for August 2026 move-in and exemption-case off-campus planning. Private family-share atlas with campus-anchored walkability, cost clarity, and verified contact paths.",
+      "Private family-share shortlist for August 2026 move-in: three verified 1BR/1BA options under $700 with campus and Rec distance context.",
     url: `${siteConfig.siteUrl}/miami-oxford-housing-2026`,
-    siteName: "Miami Oxford Housing Atlas",
+    siteName: "Miami Oxford Housing Shortlist",
     type: "article",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Miami Oxford Housing Atlas 2026",
+    title: "Miami Oxford Under-$700 1BR Shortlist 2026",
     description:
-      "Prepared for August 2026 move-in and exemption-case off-campus planning. Private atlas with campus-anchored walkability, pricing clarity, and contact links.",
+      "Private strict shortlist of three verified Miami Oxford 1BR/1BA options under $700 for 8/1/26 availability.",
   },
 };
 
