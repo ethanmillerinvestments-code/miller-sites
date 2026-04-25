@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   startTransition,
@@ -57,11 +58,12 @@ import {
   getListTierLabel,
   getMissingCostWarnings,
   getQuestionsToAsk,
+  getRankingBand,
   getRecCenterDistance,
   getSourceConfidenceLabel,
   getSourceKindLabel,
   getUnitTypeLabel,
-  isStrictAffordableNextYearOneBed,
+  getVerifiedUnder750SoloOptions,
   miamiOxfordCampusAnchor,
   miamiOxfordRecCenterAnchor,
   sortHousingOptions,
@@ -146,9 +148,27 @@ function formatEthanPrice(option: HousingOption, suffix = "/mo") {
 }
 
 function formatBedBath(option: HousingOption) {
+  if (option.unitType === "studio") {
+    return `Studio / ${option.bathrooms === 1 ? "1 bath" : `${option.bathrooms} baths`}`;
+  }
+
   const bedLabel = option.bedrooms === 1 ? "1 bed" : `${option.bedrooms} beds`;
   const bathLabel = option.bathrooms === 1 ? "1 bath" : `${option.bathrooms} baths`;
   return `${bedLabel} / ${bathLabel}`;
+}
+
+function formatHousingFormat(option: HousingOption) {
+  const optionText = `${option.propertyName} ${option.optionName}`.toLowerCase();
+
+  if (option.unitType === "studio") return "studio apartment";
+  if (option.unitType === "efficiency") return "efficiency apartment";
+  if (optionText.includes("loft")) return "loft 1BR apartment";
+  if (optionText.includes("duplex")) return "duplex 1BR";
+  if (optionText.includes("bungalow") || optionText.includes("house")) {
+    return "small 1BR house-style unit";
+  }
+
+  return "apartment 1BR";
 }
 
 function formatOptionalNumber(amount: number | null) {
@@ -194,6 +214,42 @@ function pillLabel(status: HousingClarityStatus) {
   if (status === "clear") return "Clear costs";
   if (status === "partial") return "Some unknowns";
   return "Quote";
+}
+
+function PropertyPhoto({ option, compact = false }: { option: HousingOption; compact?: boolean }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const photo = option.photo && !imageFailed ? option.photo : null;
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-[8px] border border-[#d9e0da] bg-[#dce4df]",
+        compact ? "aspect-[16/7]" : "aspect-[16/9]",
+      )}
+    >
+      {photo ? (
+        <Image
+          src={photo.url}
+          alt={photo.alt}
+          fill
+          sizes={compact ? "(min-width: 1024px) 27rem, 100vw" : "(min-width: 1024px) 28rem, 100vw"}
+          className="object-cover transition duration-500 ease-out group-hover:scale-[1.035]"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-[#dfe7e1] text-[#64746d]">
+          <div className="text-center">
+            <Home className="mx-auto h-6 w-6" />
+            <p className="mt-2 text-[11px] font-bold uppercase">Photo unavailable</p>
+          </div>
+        </div>
+      )}
+
+      <div className="absolute bottom-2 left-2 rounded-[6px] bg-[#17231f]/84 px-2 py-1 text-[10px] font-bold uppercase text-[#f8fbf8] backdrop-blur">
+        {photo ? photo.sourceLabel : "Clean fallback"}
+      </div>
+    </div>
+  );
 }
 
 function SegmentedControl<T extends string>({
@@ -272,12 +328,14 @@ function DistanceBadge({
 
 function ListingCard({
   option,
+  index,
   selected,
   onSelect,
   onHoverChange,
   onOpenMap,
 }: {
   option: HousingOption;
+  index: number;
   selected: boolean;
   onSelect: () => void;
   onHoverChange: (id: string | null) => void;
@@ -289,6 +347,7 @@ function ListingCard({
   const clarity = getHousingClarityStatus(option);
   const warnings = getMissingCostWarnings(option);
   const primaryWarning = warnings[0] ?? "Call Morrison Rentals before signing to confirm final fees and lease terms.";
+  const rankingBand = getRankingBand(option);
 
   return (
     <motion.article
@@ -297,6 +356,11 @@ function ListingCard({
       animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
       exit={reduceMotion ? undefined : { opacity: 0, y: 8 }}
       whileHover={reduceMotion ? undefined : { y: -2 }}
+      transition={
+        reduceMotion
+          ? undefined
+          : { duration: 0.22, ease: [0.22, 1, 0.36, 1], delay: Math.min(index * 0.035, 0.18) }
+      }
       onMouseEnter={() => onHoverChange(option.id)}
       onMouseLeave={() => onHoverChange(null)}
       className={cn(
@@ -307,7 +371,9 @@ function ListingCard({
       )}
     >
       <button type="button" onClick={onSelect} className="block w-full p-4 text-left">
-        <div className="flex items-start justify-between gap-3">
+        <PropertyPhoto option={option} />
+
+        <div className="mt-4 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[1.42rem] font-bold leading-none text-[#16221e]">
               {formatFullRent(option)}
@@ -324,14 +390,19 @@ function ListingCard({
             </p>
           </div>
 
-          <span
-            className={cn(
-              "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ring-1",
-              clarityBadgeClasses[clarity],
-            )}
-          >
-            {pillLabel(clarity)}
-          </span>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <span className="rounded-full bg-[#17231f] px-2.5 py-1 text-[10px] font-bold uppercase text-[#f8fbf8]">
+              {rankingBand}
+            </span>
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ring-1",
+                clarityBadgeClasses[clarity],
+              )}
+            >
+              {pillLabel(clarity)}
+            </span>
+          </div>
         </div>
 
         <div className="mt-4 grid gap-2">
@@ -352,6 +423,10 @@ function ListingCard({
         <div className="mt-3 flex items-center gap-2 text-sm text-[#54625c]">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-[#2e7d52]" />
           <span className="line-clamp-1">{option.availabilityLabel}</span>
+        </div>
+
+        <div className="mt-2 rounded-[8px] bg-[#eef3ef] px-3 py-2 text-xs leading-5 text-[#4f5f58]">
+          <span className="font-bold text-[#17231f]">Type:</span> {formatHousingFormat(option)}
         </div>
 
         <div className="mt-2 rounded-[8px] bg-[#f7f8f3] px-3 py-2 text-xs leading-5 text-[#5b6862]">
@@ -493,6 +568,7 @@ function DetailPanel({
   const clarity = getHousingClarityStatus(option);
   const warnings = getMissingCostWarnings(option);
   const questions = getQuestionsToAsk(option);
+  const rankingBand = getRankingBand(option);
 
   return (
     <aside
@@ -549,6 +625,9 @@ function DetailPanel({
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
+          <span className="rounded-full bg-[#17231f] px-2.5 py-1 text-[10px] font-bold uppercase text-[#f8fbf8]">
+            {rankingBand}
+          </span>
           <span
             className={cn(
               "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ring-1",
@@ -560,6 +639,10 @@ function DetailPanel({
           <span className="rounded-[6px] bg-[#eef3ef] px-2.5 py-1 text-[10px] font-bold uppercase text-[#4f5f58]">
             {getSourceConfidenceLabel(option.sourceConfidence)}
           </span>
+        </div>
+
+        <div className="mt-4">
+          <PropertyPhoto option={option} compact />
         </div>
 
         {mobile && questions.length ? (
@@ -578,6 +661,7 @@ function DetailPanel({
             value={`${getUnitTypeLabel(option.unitType)} / ${formatBedBath(option)} / ${
               option.squareFeet === null ? "sq ft not posted" : `${option.squareFeet} sq ft`
             }`}
+            note={formatHousingFormat(option)}
           />
           <DetailMetric
             icon={<Building2 className="h-4 w-4" />}
@@ -821,8 +905,8 @@ function ParentConfidenceStrip({ options }: { options: HousingOption[] }) {
   }).filter((value): value is number => value !== null);
   const stats = [
     {
-      label: `${options.length} strict listings`,
-      note: `1BR/1BA, posted 8/1/26, rent upper bound under $700`,
+      label: `${options.length} verified picks`,
+      note: "Studio/efficiency/1BR, private, Fall 2026, worst-case rent under $750",
     },
     {
       label: `${rangeFromValues(rentValues, "/mo")} rent`,
@@ -839,7 +923,7 @@ function ParentConfidenceStrip({ options }: { options: HousingOption[] }) {
   ];
   const warnings = [
     "Confirm final fees/utilities",
-    "Confirm lease terms",
+    "Confirm August 2026 term",
     "Call before signing",
   ];
 
@@ -959,7 +1043,7 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
   const reduceMotion = useReducedMotion();
 
   const strictOptions = useMemo(
-    () => options.filter(isStrictAffordableNextYearOneBed),
+    () => getVerifiedUnder750SoloOptions(options),
     [options],
   );
 
@@ -1134,10 +1218,11 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
     <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 sm:p-4">
       <AnimatePresence initial={false} mode="popLayout">
         {visibleOptions.length ? (
-          visibleOptions.map((option) => (
+          visibleOptions.map((option, index) => (
             <ListingCard
               key={option.id}
               option={option}
+              index={index}
               selected={selectedOption?.id === option.id}
               onHoverChange={setHoveredId}
               onSelect={() => selectListing(option.id, isDesktop ? null : "map")}
@@ -1158,18 +1243,16 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
           <div className="mx-auto flex max-w-[1800px] items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold uppercase text-[#66726d]">
-                <span>August 2026</span>
-                <span className="h-1 w-1 rounded-full bg-[#9baaa2]" aria-hidden />
-                <span>Strict under-$700 shortlist</span>
+                <span>August 2026 under-$750 solo housing shortlist</span>
                 <span className="h-1 w-1 rounded-full bg-[#9baaa2]" aria-hidden />
                 <span>Last verified {verifiedDate}</span>
               </div>
               <div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1">
                 <h1 className="text-xl font-bold text-[#16221e] sm:text-2xl">
-                  Miami Oxford 1BR shortlist
+                  Miami Oxford solo housing shortlist
                 </h1>
                 <p className="text-sm font-semibold text-[#56655e]">
-                  {summary.totalOptions} of {strictSummary.totalOptions} strict listings
+                  {summary.totalOptions} of {strictSummary.totalOptions} verified picks
                 </p>
               </div>
             </div>
@@ -1179,7 +1262,7 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
                 {strictSummary.totalOptions} verified
               </span>
               <span className="rounded-[6px] bg-[#fff4e8] px-3 py-2 text-[#87420f]">
-                under $700
+                under $750
               </span>
               <span className="rounded-[6px] bg-[#eef3ef] px-3 py-2 text-[#4f5f58]">
                 8/1/26 posted
@@ -1188,7 +1271,7 @@ export default function MiamiHousingExplorer({ options }: { options: HousingOpti
           </div>
 
           <div className="mt-3 grid grid-cols-2 rounded-[8px] border border-[#d5ddd8] bg-[#eef3ef] p-1 lg:hidden">
-            {(["map", "list"] as const).map((tab) => (
+            {(["list", "map"] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"

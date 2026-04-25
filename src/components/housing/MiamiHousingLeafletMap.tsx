@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import L from "leaflet";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Layers2, Maximize2, Minimize2 } from "lucide-react";
 
 import {
   calculateEthanPriceRange,
@@ -26,6 +26,8 @@ type MiamiHousingLeafletMapProps = {
   onSelect: (id: string) => void;
   onHoverChange: (id: string | null) => void;
 };
+
+type MapStyle = "satellite" | "map";
 
 function createAnchorIcon(kind: "armstrong" | "rec") {
   return L.divIcon({
@@ -202,6 +204,37 @@ function addRouteLines(group: L.LayerGroup, option: HousingOption, dashed = fals
   ).addTo(group);
 }
 
+function addBaseLayers(group: L.LayerGroup, style: MapStyle) {
+  group.clearLayers();
+
+  if (style === "map") {
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+      {
+        attribution:
+          'Powered by <a href="https://www.esri.com/en-us/home" target="_blank" rel="noreferrer">Esri</a>',
+      },
+    ).addTo(group);
+    return;
+  }
+
+  L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    {
+      attribution:
+        'Powered by <a href="https://www.esri.com/en-us/home" target="_blank" rel="noreferrer">Esri</a> | Imagery + labels',
+    },
+  ).addTo(group);
+  L.tileLayer(
+    "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",
+    { opacity: 0.9 },
+  ).addTo(group);
+  L.tileLayer(
+    "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+    { opacity: 0.96 },
+  ).addTo(group);
+}
+
 export default function MiamiHousingLeafletMap({
   options,
   selectedId,
@@ -213,8 +246,10 @@ export default function MiamiHousingLeafletMap({
   const shellRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const baseLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [mapStyle, setMapStyle] = useState<MapStyle>("satellite");
   const selectedOption = selectedId
     ? options.find((option) => option.id === selectedId) ?? null
     : null;
@@ -240,34 +275,33 @@ export default function MiamiHousingLeafletMap({
 
     L.control.zoom({ position: "bottomleft" }).addTo(map);
     L.control.attribution({ position: "bottomleft", prefix: false }).addTo(map);
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-      attribution:
-        'Powered by <a href="https://www.esri.com/en-us/home" target="_blank" rel="noreferrer">Esri</a> | Imagery + labels',
-    }).addTo(map);
-    L.tileLayer(
-      "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",
-      { opacity: 0.9 },
-    ).addTo(map);
-    L.tileLayer(
-      "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
-      { opacity: 0.96 },
-    ).addTo(map);
 
+    const baseLayerGroup = L.layerGroup().addTo(map);
     const layerGroup = L.layerGroup().addTo(map);
     mapRef.current = map;
+    baseLayerGroupRef.current = baseLayerGroup;
     layerGroupRef.current = layerGroup;
 
     const resizeTimer = window.setTimeout(() => map.invalidateSize(), 120);
 
     return () => {
       window.clearTimeout(resizeTimer);
+      baseLayerGroup.clearLayers();
       layerGroup.clearLayers();
       map.remove();
       mapRef.current = null;
+      baseLayerGroupRef.current = null;
       layerGroupRef.current = null;
       delete container._leaflet_id;
     };
   }, []);
+
+  useEffect(() => {
+    const group = baseLayerGroupRef.current;
+    if (!group) return;
+
+    addBaseLayers(group, mapStyle);
+  }, [mapStyle]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -438,6 +472,19 @@ export default function MiamiHousingLeafletMap({
       >
         {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         <span className="hidden sm:inline">{isFullscreen ? "Exit map" : "Full map"}</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          setMapStyle((current) => (current === "satellite" ? "map" : "satellite"));
+        }}
+        className="absolute right-3 top-[3.75rem] z-[650] inline-flex h-10 items-center gap-2 rounded-[8px] border border-white/70 bg-[#fbfcf8]/95 px-3 text-xs font-bold text-[#17231f] shadow-[0_14px_30px_rgba(38,52,45,0.18)] backdrop-blur transition hover:bg-white hover:text-[#1d4c91] active:scale-[0.98]"
+        aria-label={mapStyle === "satellite" ? "Switch to map view" : "Switch to satellite view"}
+      >
+        <Layers2 className="h-4 w-4" />
+        <span className="hidden sm:inline">{mapStyle === "satellite" ? "Map" : "Satellite"}</span>
       </button>
 
       <div ref={containerRef} className="h-full min-h-[26rem] w-full" />

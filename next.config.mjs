@@ -14,6 +14,8 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "cdn.gamma.app" },
       { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "images1.forrent.com" },
+      { protocol: "https", hostname: "img.offcampusimages.com" },
     ],
   },
   async headers() {
@@ -42,7 +44,7 @@ const nextConfig = {
               scriptSrc,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://cdn.gamma.app https://images.unsplash.com https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://services.arcgisonline.com",
+              "img-src 'self' data: blob: https://cdn.gamma.app https://images.unsplash.com https://images1.forrent.com https://img.offcampusimages.com https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://services.arcgisonline.com",
               "connect-src 'self' https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://services.arcgisonline.com",
               "form-action 'self' https://calendly.com",
               "manifest-src 'self'",

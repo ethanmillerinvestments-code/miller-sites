@@ -15,6 +15,7 @@ export type HousingAvailabilityConfidence =
   | "confirmed-2026"
   | "likely-needs-confirmation"
   | "comp-only";
+export type HousingRankingBand = "best budget" | "solid" | "stretch" | "call first";
 export type HousingFurnishedStatus =
   | "furnished"
   | "common-area-only"
@@ -36,6 +37,12 @@ export interface HousingContactPath {
   href: string;
   kind: "apply" | "book" | "call" | "email" | "listing";
   note?: string;
+}
+
+export interface HousingPhoto {
+  url: string;
+  alt: string;
+  sourceLabel: string;
 }
 
 export interface HousingOption {
@@ -86,7 +93,16 @@ export interface HousingOption {
   availabilityConfidence: HousingAvailabilityConfidence;
   lastVerifiedAt: string;
   sourceSnapshotNotes: string[];
+  photo?: HousingPhoto;
   contactPath: HousingContactPath;
+}
+
+export interface HousingRejectedSourceNote {
+  id: string;
+  label: string;
+  reason: string;
+  sourceUrls: string[];
+  notes: string[];
 }
 
 export type HousingSortKey =
@@ -148,10 +164,10 @@ export interface HousingDistanceSummary {
   label: string;
 }
 
-const VERIFIED_AT = "2026-04-24";
+const VERIFIED_AT = "2026-04-25";
 
 export const ETHAN_PARENT_CONTRIBUTION = 500;
-export const STRICT_MONTHLY_RENT_CEILING = 700;
+export const STRICT_MONTHLY_RENT_CEILING = 750;
 
 export const miamiOxfordCampusAnchor = {
   label: "Armstrong / Uptown campus anchor",
@@ -355,7 +371,7 @@ export function getSourceConfidenceLabel(confidence: HousingSourceConfidence) {
 }
 
 export function getListTierLabel(tier: HousingListTier) {
-  if (tier === "main-under-1k") return "Main under $1k";
+  if (tier === "main-under-1k") return "Main under $750";
   if (tier === "backup-over-1k") return "Backup over $1k";
   return "Watchlist";
 }
@@ -571,17 +587,24 @@ function hasPostedAugust2026Availability(option: HousingOption) {
   return (
     availabilityText.includes("8/1/26") ||
     availabilityText.includes("08/01/26") ||
-    availabilityText.includes("august 2026")
+    availabilityText.includes("08/21/2026") ||
+    availabilityText.includes("august 2026") ||
+    availabilityText.includes("fall 2026") ||
+    availabilityText.includes("2026-2027") ||
+    availabilityText.includes("26/27") ||
+    availabilityText.includes("jun 1") ||
+    availabilityText.includes("june 2026") ||
+    availabilityText.includes("mid august 2026")
   );
 }
 
-export function isStrictAffordableNextYearOneBed(option: HousingOption) {
+export function isVerifiedUnder750SoloOption(option: HousingOption) {
   const upperRent = option.monthlyEquivalentUpper ?? option.monthlyEquivalent;
 
   return (
-    option.unitType === "one-bedroom" &&
-    option.bedrooms === 1 &&
-    option.bathrooms === 1 &&
+    ["studio", "efficiency", "one-bedroom"].includes(option.unitType) &&
+    option.bedrooms <= 1 &&
+    option.bathrooms <= 1 &&
     option.availabilityConfidence === "confirmed-2026" &&
     hasPostedAugust2026Availability(option) &&
     option.monthlyEquivalent !== null &&
@@ -590,12 +613,46 @@ export function isStrictAffordableNextYearOneBed(option: HousingOption) {
   );
 }
 
+export function isStrictAffordableNextYearOneBed(option: HousingOption) {
+  return isVerifiedUnder750SoloOption(option);
+}
+
+export function getVerifiedUnder750SoloOptions(options: HousingOption[]) {
+  return options.filter(isVerifiedUnder750SoloOption);
+}
+
+export function getRankingBand(option: HousingOption): HousingRankingBand {
+  const upperRent = option.monthlyEquivalentUpper ?? option.monthlyEquivalent;
+  const evidenceText = [
+    option.availabilityLabel,
+    ...option.availabilityNotes,
+    ...option.sourceSnapshotNotes,
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  if (
+    upperRent === null ||
+    upperRent > STRICT_MONTHLY_RENT_CEILING ||
+    option.availabilityConfidence !== "confirmed-2026" ||
+    evidenceText.includes("conflict") ||
+    evidenceText.includes("2027-2028 conflict") ||
+    evidenceText.includes("zillow now")
+  ) {
+    return "call first";
+  }
+
+  if (upperRent <= 650) return "best budget";
+  if (upperRent <= 700) return "solid";
+  return "stretch";
+}
+
 function parentAffordabilityScore(option: HousingOption) {
   if (option.monthlyEquivalent === null) return 0;
 
   const upper = option.monthlyEquivalentUpper ?? option.monthlyEquivalent;
-  const ceilingRoom = ((STRICT_MONTHLY_RENT_CEILING - upper) / 105) * 100;
-  const floorRoom = ((STRICT_MONTHLY_RENT_CEILING - option.monthlyEquivalent) / 105) * 100;
+  const ceilingRoom = ((STRICT_MONTHLY_RENT_CEILING - upper) / 155) * 100;
+  const floorRoom = ((STRICT_MONTHLY_RENT_CEILING - option.monthlyEquivalent) / 155) * 100;
 
   return clamp(Math.round(ceilingRoom * 0.65 + floorRoom * 0.35), 0, 100);
 }
@@ -644,7 +701,7 @@ function parentDistanceScore(option: HousingOption) {
 }
 
 export function getParentConfidenceScore(option: HousingOption) {
-  const strictComponent = (isStrictAffordableNextYearOneBed(option) ? 100 : 0) * 0.18;
+  const strictComponent = (isVerifiedUnder750SoloOption(option) ? 100 : 0) * 0.18;
   const sourceComponent = confidenceScore(option.sourceConfidence) * 0.08;
   const feeComponent = feeClarityScore(option) * 0.16;
   const utilityComponent = utilityConfidenceScore(option) * 0.14;
@@ -992,14 +1049,14 @@ const miamiOxfordHousingOptionBase: Omit<HousingOption, "sourceSnapshotNotes">[]
     bathrooms: 1,
     squareFeet: null,
     pricingCadence: "per-semester",
-    semesterDueAmount: 4200,
+    semesterDueAmount: 4100,
     semesterDueAmountUpper: null,
-    schoolYearTotal: 8800,
+    schoolYearTotal: 8600,
     schoolYearTotalUpper: null,
-    monthlyEquivalent: calculateMonthlyEquivalentFromSchoolYearTotal(8800),
+    monthlyEquivalent: calculateMonthlyEquivalentFromSchoolYearTotal(8600),
     monthlyEquivalentUpper: null,
     moveInDue: calculateMoveInDue({
-      firstRequiredInstallment: 4200,
+      firstRequiredInstallment: 4100,
       securityDepositRefundable: 200,
       adminOrLeaseSigningFees: [
         {
@@ -1022,7 +1079,7 @@ const miamiOxfordHousingOptionBase: Omit<HousingOption, "sourceSnapshotNotes">[]
     taxesStatus: "none-listed",
     nonUtilityFeesStatus: "unknown",
     leaseTermLabel: "2-semester lease (includes J term)",
-    availabilityLabel: "Live page now rolls to 2027-2028",
+    availabilityLabel: "Direct page shows 2026-2027 availability",
     includedUtilities: ["water", "sewer", "trash"],
     excludedUtilities: [],
     unknownUtilities: ["electric", "internet"],
@@ -1037,8 +1094,8 @@ const miamiOxfordHousingOptionBase: Omit<HousingOption, "sourceSnapshotNotes">[]
       "Monthly equivalent is a 10-month comparison number; the actual billing cadence is semester-based.",
     ],
     availabilityNotes: [
-      "Search indexing previously showed this unit under 2026-2027; the live direct page currently displays 2027-2028.",
-      "Treat August 2026 timing as a confirm-before-calling item rather than locked availability.",
+      "Direct Oxford Real Estate page shows 2026-2027 availability, but the rent is over the under-$750 cutoff.",
+      "Treat as a clean rejected comp unless the office confirms a materially cheaper efficiency.",
     ],
     perks: [
       "Efficiency layout keeps the direct source price below many true 1BRs.",
@@ -1049,7 +1106,7 @@ const miamiOxfordHousingOptionBase: Omit<HousingOption, "sourceSnapshotNotes">[]
     sourceKind: "primary",
     sourceConfidence: "medium",
     listTier: "watchlist",
-    availabilityConfidence: "comp-only",
+    availabilityConfidence: "confirmed-2026",
     lastVerifiedAt: VERIFIED_AT,
     contactPath: {
       label: "Open Oxford Real Estate listing",
@@ -1219,6 +1276,86 @@ const miamiOxfordHousingOptionBase: Omit<HousingOption, "sourceSnapshotNotes">[]
     },
   },
   {
+    id: "15-n-locust-unit-c",
+    propertyName: "15 N Locust St",
+    optionName: "Unit C Loft 1BR",
+    unitType: "one-bedroom",
+    address: "15 N Locust St Unit C, Oxford, OH 45056",
+    latitude: 39.51104,
+    longitude: -84.74121,
+    distanceMiles: 0.55,
+    walkMinutes: 11,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 500,
+    pricingCadence: "monthly-range",
+    semesterDueAmount: 3600,
+    semesterDueAmountUpper: null,
+    schoolYearTotal: 7200,
+    schoolYearTotalUpper: 7500,
+    monthlyEquivalent: 600,
+    monthlyEquivalentUpper: 625,
+    moveInDue: calculateMoveInDue({
+      firstRequiredInstallment: 600,
+      firstRequiredInstallmentUpper: 625,
+      securityDepositRefundable: 500,
+      adminOrLeaseSigningFees: [],
+    }).amount,
+    moveInDueUpper: calculateMoveInDue({
+      firstRequiredInstallment: 600,
+      firstRequiredInstallmentUpper: 625,
+      securityDepositRefundable: 500,
+      adminOrLeaseSigningFees: [],
+    }).amountUpper,
+    moveInDueHasUnknowns: true,
+    securityDepositRefundable: 500,
+    adminOrLeaseSigningFees: [],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "unknown",
+    leaseTermLabel: "12-month / 2026-2027 school-year lease",
+    availabilityLabel: "ForRent/Apartments show Unit C available Jun 1 for 2026-2027",
+    includedUtilities: ["lawn care", "landscaping"],
+    excludedUtilities: [],
+    unknownUtilities: ["electric", "water", "sewer", "trash", "internet"],
+    parkingIncluded: true,
+    parkingCost: 0,
+    furnishedStatus: "unknown",
+    laundryStatus: "unknown",
+    appliances: ["dishwasher", "oven", "range", "refrigerator"],
+    ACStatus: "yes-unspecified",
+    pricingNotes: [
+      "ForRent and Apartments.com show Unit C at $600/month, while Zillow cheap-search indexing shows the same unit at $625/month.",
+      "The landlord description also posts $3,600 per semester and $7,200 per school year, so the high end remains under the $750 cutoff.",
+      "Apartments.com shows a $500 deposit; other fees and utilities still need confirmation.",
+    ],
+    availabilityNotes: [
+      "ForRent and Apartments.com show Unit C available Jun 1 and describe the 2026-2027 school year.",
+      "The direct Ohio Off Campus Housing page confirms the loft 1BR layout and direct owner contact, but does not post live rent.",
+    ],
+    perks: [
+      "Lowest verified solo rent in the refreshed shortlist.",
+      "Loft bedroom layout gives more separation than a standard studio.",
+      "Close to Uptown with off-street/street parking posted.",
+    ],
+    sourceUrl: "https://www.forrent.com/oh/oxford/15-n-locust-st/lstxxjf",
+    sourceKind: "aggregator",
+    sourceConfidence: "medium",
+    listTier: "main-under-1k",
+    availabilityConfidence: "confirmed-2026",
+    lastVerifiedAt: VERIFIED_AT,
+    photo: {
+      url: "https://images1.forrent.com/i2/TqRUObFzWHEXSKF2paZ2DbZQBgIxBZNeEh5uS-q2xQ8/117/image.jpg?p=1",
+      alt: "15 N Locust St Unit C exterior and listing photo",
+      sourceLabel: "ForRent photo",
+    },
+    contactPath: {
+      label: "Call Ohio Off Campus Housing",
+      href: "tel:9377043163",
+      kind: "call",
+      note: "Use the direct owner/manager number from Ohio Off Campus Housing to confirm the live Unit C lease.",
+    },
+  },
+  {
     id: "10-west-sycamore",
     propertyName: "10 West Sycamore",
     optionName: "1 Bedroom Apartment",
@@ -1286,6 +1423,11 @@ const miamiOxfordHousingOptionBase: Omit<HousingOption, "sourceSnapshotNotes">[]
     listTier: "main-under-1k",
     availabilityConfidence: "confirmed-2026",
     lastVerifiedAt: VERIFIED_AT,
+    photo: {
+      url: "https://img.offcampusimages.com/TRxrvE56UON2Dj557EoPiHQ4RtA%3D/660x440/left/top/smart/images/yopfkmmrxyg_5dyzzcjkyy49xi97asqirnx1v48zlts.jpeg?p=1",
+      alt: "10 West Sycamore apartment exterior",
+      sourceLabel: "Miami OH portal photo",
+    },
     contactPath: {
       label: "Call Morrison Rentals",
       href: "tel:5139163836",
@@ -1361,6 +1503,11 @@ const miamiOxfordHousingOptionBase: Omit<HousingOption, "sourceSnapshotNotes">[]
     listTier: "main-under-1k",
     availabilityConfidence: "confirmed-2026",
     lastVerifiedAt: VERIFIED_AT,
+    photo: {
+      url: "https://img.offcampusimages.com/rx4t_DgWbb1ENxSrmckEtwvJXcc%3D/660x440/left/top/smart/images/lk8usbfouwc4u_oy_efj2l40qye6xvdr_nwc_1fmees.jpeg?p=1",
+      alt: "717 McGuffey apartment exterior",
+      sourceLabel: "Miami OH portal photo",
+    },
     contactPath: {
       label: "Call Morrison Rentals",
       href: "tel:5139164182",
@@ -1436,11 +1583,299 @@ const miamiOxfordHousingOptionBase: Omit<HousingOption, "sourceSnapshotNotes">[]
     listTier: "main-under-1k",
     availabilityConfidence: "confirmed-2026",
     lastVerifiedAt: VERIFIED_AT,
+    photo: {
+      url: "https://img.offcampusimages.com/rFpmIP2s3h3BwZmEKCvRlThySeY%3D/660x440/left/top/smart/images/vyfm9_2obhqt3eiev1cmdnjudcs7j4j1genbtnfdrbm.jpeg?p=1",
+      alt: "718 South Locust apartment exterior",
+      sourceLabel: "Miami OH portal photo",
+    },
     contactPath: {
       label: "Call Morrison Rentals",
       href: "tel:5139163964",
       kind: "call",
       note: "Campus portal lists a direct phone number for this property manager.",
+    },
+  },
+  {
+    id: "312-s-poplar-unit-10",
+    propertyName: "312 S Poplar St",
+    optionName: "Unit 10 1BR Apartment",
+    unitType: "one-bedroom",
+    address: "312 S Poplar St Unit 10, Oxford, OH 45056",
+    latitude: 39.50604,
+    longitude: -84.74219,
+    distanceMiles: 0.52,
+    walkMinutes: 10,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 600,
+    pricingCadence: "monthly-range",
+    semesterDueAmount: 4200,
+    semesterDueAmountUpper: null,
+    schoolYearTotal: 8400,
+    schoolYearTotalUpper: 8700,
+    monthlyEquivalent: 700,
+    monthlyEquivalentUpper: 725,
+    moveInDue: 700,
+    moveInDueUpper: 725,
+    moveInDueHasUnknowns: true,
+    securityDepositRefundable: null,
+    adminOrLeaseSigningFees: [],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "unknown",
+    leaseTermLabel: "12-month / 2026-2027 school-year lease",
+    availabilityLabel: "ForRent shows Unit 10 available Jun 1 for 2026-2027",
+    includedUtilities: [],
+    excludedUtilities: ["utilities"],
+    unknownUtilities: ["deposit", "required fees"],
+    parkingIncluded: true,
+    parkingCost: 0,
+    furnishedStatus: "unknown",
+    laundryStatus: "on-site",
+    appliances: ["oven", "range", "refrigerator", "freezer"],
+    ACStatus: "yes-unspecified",
+    pricingNotes: [
+      "ForRent and Apartments.com show Unit 10 at $700 total monthly price, while Zillow now shows $725 for a later listed availability date.",
+      "The Ohio Off Campus Housing manager page confirms 312 S Poplar has 1BR/1BA units, washer/dryer, and off-street parking.",
+      "Use the $725 Zillow figure as the high-end worst case; it still stays under the $750 cap.",
+    ],
+    availabilityNotes: [
+      "ForRent shows leasing for 2026-2027 and Unit 10 available Jun 1.",
+      "Zillow now shows a Feb. 26, 2027 availability date, so this is a call-first lead before any application.",
+    ],
+    perks: [
+      "Very close to campus and Uptown for the price.",
+      "Unit-level 600 sq ft is posted.",
+      "Digital keypad locks and off-street parking are visible in the manager description.",
+    ],
+    sourceUrl: "https://www.forrent.com/oh/oxford/312-s-poplar-st/27r5c58",
+    sourceKind: "aggregator",
+    sourceConfidence: "medium",
+    listTier: "main-under-1k",
+    availabilityConfidence: "confirmed-2026",
+    lastVerifiedAt: VERIFIED_AT,
+    photo: {
+      url: "https://images1.forrent.com/i2/3BnbK3s-RjypPTo98ujMwxoBul6QSFbsCrz4q1X0Kiw/117/image.jpg?p=1",
+      alt: "312 S Poplar St Unit 10 exterior and listing photo",
+      sourceLabel: "ForRent photo",
+    },
+    contactPath: {
+      label: "Call Ohio Off Campus Housing",
+      href: "tel:9377043163",
+      kind: "call",
+      note: "Call the direct manager because ForRent/Apartments and Zillow disagree on the exact live timing.",
+    },
+  },
+  {
+    id: "harbor-house-studio",
+    propertyName: "Harbor House",
+    optionName: "Small Studio",
+    unitType: "studio",
+    address: "124 E Sycamore St, Oxford, OH 45056",
+    latitude: 39.51472,
+    longitude: -84.74029,
+    distanceMiles: 0.66,
+    walkMinutes: 13,
+    bedrooms: 0,
+    bathrooms: 1,
+    squareFeet: 368,
+    pricingCadence: "monthly-range",
+    semesterDueAmount: 4350,
+    semesterDueAmountUpper: 4560,
+    schoolYearTotal: 8700,
+    schoolYearTotalUpper: 9120,
+    monthlyEquivalent: 725,
+    monthlyEquivalentUpper: 760,
+    moveInDue: 725,
+    moveInDueUpper: 745,
+    moveInDueHasUnknowns: true,
+    securityDepositRefundable: null,
+    adminOrLeaseSigningFees: [],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "unknown",
+    leaseTermLabel: "Academic-year studio lease; 12-month available by request",
+    availabilityLabel: "Redfin/HotPads show 26/27 pre-leasing and mid-August 2026 availability",
+    includedUtilities: ["water", "sewer", "trash", "high-speed internet"],
+    excludedUtilities: [],
+    unknownUtilities: ["electric", "deposit", "required fees"],
+    parkingIncluded: true,
+    parkingCost: 0,
+    furnishedStatus: "unknown",
+    laundryStatus: "on-site",
+    appliances: [],
+    ACStatus: "unknown",
+    pricingNotes: [
+      "HotPads still shows studio rent at $725-$745 and explains small-studio semester pricing of $4,350.",
+      "Zillow's current crawl shows Studio Unit 9 at $760+ and a $4,560 large-studio semester line, so the worst-case current read is over the $750 cutoff.",
+      "Move-in cash is incomplete because the deposit and application/admin fees require manager confirmation.",
+    ],
+    availabilityNotes: [
+      "Redfin shows availability on 08/21/2026 for Harbor House.",
+      "HotPads says availability begins June 2026, while Redfin says mid-August 2026; both support Fall 2026 timing.",
+    ],
+    perks: [
+      "Still a useful studio backup if the manager confirms a small studio under $750.",
+      "Included internet and core utilities reduce monthly unknowns.",
+      "Mile Square location with off-street parking and on-site laundry.",
+    ],
+    sourceUrl: "https://hotpads.com/harbor-house-oxford-oh-45056-247baaa/pad",
+    sourceKind: "aggregator",
+    sourceConfidence: "low",
+    listTier: "watchlist",
+    availabilityConfidence: "confirmed-2026",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Call Harbor House",
+      href: "tel:5139384554",
+      kind: "call",
+      note: "Ask whether the $725 small-studio line is still open for August 2026 before applying; current Zillow output is over the cap.",
+    },
+  },
+  {
+    id: "314-s-poplar-unit-16",
+    propertyName: "314 S Poplar St",
+    optionName: "Unit 16 1BR Apartment",
+    unitType: "one-bedroom",
+    address: "314 S Poplar St Unit 16, Oxford, OH 45056",
+    latitude: 39.50595,
+    longitude: -84.74224,
+    distanceMiles: 0.53,
+    walkMinutes: 11,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 700,
+    pricingCadence: "monthly-range",
+    semesterDueAmount: 4000,
+    semesterDueAmountUpper: 4100,
+    schoolYearTotal: 8000,
+    schoolYearTotalUpper: 8200,
+    monthlyEquivalent: 675,
+    monthlyEquivalentUpper: 700,
+    moveInDue: calculateMoveInDue({
+      firstRequiredInstallment: 675,
+      firstRequiredInstallmentUpper: 700,
+      securityDepositRefundable: 500,
+      adminOrLeaseSigningFees: [],
+    }).amount,
+    moveInDueUpper: calculateMoveInDue({
+      firstRequiredInstallment: 675,
+      firstRequiredInstallmentUpper: 700,
+      securityDepositRefundable: 500,
+      adminOrLeaseSigningFees: [],
+    }).amountUpper,
+    moveInDueHasUnknowns: true,
+    securityDepositRefundable: 500,
+    adminOrLeaseSigningFees: [],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "unknown",
+    leaseTermLabel: "12-month lease; source year conflict",
+    availabilityLabel: "Hidden until 2026-2027 vs 2027-2028 conflict is resolved",
+    includedUtilities: [],
+    excludedUtilities: [],
+    unknownUtilities: ["utilities", "required fees"],
+    parkingIncluded: true,
+    parkingCost: 0,
+    furnishedStatus: "unknown",
+    laundryStatus: "on-site",
+    appliances: ["dishwasher", "oven", "refrigerator"],
+    ACStatus: "central",
+    pricingNotes: [
+      "Apartments.com and Trulia show Unit 16 under $700 with a $500 deposit.",
+      "HotPads now shows Unit 16 at $700 for 2027-2028, so it cannot be counted as verified August/Fall 2026.",
+    ],
+    availabilityNotes: [
+      "Apartments.com/Trulia preserve 2026-2027 language and Jun 1 timing.",
+      "HotPads has fresher-looking 2027-2028 language, creating a year conflict that must be resolved by phone.",
+    ],
+    perks: [
+      "Close to campus with off-street parking.",
+      "Digital keypad lock and shared laundry are posted.",
+      "Could be excellent if the office confirms a 2026-2027 opening.",
+    ],
+    sourceUrl: "https://www.apartments.com/314-s-poplar-st-oxford-oh/edbkhwp/",
+    sourceKind: "aggregator",
+    sourceConfidence: "low",
+    listTier: "watchlist",
+    availabilityConfidence: "likely-needs-confirmation",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Call Ohio Off Campus Housing",
+      href: "tel:9377043163",
+      kind: "call",
+      note: "Ask specifically whether Unit 16 is 2026-2027 or already rolled to 2027-2028.",
+    },
+  },
+  {
+    id: "314-s-poplar-unit-21",
+    propertyName: "314 S Poplar St",
+    optionName: "Unit 21 1BR Apartment",
+    unitType: "one-bedroom",
+    address: "314 S Poplar St Unit 21, Oxford, OH 45056",
+    latitude: 39.50595,
+    longitude: -84.74224,
+    distanceMiles: 0.53,
+    walkMinutes: 11,
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 500,
+    pricingCadence: "monthly-range",
+    semesterDueAmount: 4000,
+    semesterDueAmountUpper: 4100,
+    schoolYearTotal: 8000,
+    schoolYearTotalUpper: 8200,
+    monthlyEquivalent: 675,
+    monthlyEquivalentUpper: 700,
+    moveInDue: calculateMoveInDue({
+      firstRequiredInstallment: 675,
+      firstRequiredInstallmentUpper: 700,
+      securityDepositRefundable: 500,
+      adminOrLeaseSigningFees: [],
+    }).amount,
+    moveInDueUpper: calculateMoveInDue({
+      firstRequiredInstallment: 675,
+      firstRequiredInstallmentUpper: 700,
+      securityDepositRefundable: 500,
+      adminOrLeaseSigningFees: [],
+    }).amountUpper,
+    moveInDueHasUnknowns: true,
+    securityDepositRefundable: 500,
+    adminOrLeaseSigningFees: [],
+    taxesStatus: "none-listed",
+    nonUtilityFeesStatus: "unknown",
+    leaseTermLabel: "12-month lease; source year conflict",
+    availabilityLabel: "Hidden until 2026-2027 vs 2027-2028 conflict is resolved",
+    includedUtilities: [],
+    excludedUtilities: [],
+    unknownUtilities: ["utilities", "required fees"],
+    parkingIncluded: true,
+    parkingCost: 0,
+    furnishedStatus: "unknown",
+    laundryStatus: "on-site",
+    appliances: ["dishwasher", "oven", "refrigerator"],
+    ACStatus: "central",
+    pricingNotes: [
+      "Apartments.com shows Unit 21 at $675 with a $500 deposit; Zillow/HotPads now show $700.",
+      "HotPads now describes Unit 21 as 2027-2028, so it stays hidden from the verified Fall 2026 list.",
+    ],
+    availabilityNotes: [
+      "Apartments.com and Homes summaries preserve 2026-2027 leasing language.",
+      "HotPads has fresher-looking 2027-2028 wording; call the manager before counting this as August 2026 inventory.",
+    ],
+    perks: [
+      "Smaller 500 sq ft 1BR, but still private.",
+      "Off-street parking and central A/C are posted on aggregator pages.",
+      "Worth a fast phone check because the rent is otherwise attractive.",
+    ],
+    sourceUrl: "https://www.apartments.com/314-s-poplar-st-oxford-oh/edbkhwp/",
+    sourceKind: "aggregator",
+    sourceConfidence: "low",
+    listTier: "watchlist",
+    availabilityConfidence: "likely-needs-confirmation",
+    lastVerifiedAt: VERIFIED_AT,
+    contactPath: {
+      label: "Call Ohio Off Campus Housing",
+      href: "tel:9377043163",
+      kind: "call",
+      note: "Ask specifically whether Unit 21 is 2026-2027 or already rolled to 2027-2028.",
     },
   },
   {
@@ -2412,7 +2847,7 @@ const sourceSnapshotNotesById: Record<string, string[]> = {
     "The same SCQ page shows the 2027-2028 1BR at $850 and available, so this stays a next-cycle comp until the office confirms August 2026.",
   ],
   "26-east-walnut-apt-4": [
-    "Oxford Real Estate source shows the efficiency as 2027-2028 at $4,200 per semester and $8,800 total rent.",
+    "Oxford Real Estate source shows Apt. 4 as 2026-2027 at $4,100 per semester and $8,600 total rent.",
     "The source lists dishwasher, disposal, onsite laundry, wall A/C, and water, sewer, and trash included.",
   ],
   "18-n-elm": [
@@ -2422,6 +2857,10 @@ const sourceSnapshotNotesById: Record<string, string[]> = {
   "23-e-high-apt-1-up": [
     "Oxford Real Estate source shows Apt. 1 Up as 2027-2028 at $4,500 per semester and $9,400 total rent.",
     "The page describes a 1BR/1BA apartment over High Street and posts the $600 lease-signing amount.",
+  ],
+  "15-n-locust-unit-c": [
+    "ForRent shows 15 N Locust Unit C at $600/month, 1BR/1BA, 500 sq ft, available Jun 1, and leasing for the 2026-2027 school year.",
+    "Apartments.com repeats the $600 total monthly price and $500 deposit, while Zillow cheap-search indexing shows $625/month; both remain under the $750 cap.",
   ],
   "10-west-sycamore": [
     "Miami off-campus portal shows a 1BR at $595-$675 per bedroom, 12-month lease, and 8/1/26 availability.",
@@ -2434,6 +2873,22 @@ const sourceSnapshotNotesById: Record<string, string[]> = {
   "718-south-locust": [
     "Miami off-campus portal shows a 1BR at $625-$675 per bedroom plus fees and 8/1/26 availability.",
     "The current amenity table lists washer/dryer in unit, while the description also references laundry facilities; the row uses the more specific laundry field.",
+  ],
+  "312-s-poplar-unit-10": [
+    "ForRent shows 312 S Poplar Unit 10 at $700 total monthly price, 1BR/1BA, 600 sq ft, available Jun 1, and leasing for 2026-2027.",
+    "Zillow now shows the same unit at $725 with Feb. 26, 2027 availability, so the row uses $725 as the high-end price and flags the timing conflict.",
+  ],
+  "harbor-house-studio": [
+    "HotPads shows Harbor House studios at $725-$745 with 26/27 pre-leasing and availability beginning June 2026.",
+    "Redfin shows availability on 08/21/2026, but Zillow's current crawl shows $760+ for Studio Unit 9 and a $4,560 large-studio semester line, so this is hidden from the under-$750 shortlist.",
+  ],
+  "314-s-poplar-unit-16": [
+    "Apartments.com and Trulia preserve 2026-2027 leasing language for Unit 16 at roughly $675-$700 with a $500 deposit.",
+    "HotPads now shows Unit 16 as 2027-2028 at $700, so this is hidden from the verified August 2026 shortlist until the manager resolves the conflict.",
+  ],
+  "314-s-poplar-unit-21": [
+    "Apartments.com shows Unit 21 at $675, 1BR/1BA, 500 sq ft, available Jun 1 with a $500 deposit.",
+    "HotPads now shows Unit 21 as 2027-2028 at $700, so this is hidden from the verified August 2026 shortlist until the manager resolves the conflict.",
   ],
   "campus-courts": [
     "SCQ source shows the 2026-2027 1BR no-balcony price at $5,800 per tenant/semester/bedroom and leased.",
@@ -2488,6 +2943,70 @@ const sourceSnapshotNotesById: Record<string, string[]> = {
     "The A1 row shows 1BR/1BA, 460 sq ft, $1,219, Fall 12 Month 08/21/2026-07/27/2027, high-speed internet, in-unit laundry, and furnished status.",
   ],
 };
+
+export const miamiOxfordRejectedHousingNotes: HousingRejectedSourceNote[] = [
+  {
+    id: "314-s-poplar-conflict",
+    label: "314 S Poplar St Units 16 and 21",
+    reason:
+      "Do not show in the verified main list until the 2026-2027 vs 2027-2028 source conflict is resolved.",
+    sourceUrls: [
+      "https://www.apartments.com/314-s-poplar-st-oxford-oh/edbkhwp/",
+      "https://hotpads.com/314-s-poplar-st-oxford-oh-45056-1mkuztd/16/pad",
+      "https://hotpads.com/314-s-poplar-st-oxford-oh-45056-1mkuztd/21/pad",
+      "https://www.zillow.com/b/314-s-poplar-st-oxford-oh-9QtHbs/",
+    ],
+    notes: [
+      "Apartments.com and Trulia preserve 2026-2027 language with Jun 1 timing and under-$700 1BR units.",
+      "HotPads now labels Units 16 and 21 as 2027-2028 at $700, which conflicts with the 2026-2027 source trail.",
+      "Zillow shows current for-rent 1BR units at $700 but does not clearly resolve the school-year timing.",
+    ],
+  },
+  {
+    id: "harbor-house-over-cap-conflict",
+    label: "Harbor House Studio",
+    reason:
+      "Hidden because Zillow's current studio read is $760+, which fails the under-$750 worst-case rule even though older/current sister-source ranges show $725-$745.",
+    sourceUrls: [
+      "https://hotpads.com/harbor-house-oxford-oh-45056-247baaa/pad",
+      "https://www.redfin.com/OH/Oxford/124-E-Sycamore-St-45056/home/78981875",
+      "https://www.zillow.com/apartments/oxford-oh/harbor-house/CjjCNG/",
+    ],
+    notes: [
+      "HotPads and Redfin preserve 26/27 pre-leasing with $725-$745 or $725+ studio language.",
+      "Zillow's current crawl shows Studio Unit 9 at $760+ and a large-studio semester line of $4,560.",
+      "Keep as a phone-check backup only; do not show it unless the manager confirms a specific August 2026 small studio at or below $750.",
+    ],
+  },
+  {
+    id: "oxford-square-over-cap",
+    label: "Oxford Square Apartments 1BR",
+    reason:
+      "Hidden because the posted high end reaches $795/month, which fails the under-$750 worst-case rule.",
+    sourceUrls: [
+      "https://www.zillow.com/apartments/oxford-oh/oxford-square-apartments/5jB26z/",
+      "https://hotpads.com/oxford-square-apartments-oxford-oh-45056-tugjgb/pad",
+    ],
+    notes: [
+      "Zillow shows 1BR from $725, but HotPads/Redfin-style ranges show $725-$795.",
+      "Because the high end exceeds $750, this stays out of the shortlist unless a specific under-$750 unit is confirmed.",
+    ],
+  },
+  {
+    id: "606-s-college-no-fall-2026",
+    label: "606 S College Ave Apt 1/7",
+    reason:
+      "Hidden because current listings are cheap but do not verify August/Fall 2026 school-year availability.",
+    sourceUrls: [
+      "https://www.zillow.com/homedetails/606-S-College-Ave-APT-1-Oxford-OH-45056/460406704_zpid/",
+      "https://hotpads.com/606-s-college-ave-oxford-oh-45056-1mkv04m/7/pad",
+    ],
+    notes: [
+      "Zillow/Trulia/HotPads show $645 1BR units and current availability.",
+      "The source trail does not clearly state Fall 2026 or 2026-2027 school-year timing, so it is not counted as verified for Ethan's August 2026 search.",
+    ],
+  },
+];
 
 function attachSourceSnapshotNotes(
   options: Omit<HousingOption, "sourceSnapshotNotes">[],
